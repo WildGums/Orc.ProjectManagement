@@ -81,6 +81,9 @@
     <Compile Include="Models\ProjectBase.cs" />
     <Compile Include="ModuleInitializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Serialization\DefaultProjectSerializerSelector.cs" />
+    <Compile Include="Serialization\FixedProjectSerializerSelector.cs" />
+    <Compile Include="Serialization\Interfaces\IProjectSerializerSelector.cs" />
     <Compile Include="Services\CommandLineService.cs" />
     <Compile Include="Extensions\IProjectManagerExtensions.cs" />
     <Compile Include="Services\Interfaces\ICommandLineService.cs" />

@@ -7,8 +7,10 @@
 
 namespace Orc.ProjectManagement.Test.Managers
 {
+    using Catel.IoC;
     using Mocks;
     using NUnit.Framework;
+    using ProjectManagement.Serialization;
 
     public class ProjectManagerFacts
     {
@@ -18,7 +20,7 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase("myLocation")]
             public void UpdatesLocationAfterLoadingProject(string newLocation)
             {
-                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new MemoryProjectReader(), new MemoryProjectWriter());
+                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 Assert.AreEqual(null, projectManager.Location);
 
@@ -30,7 +32,7 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public void RaisesProjectLoadingEvent()
             {
-                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new MemoryProjectReader(), new MemoryProjectWriter());
+                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 var eventRaised = false;
                 projectManager.ProjectLoading += (sender, e) => eventRaised = true;
@@ -43,7 +45,7 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public void RaisesProjectLoadedEvent()
             {
-                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new MemoryProjectReader(), new MemoryProjectWriter());
+                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 var eventRaised = false;
                 projectManager.ProjectLoaded += (sender, e) => eventRaised = true;
@@ -60,7 +62,7 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public void DoesNothingWithoutProject()
             {
-                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new MemoryProjectReader(), new MemoryProjectWriter());
+                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 Assert.IsNull(projectManager.Project);
 
@@ -72,7 +74,7 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public void RaisesProjectUpdatedEvent()
             {
-                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new MemoryProjectReader(), new MemoryProjectWriter());
+                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 projectManager.Load("dummyLocation");
 
@@ -91,7 +93,7 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase("myLocation")]
             public void UpdatesLocationAfterSavingProject(string newLocation)
             {
-                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new MemoryProjectReader(), new MemoryProjectWriter());
+                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 projectManager.Load("dummyLocation");
 
@@ -105,7 +107,7 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public void RaisesProjectSavingEvent()
             {
-                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new MemoryProjectReader(), new MemoryProjectWriter());
+                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 projectManager.Load("dummyLocation");
 
@@ -120,7 +122,7 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public void RaisesProjectLoadedEvent()
             {
-                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new MemoryProjectReader(), new MemoryProjectWriter());
+                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 projectManager.Load("dummyLocation");
 
@@ -139,7 +141,7 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public void UpdatesProjectAfterClosingProject()
             {
-                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new MemoryProjectReader(), new MemoryProjectWriter());
+                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 projectManager.Load("dummyLocation");
 
@@ -153,7 +155,7 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public void UpdatesLocationAfterClosingProject()
             {
-                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new MemoryProjectReader(), new MemoryProjectWriter());
+                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 projectManager.Load("dummyLocation");
 
@@ -167,7 +169,7 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public void RaisesProjectClosingEvent()
             {
-                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new MemoryProjectReader(), new MemoryProjectWriter());
+                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 projectManager.Load("dummyLocation");
 
@@ -182,7 +184,7 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public void RaisesProjectClosedEvent()
             {
-                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new MemoryProjectReader(), new MemoryProjectWriter());
+                var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 projectManager.Load("dummyLocation");
 

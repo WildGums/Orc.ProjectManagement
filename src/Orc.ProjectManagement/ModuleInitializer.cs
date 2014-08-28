@@ -1,5 +1,6 @@
 ﻿using Catel.IoC;
 using Orc.ProjectManagement;
+using Orc.ProjectManagement.Serialization;
 using Orc.ProjectManagement.Services;
 
 /// <summary>
@@ -17,5 +18,6 @@ public static class ModuleInitializer
         serviceLocator.RegisterType<ICommandLineService, CommandLineService>();
         serviceLocator.RegisterType<IProjectManager, ProjectManager>();
         serviceLocator.RegisterType<IProjectInitializer, EmptyProjectInitializer>();
+        serviceLocator.RegisterType<IProjectSerializerSelector, DefaultProjectSerializerSelector>();
     }
 }

@@ -16,22 +16,17 @@ namespace Orc.ProjectManagement
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-        private readonly IProjectInitializer _projectInitializer;
-        private readonly IProjectReader _projectReader;
-        private readonly IProjectWriter _projectWriter;
+        private readonly IProjectSerializerSelector _projectSerializerSelector;
 
         private IProject _project;
 
         #region Constructors
-        public ProjectManager(IProjectInitializer projectInitializer, IProjectReader projectReader, IProjectWriter projectWriter)
+        public ProjectManager(IProjectInitializer projectInitializer, IProjectSerializerSelector projectSerializerSelector)
         {
             Argument.IsNotNull(() => projectInitializer);
-            Argument.IsNotNull(() => projectReader);
-            Argument.IsNotNull(() => projectWriter);
+            Argument.IsNotNull(() => projectSerializerSelector);
 
-            _projectInitializer = projectInitializer;
-            _projectReader = projectReader;
-            _projectWriter = projectWriter;
+            _projectSerializerSelector = projectSerializerSelector;
 
             var location = projectInitializer.GetInitialLocation();
 
@@ -107,7 +102,13 @@ namespace Orc.ProjectManagement
 
             ProjectLoading.SafeInvoke(this, new ProjectEventArgs(location));
 
-            var project = await _projectReader.Read(location);
+            var projectReader = _projectSerializerSelector.GetReader(location);
+            if (projectReader == null)
+            {
+                Log.ErrorAndThrowException<NotSupportedException>(string.Format("No project reader is found for location '{0}'", location));
+            }
+
+            var project = await projectReader.Read(location);
 
             Location = location;
             Project = project;
@@ -136,7 +137,13 @@ namespace Orc.ProjectManagement
             var eventArgs = new ProjectEventArgs(project);
             ProjectSaving.SafeInvoke(this, eventArgs);
 
-            await _projectWriter.Write(project, location);
+            var projectWriter = _projectSerializerSelector.GetWriter(location);
+            if (projectWriter == null)
+            {
+                Log.ErrorAndThrowException<NotSupportedException>(string.Format("No project writer is found for location '{0}'", location));
+            }
+
+            await projectWriter.Write(project, location);
             Location = location;
 
             ProjectSaved.SafeInvoke(this, eventArgs);
