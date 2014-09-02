@@ -19,6 +19,11 @@ namespace Orc.ProjectManagement
         public ProjectEventArgs(IProject project)
         {
             Project = project;
+
+            if (project != null)
+            {
+                Location = project.Location;
+            }
         }
 
         public string Location { get; private set; }
