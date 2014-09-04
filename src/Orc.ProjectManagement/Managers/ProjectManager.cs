@@ -108,6 +108,8 @@ namespace Orc.ProjectManagement
                 Log.ErrorAndThrowException<NotSupportedException>(string.Format("No project reader is found for location '{0}'", location));
             }
 
+            Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
+
             var project = await projectReader.Read(location);
 
             Location = location;
@@ -142,6 +144,8 @@ namespace Orc.ProjectManagement
             {
                 Log.ErrorAndThrowException<NotSupportedException>(string.Format("No project writer is found for location '{0}'", location));
             }
+
+            Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);
 
             await projectWriter.Write(project, location);
             Location = location;
