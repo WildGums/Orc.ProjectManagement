@@ -18,39 +18,39 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheLoadMethod
         {
             [TestCase("myLocation")]
-            public void UpdatesLocationAfterLoadingProject(string newLocation)
+            public async void UpdatesLocationAfterLoadingProject(string newLocation)
             {
                 var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 Assert.AreEqual(null, projectManager.Location);
 
-                projectManager.Load(newLocation);
+                await projectManager.Load(newLocation);
 
                 Assert.AreEqual(newLocation, projectManager.Location);
             }
 
             [TestCase]
-            public void RaisesProjectLoadingEvent()
+            public async void RaisesProjectLoadingEvent()
             {
                 var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 var eventRaised = false;
                 projectManager.ProjectLoading += (sender, e) => eventRaised = true;
 
-                projectManager.Load("dummyLocation");
+                await projectManager.Load("dummyLocation");
 
                 Assert.IsTrue(eventRaised);
             }
 
             [TestCase]
-            public void RaisesProjectLoadedEvent()
+            public async void RaisesProjectLoadedEvent()
             {
                 var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 var eventRaised = false;
                 projectManager.ProjectLoaded += (sender, e) => eventRaised = true;
 
-                projectManager.Load("dummyLocation");
+                await projectManager.Load("dummyLocation");
 
                 Assert.IsTrue(eventRaised);
             }
@@ -60,28 +60,28 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheRefreshMethod
         {
             [TestCase]
-            public void DoesNothingWithoutProject()
+            public async void DoesNothingWithoutProject()
             {
                 var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
                 Assert.IsNull(projectManager.Project);
 
-                projectManager.Refresh();
+                await projectManager.Refresh();
 
                 Assert.IsNull(projectManager.Project);
             }
 
             [TestCase]
-            public void RaisesProjectUpdatedEvent()
+            public async void RaisesProjectUpdatedEvent()
             {
                 var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
-                projectManager.Load("dummyLocation");
+                await projectManager.Load("dummyLocation");
 
                 var eventRaised = false;
                 projectManager.ProjectUpdated += (sender, e) => eventRaised = true;
 
-                projectManager.Refresh(); 
+                await projectManager.Refresh(); 
 
                 Assert.IsTrue(eventRaised);
             }
@@ -91,45 +91,45 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheSaveMethod
         {
             [TestCase("myLocation")]
-            public void UpdatesLocationAfterSavingProject(string newLocation)
+            public async void UpdatesLocationAfterSavingProject(string newLocation)
             {
                 var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
-                projectManager.Load("dummyLocation");
+                await projectManager.Load("dummyLocation");
 
                 Assert.AreEqual("dummyLocation", projectManager.Location);
 
-                projectManager.Save(newLocation);
+                await projectManager.Save(newLocation);
 
                 Assert.AreEqual(newLocation, projectManager.Location);
             }
 
             [TestCase]
-            public void RaisesProjectSavingEvent()
+            public async void RaisesProjectSavingEvent()
             {
                 var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
-                projectManager.Load("dummyLocation");
+                await projectManager.Load("dummyLocation");
 
                 var eventRaised = false;
                 projectManager.ProjectSaving += (sender, e) => eventRaised = true;
 
-                projectManager.Save();
+                await projectManager.Save();
 
                 Assert.IsTrue(eventRaised);
             }
 
             [TestCase]
-            public void RaisesProjectLoadedEvent()
+            public async void RaisesProjectSavedEvent()
             {
                 var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
-                projectManager.Load("dummyLocation");
+                await projectManager.Load("dummyLocation");
 
                 var eventRaised = false;
                 projectManager.ProjectSaved += (sender, e) => eventRaised = true;
 
-                projectManager.Save();
+                await projectManager.Save();
 
                 Assert.IsTrue(eventRaised);
             }
@@ -139,11 +139,11 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheCloseMethod
         {
             [TestCase]
-            public void UpdatesProjectAfterClosingProject()
+            public async void UpdatesProjectAfterClosingProject()
             {
                 var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
-                projectManager.Load("dummyLocation");
+                await projectManager.Load("dummyLocation");
 
                 Assert.IsNotNull(projectManager.Project);
 
@@ -153,11 +153,11 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public void UpdatesLocationAfterClosingProject()
+            public async void UpdatesLocationAfterClosingProject()
             {
                 var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
-                projectManager.Load("dummyLocation");
+                await projectManager.Load("dummyLocation");
 
                 Assert.AreEqual("dummyLocation", projectManager.Location);
 
@@ -167,11 +167,11 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public void RaisesProjectClosingEvent()
+            public async void RaisesProjectClosingEvent()
             {
                 var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
-                projectManager.Load("dummyLocation");
+                await projectManager.Load("dummyLocation");
 
                 var eventRaised = false;
                 projectManager.ProjectClosing += (sender, e) => eventRaised = true;
@@ -182,11 +182,11 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public void RaisesProjectClosedEvent()
+            public async void RaisesProjectClosedEvent()
             {
                 var projectManager = new ProjectManager(new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
-                projectManager.Load("dummyLocation");
+                await projectManager.Load("dummyLocation");
 
                 var eventRaised = false;
                 projectManager.ProjectClosed += (sender, e) => eventRaised = true;
