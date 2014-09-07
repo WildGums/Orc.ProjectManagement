@@ -14,7 +14,7 @@ namespace Orc.ProjectManagement
         public static TProject GetProject<TProject>(this IProjectManager projectManager)
             where TProject : IProject
         {
-            Argument.IsNotNull("projectManager", projectManager);
+            Argument.IsNotNull(() => projectManager);
 
             return (TProject)projectManager.Project;
         }

@@ -19,7 +19,7 @@ namespace Orc.ProjectManagement.Serialization
 
         public DefaultProjectSerializerSelector(IServiceLocator serviceLocator)
         {
-            Argument.IsNotNull("serviceLocator", serviceLocator);
+            Argument.IsNotNull(() => serviceLocator);
 
             _serviceLocator = serviceLocator;
         }
