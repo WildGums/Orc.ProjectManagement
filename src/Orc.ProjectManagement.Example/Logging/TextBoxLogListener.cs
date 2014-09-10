@@ -34,7 +34,7 @@ namespace Orc.ProjectManagement.Example.Logging
         {
             _textBox.Dispatcher.Invoke(new Action(() =>
             {
-                _textBox.AppendText(string.Format("{0} {1}", time.ToString("hh:mm:ss.fff"), message));
+                _textBox.AppendText(string.Format("{0} [{1}] {2}", time.ToString("hh:mm:ss.fff"), logEvent.ToString().ToUpper(), message));
                 _textBox.AppendText(Environment.NewLine);
                 _textBox.ScrollToEnd();
             }));
