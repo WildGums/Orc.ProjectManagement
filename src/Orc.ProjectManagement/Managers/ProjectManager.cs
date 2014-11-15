@@ -111,6 +111,10 @@ namespace Orc.ProjectManagement
             Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
 
             var project = await projectReader.Read(location);
+            if (project == null)
+            {
+                Log.ErrorAndThrowException<NotSupportedException>(string.Format("Project could not be loaded from '{0}'", location));
+            }
 
             Location = location;
             Project = project;
