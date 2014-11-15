@@ -11,10 +11,14 @@ namespace Orc.ProjectManagement
 
     public abstract class ProjectWatcherBase
     {
+        private readonly IProjectManager _projectManager;
+
         #region Constructors
         protected ProjectWatcherBase(IProjectManager projectManager)
         {
             Argument.IsNotNull(() => projectManager);
+
+            _projectManager = projectManager;
 
             projectManager.ProjectLoading += OnProjectLoading;
             projectManager.ProjectLoaded += OnProjectLoaded;
@@ -26,6 +30,13 @@ namespace Orc.ProjectManagement
             projectManager.ProjectClosed += OnProjectClosed;
 
             projectManager.ProjectUpdated += OnProjectUpdated;
+        }
+        #endregion
+
+        #region Properties
+        protected IProjectManager ProjectManager
+        {
+            get { return _projectManager; }
         }
         #endregion
 
