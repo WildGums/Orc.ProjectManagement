@@ -95,6 +95,7 @@
     <Compile Include="Managers\ProjectManager.cs" />
     <Compile Include="Serialization\ProjectReaderBase.cs" />
     <Compile Include="Serialization\ProjectWriterBase.cs" />
+    <Compile Include="Watchers\ProjectWatcherBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
