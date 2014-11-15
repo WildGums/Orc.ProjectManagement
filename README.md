@@ -49,6 +49,25 @@ Next it can be registered in the ServiceLocator (so it will automatically be inj
 
 **Make sure to register the service before instantiating the *IProjectManager* because it will be injected**
 
+# Creating a project validator
+
+Sometimes it is possible to check on forehand if it's even possible to load a project. This is implemented via the *IProjectValidator* interface. By default there is no validation, but this can be implemented. For example when a project represents a folder on disk, the validator can check if the directory exists:
+
+
+    public class DirectoryExistsProjectValidator : IProjectValidator
+    {
+        #region IProjectValidator Members
+        public async Task<bool> CanStartLoadingProject(string location)
+        {
+            return Directory.Exists(location);
+        }
+        #endregion
+    }
+
+Next it can be registered in the ServiceLocator (so it will automatically be injected into the *ProjectManager*):
+
+	ServiceLocator.Default.RegisterType<IProjectValidator, DirectoryExistsProjectValidator>();
+
 # Creating a project reader service
 
 Projects must be read via the *IProjectReaderService*. The project manager automatically knows when to read a project. First, one must create a project reader as shown in the example below:

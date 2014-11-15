@@ -89,6 +89,7 @@
     <Compile Include="Mocks\MemoryProjectReader.cs" />
     <Compile Include="Mocks\MemoryProjectWriter.cs" />
     <Compile Include="Mocks\Project.cs" />
+    <Compile Include="Mocks\ProjectValidator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serialization\ProjectWriterBaseFacts.cs" />
     <Compile Include="Serialization\ProjectReaderBaseFacts.cs" />

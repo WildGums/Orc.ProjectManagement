@@ -18,6 +18,7 @@ public static class ModuleInitializer
         serviceLocator.RegisterType<ICommandLineService, CommandLineService>();
         serviceLocator.RegisterType<IProjectManager, ProjectManager>();
         serviceLocator.RegisterType<IProjectInitializer, EmptyProjectInitializer>();
+        serviceLocator.RegisterType<IProjectValidator, EmptyProjectValidator>();
         serviceLocator.RegisterType<IProjectSerializerSelector, DefaultProjectSerializerSelector>();
     }
 }

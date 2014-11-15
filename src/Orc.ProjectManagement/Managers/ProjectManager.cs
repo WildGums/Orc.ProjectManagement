@@ -16,16 +16,19 @@ namespace Orc.ProjectManagement
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
+        private readonly IProjectValidator _projectValidator;
         private readonly IProjectSerializerSelector _projectSerializerSelector;
 
         private IProject _project;
 
         #region Constructors
-        public ProjectManager(IProjectInitializer projectInitializer, IProjectSerializerSelector projectSerializerSelector)
+        public ProjectManager(IProjectValidator projectValidator, IProjectInitializer projectInitializer, IProjectSerializerSelector projectSerializerSelector)
         {
             Argument.IsNotNull(() => projectInitializer);
+            Argument.IsNotNull(() => projectValidator);
             Argument.IsNotNull(() => projectSerializerSelector);
 
+            _projectValidator = projectValidator;
             _projectSerializerSelector = projectSerializerSelector;
 
             var location = projectInitializer.GetInitialLocation();
@@ -54,9 +57,11 @@ namespace Orc.ProjectManagement
 
         #region Events
         public event EventHandler<ProjectEventArgs> ProjectLoading;
+        public event EventHandler<ProjectEventArgs> ProjectLoadingFailed;
         public event EventHandler<ProjectEventArgs> ProjectLoaded;
 
         public event EventHandler<ProjectEventArgs> ProjectSaving;
+        public event EventHandler<ProjectEventArgs> ProjectSavingFailed;
         public event EventHandler<ProjectEventArgs> ProjectSaved;
 
         public event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated;
@@ -102,6 +107,15 @@ namespace Orc.ProjectManagement
 
             ProjectLoading.SafeInvoke(this, new ProjectEventArgs(location));
 
+            Log.Debug("Validating to see if we can load the project from '{0}'", location);
+
+            if (!await _projectValidator.CanStartLoadingProject(location))
+            {
+                Log.Error("Cannot load project from '{0}'", location);
+                ProjectLoadingFailed.SafeInvoke(this, new ProjectEventArgs(location));
+                return;
+            }
+
             var projectReader = _projectSerializerSelector.GetReader(location);
             if (projectReader == null)
             {
@@ -110,10 +124,21 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
 
-            var project = await projectReader.Read(location);
-            if (project == null)
+            IProject project;
+
+            try
             {
-                Log.ErrorAndThrowException<NotSupportedException>(string.Format("Project could not be loaded from '{0}'", location));
+                project = await projectReader.Read(location);
+                if (project == null)
+                {
+                    Log.ErrorAndThrowException<NotSupportedException>(string.Format("Project could not be loaded from '{0}'", location));
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to load project from '{0}'", location);
+                ProjectLoadingFailed.SafeInvoke(this, new ProjectEventArgs(location));
+                return;
             }
 
             Location = location;
@@ -151,8 +176,17 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);
 
-            await projectWriter.Write(project, location);
-            Location = location;
+            try
+            {
+                await projectWriter.Write(project, location);
+                Location = location;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to save project '{0}' to '{1}'", project, location);
+                ProjectSavingFailed.SafeInvoke(this, eventArgs);
+                return;
+            }
 
             ProjectSaved.SafeInvoke(this, eventArgs);
 
