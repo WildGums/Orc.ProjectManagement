@@ -57,11 +57,11 @@ namespace Orc.ProjectManagement
 
         #region Events
         public event EventHandler<ProjectEventArgs> ProjectLoading;
-        public event EventHandler<ProjectEventArgs> ProjectLoadingFailed;
+        public event EventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
         public event EventHandler<ProjectEventArgs> ProjectLoaded;
 
         public event EventHandler<ProjectEventArgs> ProjectSaving;
-        public event EventHandler<ProjectEventArgs> ProjectSavingFailed;
+        public event EventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
         public event EventHandler<ProjectEventArgs> ProjectSaved;
 
         public event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated;
@@ -112,7 +112,7 @@ namespace Orc.ProjectManagement
             if (!await _projectValidator.CanStartLoadingProject(location))
             {
                 Log.Error("Cannot load project from '{0}'", location);
-                ProjectLoadingFailed.SafeInvoke(this, new ProjectEventArgs(location));
+                ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location));
                 return;
             }
 
@@ -137,7 +137,7 @@ namespace Orc.ProjectManagement
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to load project from '{0}'", location);
-                ProjectLoadingFailed.SafeInvoke(this, new ProjectEventArgs(location));
+                ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, ex));
                 return;
             }
 
@@ -184,7 +184,7 @@ namespace Orc.ProjectManagement
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to save project '{0}' to '{1}'", project, location);
-                ProjectSavingFailed.SafeInvoke(this, eventArgs);
+                ProjectSavingFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, ex));
                 return;
             }
 

@@ -16,11 +16,11 @@ namespace Orc.ProjectManagement
         string Location { get; }
 
         event EventHandler<ProjectEventArgs> ProjectLoading;
-        event EventHandler<ProjectEventArgs> ProjectLoadingFailed;
+        event EventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
         event EventHandler<ProjectEventArgs> ProjectLoaded;
 
         event EventHandler<ProjectEventArgs> ProjectSaving;
-        event EventHandler<ProjectEventArgs> ProjectSavingFailed;
+        event EventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
         event EventHandler<ProjectEventArgs> ProjectSaved;
 
         event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated;

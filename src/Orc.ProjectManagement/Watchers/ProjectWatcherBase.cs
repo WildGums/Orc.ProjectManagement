@@ -7,6 +7,7 @@
 
 namespace Orc.ProjectManagement
 {
+    using System;
     using Catel;
 
     public abstract class ProjectWatcherBase
@@ -21,9 +22,11 @@ namespace Orc.ProjectManagement
             _projectManager = projectManager;
 
             projectManager.ProjectLoading += OnProjectLoading;
+            projectManager.ProjectLoadingFailed += OnProjectLoadingFailed;
             projectManager.ProjectLoaded += OnProjectLoaded;
 
             projectManager.ProjectSaving += OnProjectSaving;
+            projectManager.ProjectSavingFailed += OnProjectSavingFailed;
             projectManager.ProjectSaved += OnProjectSaved;
 
             projectManager.ProjectClosing += OnProjectClosing;
@@ -45,11 +48,19 @@ namespace Orc.ProjectManagement
         {
         }
 
+        protected virtual void OnLoadingFailed(string location, Exception exception)
+        {
+        }
+
         protected virtual void OnLoaded(IProject project)
         {
         }
 
         protected virtual void OnSaving(IProject project)
+        {
+        }
+
+        protected virtual void OnSavingFailed(IProject project, Exception exception)
         {
         }
 
@@ -74,6 +85,11 @@ namespace Orc.ProjectManagement
             OnLoading(e.Location);
         }
 
+        private void OnProjectLoadingFailed(object sender, ProjectErrorEventArgs e)
+        {
+            OnLoadingFailed(e.Location, e.Exception);
+        }
+
         private void OnProjectLoaded(object sender, ProjectEventArgs e)
         {
             OnLoaded(e.Project);
@@ -82,6 +98,11 @@ namespace Orc.ProjectManagement
         private void OnProjectSaving(object sender, ProjectEventArgs e)
         {
             OnSaving(e.Project);
+        }
+
+        private void OnProjectSavingFailed(object sender, ProjectErrorEventArgs e)
+        {
+            OnSavingFailed(e.Project, e.Exception);
         }
 
         private void OnProjectSaved(object sender, ProjectEventArgs e)
