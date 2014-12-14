@@ -10,6 +10,7 @@ namespace Orc.ProjectManagement
     using System;
     using System.Threading.Tasks;
     using Catel;
+    using Catel.Data;
     using Catel.Logging;
 
     public class ProjectManager : IProjectManager
@@ -119,25 +120,32 @@ namespace Orc.ProjectManagement
             var projectReader = _projectSerializerSelector.GetReader(location);
             if (projectReader == null)
             {
-                Log.ErrorAndThrowException<NotSupportedException>(string.Format("No project reader is found for location '{0}'", location));
+                Log.ErrorAndThrowException<InvalidOperationException>(string.Format("No project reader is found for location '{0}'", location));
             }
 
             Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
 
             IProject project;
+            IValidationContext validationContext = null;
 
             try
             {
                 project = await projectReader.Read(location);
                 if (project == null)
                 {
-                    Log.ErrorAndThrowException<NotSupportedException>(string.Format("Project could not be loaded from '{0}'", location));
+                    Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
+                }
+
+                validationContext = await _projectValidator.ValidateProject(project);
+                if (validationContext.HasErrors)
+                {
+                    Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to load project from '{0}'", location);
-                ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, ex));
+                ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, ex, validationContext));
                 return;
             }
 

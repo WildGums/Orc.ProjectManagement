@@ -9,6 +9,7 @@ namespace Orc.ProjectManagement
 {
     using System;
     using Catel;
+    using Catel.Data;
 
     public abstract class ProjectWatcherBase
     {
@@ -48,7 +49,7 @@ namespace Orc.ProjectManagement
         {
         }
 
-        protected virtual void OnLoadingFailed(string location, Exception exception)
+        protected virtual void OnLoadingFailed(string location, Exception exception, IValidationContext validationContext)
         {
         }
 
@@ -87,7 +88,7 @@ namespace Orc.ProjectManagement
 
         private void OnProjectLoadingFailed(object sender, ProjectErrorEventArgs e)
         {
-            OnLoadingFailed(e.Location, e.Exception);
+            OnLoadingFailed(e.Location, e.Exception, e.ValidationContext);
         }
 
         private void OnProjectLoaded(object sender, ProjectEventArgs e)

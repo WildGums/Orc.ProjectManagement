@@ -10,10 +10,10 @@ namespace Orc.ProjectManagement
     using System.IO;
     using System.Threading.Tasks;
 
-    public class DirectoryExistsProjectValidator : IProjectValidator
+    public class DirectoryExistsProjectValidator : ProjectValidatorBase
     {
         #region IProjectValidator Members
-        public async Task<bool> CanStartLoadingProject(string location)
+        public override async Task<bool> CanStartLoadingProject(string location)
         {
             return Directory.Exists(location);
         }

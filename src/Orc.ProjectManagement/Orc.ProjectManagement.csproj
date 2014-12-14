@@ -100,6 +100,7 @@
     <Compile Include="Validators\DirectoryExistsProjectValidator.cs" />
     <Compile Include="Validators\EmptyProjectValidator.cs" />
     <Compile Include="Validators\Interfaces\IProjectValidator.cs" />
+    <Compile Include="Validators\ProjectValidatorBase.cs" />
     <Compile Include="Watchers\ProjectWatcherBase.cs" />
   </ItemGroup>
   <ItemGroup>
