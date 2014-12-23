@@ -1,5 +1,6 @@
 ﻿using Catel.IoC;
 using Orc.ProjectManagement;
+using Orc.ProjectManagement.Example.ProjectManagement;
 using Orc.ProjectManagement.Example.Services;
 
 /// <summary>
@@ -18,5 +19,7 @@ public static class ModuleInitializer
         serviceLocator.RegisterType<IProjectWriter, PersonProjectWriter>();
         serviceLocator.RegisterType<IProjectInitializer, PersonProjectInitializer>();
         serviceLocator.RegisterType<IProjectRefresher, FileProjectRefresher>(RegistrationType.Transient);
+
+        serviceLocator.RegisterTypeAndInstantiate<RefreshProjectWatcher>();
     }
 }

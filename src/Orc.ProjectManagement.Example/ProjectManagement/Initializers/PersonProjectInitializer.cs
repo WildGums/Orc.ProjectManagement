@@ -5,9 +5,9 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 
-namespace Orc.ProjectManagement.Example.Services
+namespace Orc.ProjectManagement.Example.ProjectManagement
 {
-    using ProjectManagement.Services;
+    using Orc.ProjectManagement.Services;
 
     public class PersonProjectInitializer : FileProjectInitializer
     {

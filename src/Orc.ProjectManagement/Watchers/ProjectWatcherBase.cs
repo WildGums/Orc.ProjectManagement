@@ -34,6 +34,8 @@ namespace Orc.ProjectManagement
             projectManager.ProjectClosed += OnProjectClosed;
 
             projectManager.ProjectUpdated += OnProjectUpdated;
+
+            projectManager.ProjectRefreshRequired += OnProjectRefreshRequired;
         }
         #endregion
 
@@ -81,6 +83,10 @@ namespace Orc.ProjectManagement
         {
         }
 
+        protected virtual void OnProjectRefreshRequired()
+        {
+        }
+
         private void OnProjectLoading(object sender, ProjectEventArgs e)
         {
             OnLoading(e.Location);
@@ -124,6 +130,11 @@ namespace Orc.ProjectManagement
         private void OnProjectUpdated(object sender, ProjectUpdatedEventArgs e)
         {
             OnUpdated(e.OldProject, e.NewProject, e.IsRefresh);
+        }
+
+        private void OnProjectRefreshRequired(object sender, EventArgs e)
+        {
+            OnProjectRefreshRequired();
         }
         #endregion
     }

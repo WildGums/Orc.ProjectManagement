@@ -162,7 +162,6 @@ namespace Orc.ProjectManagement.Example.ViewModels
             await base.Initialize();
 
             _projectManager.ProjectUpdated += OnProjectUpdated;
-            _projectManager.ProjectRefreshRequired += OnProjectRefreshRequired;
 
             ReloadProject();
         }
@@ -182,14 +181,6 @@ namespace Orc.ProjectManagement.Example.ViewModels
         private void ReloadProject()
         {
             Project = _projectManager.GetProject<PersonProject>();
-        }
-
-        private async void OnProjectRefreshRequired(object sender, EventArgs e)
-        {
-            if (await _messageService.Show("Detected a file change, do you want to refresh the project now?", "Refresh project?", MessageButton.YesNo) == MessageResult.Yes)
-            {
-                await _projectManager.Refresh();
-            }
         }
         #endregion
     }
