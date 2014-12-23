@@ -113,3 +113,59 @@ Because the project manager is using async, the initialization is a separate met
 The library contains extension methods for the *IProjectManager* to retrieve a typed instance:
 
 	var myProject = projectManager.GetProject<MyProject>();
+
+# Detecting project refreshes in the source
+
+The library can automatically detect whether the source has changed and the project requires a refresh. It does this using the *IProjectRefresher* interface.
+
+## Creating a project refresher selector
+
+	public class ProjectRefresherSelector : IProjectSelector
+	{
+	    public IProjectRefresher GetProjectRefresher(string location)
+		{
+			// TODO: Determine what refresher to use, in this case a file refresher
+			return new FileProjectRefresher(location);
+		}
+	} 
+
+Next it can be registered in the ServiceLocator (so it will automatically be injected into the *ProjectManager*):
+
+	ServiceLocator.Default.RegisterType<IProjectWriterService, MyProjectWriterService>();
+
+**Note that you can also use the DefaultProjectRefresherSelector, which will return the IProjectRefresher that is registered in the ServiceLocator**
+
+## Creating a project refresher
+
+The library providers a few default implementations:
+
+* DirectoryProjectRefresher
+* FileProjectRefresher
+
+If your projects are a file or a directory of files, it should be sufficient to register it in the service locator:
+
+	ServiceLocator.Default.RegisterType<IProjectRefresher, FileProjectRefresher>();
+
+If a custom refresher is required, simply implement it as show in the example below:
+
+    public class DirectoryProjectRefresher : ProjectRefresherBase
+    {
+        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+
+        public DirectoryProjectRefresher(string location) 
+            : base(location)
+        {
+        }
+
+        protected override void SubscribeToLocation(string location)
+        {
+            // TODO: subscribe to changes here
+        }
+
+        protected override void UnsubscribeFromLocation(string location)
+        {
+            // TODO: unsubscribe from changes here
+        }
+    }
+
+Then register it in the ServiceLocator or return it in the custom *ProjectRefresherSelector*.
