@@ -77,11 +77,15 @@
     <Compile Include="Exceptions\InvalidProjectException.cs" />
     <Compile Include="Initializers\FileProjectInitializer.cs" />
     <Compile Include="Initializers\EmptyProjectInitializer.cs" />
+    <Compile Include="Refreshers\DirectoryRefresher.cs" />
+    <Compile Include="Refreshers\FileRefresher.cs" />
+    <Compile Include="Refreshers\Interfaces\IRefresher.cs" />
     <Compile Include="Models\Extensions\IProjectExtensions.cs" />
     <Compile Include="Models\Interfaces\IProject.cs" />
     <Compile Include="Models\ProjectBase.cs" />
     <Compile Include="ModuleInitializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Refreshers\RefresherBase.cs" />
     <Compile Include="Serialization\DefaultProjectSerializerSelector.cs" />
     <Compile Include="Serialization\FixedProjectSerializerSelector.cs" />
     <Compile Include="Serialization\Interfaces\IProjectSerializerSelector.cs" />
