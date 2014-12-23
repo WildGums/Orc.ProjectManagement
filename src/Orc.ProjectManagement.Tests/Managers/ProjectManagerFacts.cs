@@ -16,7 +16,9 @@ namespace Orc.ProjectManagement.Test.Managers
     {
         private static ProjectManager GetProjectManager()
         {
-            var projectManager = new ProjectManager(new EmptyProjectValidator(), new EmptyProjectInitializer(), new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
+            var projectManager = new ProjectManager(new EmptyProjectValidator(), new EmptyProjectInitializer(), 
+                new DefaultProjectRefresherSelector(ServiceLocator.Default, TypeFactory.Default), 
+                new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
             return projectManager;
         }

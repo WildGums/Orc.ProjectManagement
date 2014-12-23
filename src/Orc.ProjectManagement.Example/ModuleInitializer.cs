@@ -17,5 +17,6 @@ public static class ModuleInitializer
         serviceLocator.RegisterType<IProjectReader, PersonProjectReader>();
         serviceLocator.RegisterType<IProjectWriter, PersonProjectWriter>();
         serviceLocator.RegisterType<IProjectInitializer, PersonProjectInitializer>();
+        serviceLocator.RegisterType<IProjectRefresher, FileProjectRefresher>(RegistrationType.Transient);
     }
 }

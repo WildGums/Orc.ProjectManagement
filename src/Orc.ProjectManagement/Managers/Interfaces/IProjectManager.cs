@@ -33,5 +33,6 @@ namespace Orc.ProjectManagement
         Task Load(string location);
         Task Save(string location = null);
         void Close();
+        event EventHandler<EventArgs> ProjectRefreshRequired;
     }
 }

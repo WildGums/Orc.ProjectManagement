@@ -7,13 +7,23 @@
 
 namespace Orc.ProjectManagement
 {
+    using System;
     using System.IO;
+    using Catel.Logging;
 
-    public class DirectoryRefresher : RefresherBase
+    public class DirectoryProjectRefresher : ProjectRefresherBase
     {
+        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+
         private FileSystemWatcher _fileSystemWatcher;
 
-        public DirectoryRefresher(string location, string fileFilter = null) 
+        public DirectoryProjectRefresher(string location) 
+            : this(location, null)
+        {
+            
+        }
+
+        public DirectoryProjectRefresher(string location, string fileFilter)
             : base(location)
         {
             FileFilter = fileFilter;
@@ -38,7 +48,18 @@ namespace Orc.ProjectManagement
 
         private void OnFileSystemWatcherChanged(object sender, FileSystemEventArgs e)
         {
-            RaiseUpdated();
+            try
+            {
+                _fileSystemWatcher.EnableRaisingEvents = false;
+
+                Log.Debug("Detected change '{0}' for location '{1}'", e.ChangeType, e.FullPath);
+
+                RaiseUpdated();
+            }
+            finally
+            {
+                _fileSystemWatcher.EnableRaisingEvents = true;
+            }
         }
     }
 }

@@ -9,10 +9,10 @@ namespace Orc.ProjectManagement
 {
     using System.IO;
 
-    public class FileRefresher : DirectoryRefresher
+    public class FileProjectRefresher : DirectoryProjectRefresher
     {
-        public FileRefresher(string location) 
-            : base(location, Path.GetFileName(location))
+        public FileProjectRefresher(string location) 
+            : base(Path.GetDirectoryName(location), Path.GetFileName(location))
         {
         }
     }

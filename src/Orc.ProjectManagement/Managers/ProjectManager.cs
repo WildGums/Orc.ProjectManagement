@@ -12,24 +12,31 @@ namespace Orc.ProjectManagement
     using Catel;
     using Catel.Data;
     using Catel.Logging;
+    using Catel.Reflection;
 
     public class ProjectManager : IProjectManager
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
         private readonly IProjectValidator _projectValidator;
+        private readonly IProjectRefresherSelector _projectRefresherSelector;
         private readonly IProjectSerializerSelector _projectSerializerSelector;
 
         private IProject _project;
+        private IProjectRefresher _projectRefresher;
+        private bool _isLoading;
+        private bool _isSaving;
 
         #region Constructors
-        public ProjectManager(IProjectValidator projectValidator, IProjectInitializer projectInitializer, IProjectSerializerSelector projectSerializerSelector)
+        public ProjectManager(IProjectValidator projectValidator, IProjectInitializer projectInitializer, IProjectRefresherSelector projectRefresherSelector, IProjectSerializerSelector projectSerializerSelector)
         {
             Argument.IsNotNull(() => projectInitializer);
             Argument.IsNotNull(() => projectValidator);
+            Argument.IsNotNull(() => projectRefresherSelector);
             Argument.IsNotNull(() => projectSerializerSelector);
 
             _projectValidator = projectValidator;
+            _projectRefresherSelector = projectRefresherSelector;
             _projectSerializerSelector = projectSerializerSelector;
 
             var location = projectInitializer.GetInitialLocation();
@@ -51,12 +58,14 @@ namespace Orc.ProjectManagement
 
                 _project = value;
 
-                ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(oldProject, newProject));
+                HandleProjectUpdate(oldProject, newProject);
             }
         }
         #endregion
 
         #region Events
+        public event EventHandler<EventArgs> ProjectRefreshRequired;
+
         public event EventHandler<ProjectEventArgs> ProjectLoading;
         public event EventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
         public event EventHandler<ProjectEventArgs> ProjectLoaded;
@@ -106,6 +115,8 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Loading project from '{0}'", location);
 
+            _isLoading = true;
+
             ProjectLoading.SafeInvoke(this, new ProjectEventArgs(location));
 
             Log.Debug("Validating to see if we can load the project from '{0}'", location);
@@ -114,12 +125,17 @@ namespace Orc.ProjectManagement
             {
                 Log.Error("Cannot load project from '{0}'", location);
                 ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location));
+
+                _isLoading = false;
+
                 return;
             }
 
             var projectReader = _projectSerializerSelector.GetReader(location);
             if (projectReader == null)
             {
+                _isLoading = false;
+
                 Log.ErrorAndThrowException<InvalidOperationException>(string.Format("No project reader is found for location '{0}'", location));
             }
 
@@ -146,6 +162,9 @@ namespace Orc.ProjectManagement
             {
                 Log.Error(ex, "Failed to load project from '{0}'", location);
                 ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, ex, validationContext));
+
+                _isLoading = false;
+
                 return;
             }
 
@@ -153,6 +172,8 @@ namespace Orc.ProjectManagement
             Project = project;
 
             ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
+
+            _isLoading = false;
 
             Log.Info("Loaded project from '{0}'", location);
         }
@@ -173,12 +194,16 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Saving project '{0}' to '{1}'", project, location);
 
+            _isSaving = true;
+
             var eventArgs = new ProjectEventArgs(project);
             ProjectSaving.SafeInvoke(this, eventArgs);
 
             var projectWriter = _projectSerializerSelector.GetWriter(location);
             if (projectWriter == null)
             {
+                _isSaving = false;
+
                 Log.ErrorAndThrowException<NotSupportedException>(string.Format("No project writer is found for location '{0}'", location));
             }
 
@@ -193,10 +218,15 @@ namespace Orc.ProjectManagement
             {
                 Log.Error(ex, "Failed to save project '{0}' to '{1}'", project, location);
                 ProjectSavingFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, ex));
+
+                _isSaving = false;
+
                 return;
             }
 
             ProjectSaved.SafeInvoke(this, eventArgs);
+
+            _isSaving = false;
 
             Log.Info("Saved project '{0}' to '{1}'", project, location);
         }
@@ -220,6 +250,58 @@ namespace Orc.ProjectManagement
             ProjectClosed.SafeInvoke(this, eventArgs);
 
             Log.Info("Closed project '{0}'", project);
+        }
+
+        private void HandleProjectUpdate(IProject oldProject, IProject newProject)
+        {
+            if (_projectRefresher != null)
+            {
+                try
+                {
+                    Log.Debug("Unsubscribing from project refresher '{0}'", _projectRefresher.GetType().GetSafeFullName());
+
+                    _projectRefresher.Unsubscribe();
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed to unsubscribe from project refresher");
+                }
+
+                _projectRefresher.Updated -= OnProjectRefresherUpdated;
+                _projectRefresher = null;
+            }
+
+            if (newProject != null)
+            {
+                try
+                {
+                    var projectRefresher = _projectRefresherSelector.GetProjectRefresher(newProject.Location);
+                    if (projectRefresher != null)
+                    {
+                        Log.Debug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
+
+                        _projectRefresher = projectRefresher;
+                        _projectRefresher.Updated += OnProjectRefresherUpdated;
+                        _projectRefresher.Subscribe();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed to subscribe to project refresher");
+                }
+            }
+
+            ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(oldProject, newProject));
+        }
+
+        private void OnProjectRefresherUpdated(object sender, EventArgs e)
+        {
+            if (_isLoading || _isSaving)
+            {
+                return;
+            }
+
+            ProjectRefreshRequired.SafeInvoke(this);
         }
         #endregion
     }

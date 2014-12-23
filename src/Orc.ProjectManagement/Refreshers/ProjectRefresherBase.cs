@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="RefresherBase.cs" company="Orchestra development team">
+// <copyright file="ProjectRefresherBase.cs" company="Orchestra development team">
 //   Copyright (c) 2008 - 2014 Orchestra development team. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
@@ -11,11 +11,11 @@ namespace Orc.ProjectManagement
     using Catel;
     using Catel.Logging;
 
-    public abstract class RefresherBase : IRefresher
+    public abstract class ProjectRefresherBase : IProjectRefresher
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-        protected RefresherBase(string location)
+        protected ProjectRefresherBase(string location)
         {
             Argument.IsNotNullOrWhitespace(() => location);
 
