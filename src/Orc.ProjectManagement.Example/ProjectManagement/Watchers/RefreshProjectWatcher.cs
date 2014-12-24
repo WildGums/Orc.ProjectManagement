@@ -8,11 +8,15 @@
 namespace Orc.ProjectManagement.Example.ProjectManagement
 {
     using Catel;
+    using Catel.Logging;
     using Catel.Services;
 
     public class RefreshProjectWatcher : ProjectWatcherBase
     {
+        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+
         private readonly IMessageService _messageService;
+        private bool _isAwaitingFeedback;
 
         public RefreshProjectWatcher(IProjectManager projectManager, IMessageService messageService) 
             : base(projectManager)
@@ -24,12 +28,22 @@ namespace Orc.ProjectManagement.Example.ProjectManagement
 
         protected override async void OnProjectRefreshRequired()
         {
+            if (_isAwaitingFeedback)
+            {
+                Log.Debug("Project requires refresh, but still awaiting feedback from a previous update, ignoring event");
+                return;
+            }
+
+            _isAwaitingFeedback = true;
+
             base.OnProjectRefreshRequired();
 
             if (await _messageService.Show("Detected a project change, do you want to refresh the project now?", "Refresh project?", MessageButton.YesNo) == MessageResult.Yes)
             {
                 await ProjectManager.Refresh();
             }
+
+            _isAwaitingFeedback = false;
         }
     }
 }
