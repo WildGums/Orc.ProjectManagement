@@ -7,6 +7,7 @@
 
 namespace Orc.ProjectManagement.Test.Managers
 {
+    using System.Threading.Tasks;
     using Catel.IoC;
     using Mocks;
     using NUnit.Framework;
@@ -27,7 +28,7 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheLoadMethod
         {
             [TestCase("myLocation")]
-            public async void UpdatesLocationAfterLoadingProject(string newLocation)
+            public async Task UpdatesLocationAfterLoadingProject(string newLocation)
             {
                 var projectManager = GetProjectManager();
 
@@ -39,7 +40,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async void RaisesProjectLoadingEvent()
+            public async Task RaisesProjectLoadingEvent()
             {
                 var projectManager = GetProjectManager();
 
@@ -52,7 +53,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async void RaisesProjectLoadingFailedEvent()
+            public async Task RaisesProjectLoadingFailedEvent()
             {
                 var projectManager = GetProjectManager();
 
@@ -65,7 +66,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async void RaisesProjectLoadedEvent()
+            public async Task RaisesProjectLoadedEvent()
             {
                 var projectManager = GetProjectManager();
 
@@ -82,7 +83,7 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheRefreshMethod
         {
             [TestCase]
-            public async void DoesNothingWithoutProject()
+            public async Task DoesNothingWithoutProject()
             {
                 var projectManager = GetProjectManager();
 
@@ -94,7 +95,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async void RaisesProjectUpdatedEvent()
+            public async Task RaisesProjectUpdatedEvent()
             {
                 var projectManager = GetProjectManager();
 
@@ -113,7 +114,7 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheSaveMethod
         {
             [TestCase("myLocation")]
-            public async void UpdatesLocationAfterSavingProject(string newLocation)
+            public async Task UpdatesLocationAfterSavingProject(string newLocation)
             {
                 var projectManager = GetProjectManager();
 
@@ -127,7 +128,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async void RaisesProjectSavingEvent()
+            public async Task RaisesProjectSavingEvent()
             {
                 var projectManager = GetProjectManager();
 
@@ -142,7 +143,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async void RaisesProjectSavedEvent()
+            public async Task RaisesProjectSavedEvent()
             {
                 var projectManager = GetProjectManager();
 
@@ -161,7 +162,7 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheCloseMethod
         {
             [TestCase]
-            public async void UpdatesProjectAfterClosingProject()
+            public async Task UpdatesProjectAfterClosingProject()
             {
                 var projectManager = GetProjectManager();
 
@@ -175,7 +176,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async void UpdatesLocationAfterClosingProject()
+            public async Task UpdatesLocationAfterClosingProject()
             {
                 var projectManager = GetProjectManager();
 
@@ -189,7 +190,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async void RaisesProjectClosingEvent()
+            public async Task RaisesProjectClosingEvent()
             {
                 var projectManager = GetProjectManager();
 
@@ -204,7 +205,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async void RaisesProjectClosedEvent()
+            public async Task RaisesProjectClosedEvent()
             {
                 var projectManager = GetProjectManager();
 
