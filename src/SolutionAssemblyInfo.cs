@@ -13,8 +13,8 @@ using System.Resources;
 ////[assembly: AssemblyProduct("DEFINED IN ACTUAL ASSEMBLYINFO")]
 ////[assembly: AssemblyDescription("DEFINED IN ACTUAL ASSEMBLYINFO")]
 
-[assembly: AssemblyCompany("CatenaLogic")]
-[assembly: AssemblyCopyright("Copyright © Orchestra team 2010 - 2014")]
+[assembly: AssemblyCompany("Wild Gums")]
+[assembly: AssemblyCopyright("Copyright © Wild Gums 2010 - 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: NeutralResourcesLanguage("en-US")]
