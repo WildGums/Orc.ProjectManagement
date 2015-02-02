@@ -66,7 +66,7 @@ namespace Orc.ProjectManagement
         #region Events
         public event EventHandler<EventArgs> ProjectRefreshRequired;
 
-        public event EventHandler<ProjectEventArgs> ProjectLoading;
+        public event EventHandler<ProjectLoadingEventArgs> ProjectLoading;
         public event EventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
         public event EventHandler<ProjectEventArgs> ProjectLoaded;
 
@@ -117,7 +117,14 @@ namespace Orc.ProjectManagement
 
             _isLoading = true;
 
-            ProjectLoading.SafeInvoke(this, new ProjectEventArgs(location));
+            var args = new ProjectLoadingEventArgs(location);
+            ProjectLoading.SafeInvoke(this, args);
+
+            if (args.IsCanceled)
+            {
+                _isLoading = true;
+                return;
+            }
 
             Log.Debug("Validating to see if we can load the project from '{0}'", location);
 

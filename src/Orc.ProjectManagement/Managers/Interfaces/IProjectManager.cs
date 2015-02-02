@@ -4,7 +4,6 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-
 namespace Orc.ProjectManagement
 {
     using System;
@@ -15,7 +14,7 @@ namespace Orc.ProjectManagement
         IProject Project { get; }
         string Location { get; }
 
-        event EventHandler<ProjectEventArgs> ProjectLoading;
+        event EventHandler<ProjectLoadingEventArgs> ProjectLoading;
         event EventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
         event EventHandler<ProjectEventArgs> ProjectLoaded;
 

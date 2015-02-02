@@ -72,6 +72,7 @@
       <Link>Properties\SolutionAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="EventArgs\ProjectErrorEventArgs.cs" />
+    <Compile Include="EventArgs\ProjectLoadingEventArgs.cs" />
     <Compile Include="EventArgs\ProjectUpdatedEventArgs.cs" />
     <Compile Include="EventArgs\ProjectEventArgs.cs" />
     <Compile Include="Exceptions\InvalidProjectException.cs" />
