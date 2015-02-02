@@ -33,9 +33,19 @@ namespace Orc.ProjectManagement
             projectManager.ProjectClosing += OnProjectClosing;
             projectManager.ProjectClosed += OnProjectClosed;
 
+            projectManager.ProjectCanceled += OnProjectCanceled;
+
             projectManager.ProjectUpdated += OnProjectUpdated;
 
             projectManager.ProjectRefreshRequired += OnProjectRefreshRequired;
+        }
+
+        /// <summary>
+        /// Called when project loading process was canceled during <see cref="IProjectManager.ProjectCanceled"/> event
+        /// </summary>
+        protected virtual void OnProjectCanceled(object sender, ProjectEventArgs e)
+        {
+            
         }
         #endregion
 

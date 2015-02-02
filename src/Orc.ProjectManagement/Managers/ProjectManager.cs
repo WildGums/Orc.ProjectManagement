@@ -70,6 +70,11 @@ namespace Orc.ProjectManagement
         public event EventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
         public event EventHandler<ProjectEventArgs> ProjectLoaded;
 
+        /// <summary>
+        /// If project load was canceled during <see cref="ProjectLoading"/> event
+        /// </summary>
+        public event EventHandler<ProjectEventArgs> ProjectCanceled;
+
         public event EventHandler<ProjectEventArgs> ProjectSaving;
         public event EventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
         public event EventHandler<ProjectEventArgs> ProjectSaved;
@@ -122,6 +127,7 @@ namespace Orc.ProjectManagement
 
             if (args.IsCanceled)
             {
+                ProjectCanceled.SafeInvoke(this, new ProjectEventArgs(location));
                 _isLoading = true;
                 return;
             }

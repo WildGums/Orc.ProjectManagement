@@ -33,5 +33,10 @@ namespace Orc.ProjectManagement
         Task Save(string location = null);
         void Close();
         event EventHandler<EventArgs> ProjectRefreshRequired;
+
+        /// <summary>
+        /// If project load was canceled during <see cref="ProjectManager.ProjectLoading"/> event
+        /// </summary>
+        event EventHandler<ProjectEventArgs> ProjectCanceled;
     }
 }
