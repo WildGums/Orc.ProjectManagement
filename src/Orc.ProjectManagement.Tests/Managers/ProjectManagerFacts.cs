@@ -66,6 +66,20 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
+            public async Task RaisesProjectLoadingCanceledEvent()
+            {
+                var projectManager = GetProjectManager();
+
+                var eventRaised = false;
+                projectManager.ProjectLoading += (sender, e) => e.Cancel = true;
+                projectManager.ProjectLoadingCanceled += (sender, e) => eventRaised = true;
+
+                await projectManager.Load("dummyLocation");
+
+                Assert.IsTrue(eventRaised);
+            }
+
+            [TestCase]
             public async Task RaisesProjectLoadedEvent()
             {
                 var projectManager = GetProjectManager();

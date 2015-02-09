@@ -16,6 +16,7 @@ namespace Orc.ProjectManagement
 
         event EventHandler<ProjectLoadingEventArgs> ProjectLoading;
         event EventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
+        event EventHandler<ProjectEventArgs> ProjectLoadingCanceled;
         event EventHandler<ProjectEventArgs> ProjectLoaded;
 
         event EventHandler<ProjectEventArgs> ProjectSaving;
@@ -23,6 +24,7 @@ namespace Orc.ProjectManagement
         event EventHandler<ProjectEventArgs> ProjectSaved;
 
         event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated;
+        event EventHandler<EventArgs> ProjectRefreshRequired;
 
         event EventHandler<ProjectEventArgs> ProjectClosing;
         event EventHandler<ProjectEventArgs> ProjectClosed;
@@ -32,11 +34,5 @@ namespace Orc.ProjectManagement
         Task Load(string location);
         Task Save(string location = null);
         void Close();
-        event EventHandler<EventArgs> ProjectRefreshRequired;
-
-        /// <summary>
-        /// If project load was canceled during <see cref="ProjectManager.ProjectLoading"/> event
-        /// </summary>
-        event EventHandler<ProjectEventArgs> ProjectCanceled;
     }
 }
