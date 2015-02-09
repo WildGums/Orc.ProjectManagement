@@ -24,6 +24,7 @@ namespace Orc.ProjectManagement
 
             projectManager.ProjectLoading += OnProjectLoading;
             projectManager.ProjectLoadingFailed += OnProjectLoadingFailed;
+            projectManager.ProjectLoadingCanceled += OnProjectLoadingCanceled;
             projectManager.ProjectLoaded += OnProjectLoaded;
 
             projectManager.ProjectSaving += OnProjectSaving;
@@ -52,6 +53,10 @@ namespace Orc.ProjectManagement
         }
 
         protected virtual void OnLoadingFailed(string location, Exception exception, IValidationContext validationContext)
+        {
+        }
+
+        protected virtual void OnLoadingCanceled(string location)
         {
         }
 
@@ -95,6 +100,11 @@ namespace Orc.ProjectManagement
         private void OnProjectLoadingFailed(object sender, ProjectErrorEventArgs e)
         {
             OnLoadingFailed(e.Location, e.Exception, e.ValidationContext);
+        }
+
+        protected void OnProjectLoadingCanceled(object sender, ProjectEventArgs e)
+        {
+            OnLoadingCanceled(e.Location);
         }
 
         private void OnProjectLoaded(object sender, ProjectEventArgs e)
