@@ -22,6 +22,7 @@ namespace Orc.ProjectManagement
         private readonly IProjectRefresherSelector _projectRefresherSelector;
         private readonly IProjectSerializerSelector _projectSerializerSelector;
 
+        private string _initialLocation;
         private IProject _project;
         private IProjectRefresher _projectRefresher;
         private bool _isLoading;
@@ -41,7 +42,7 @@ namespace Orc.ProjectManagement
 
             var location = projectInitializer.GetInitialLocation();
 
-            Location = location;
+            _initialLocation = location;
         }
         #endregion
 
@@ -84,12 +85,11 @@ namespace Orc.ProjectManagement
         #region IProjectManager Members
         public async Task Initialize()
         {
-            var location = Location;
+            var location = _initialLocation;
             if (!string.IsNullOrEmpty(location))
             {
                 Log.Debug("Initial location is '{0}', loading initial project", location);
 
-                // TODO: Determine if this should be moved to a separate method
                 await Load(location);
             }
         }
