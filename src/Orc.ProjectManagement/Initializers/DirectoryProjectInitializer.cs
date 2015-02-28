@@ -37,11 +37,6 @@ namespace Orc.ProjectManagement
             {
                 dataDirectory = Path.Combine(Catel.IO.Path.GetApplicationDataDirectory(), "data");
 
-                if (!Directory.Exists(dataDirectory))
-                {
-                    Directory.CreateDirectory(dataDirectory);
-                }
-
                 Log.Info("DataLocation is empty in configuration, determining the data directory automatically to '{0}'", dataDirectory);
             }
 
@@ -53,7 +48,8 @@ namespace Orc.ProjectManagement
             var fullPath = Path.GetFullPath(dataDirectory);
             if (!Directory.Exists(fullPath))
             {
-                Log.ErrorAndThrowException<InvalidOperationException>("Cannot use the data directory '{0}', it does not exist", fullPath);
+                Log.Warning("Cannot use the data directory '{0}', it does not exist", fullPath);
+                return null;
             }
 
             return fullPath;
