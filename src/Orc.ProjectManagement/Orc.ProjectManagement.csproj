@@ -103,6 +103,7 @@
     <Compile Include="Managers\ProjectManager.cs" />
     <Compile Include="Serialization\ProjectReaderBase.cs" />
     <Compile Include="Serialization\ProjectWriterBase.cs" />
+    <Compile Include="Validators\Extensions\IProjectValidatorExtensions.cs" />
     <Compile Include="Validators\FileExistsProjectValidator.cs" />
     <Compile Include="Validators\DirectoryExistsProjectValidator.cs" />
     <Compile Include="Validators\EmptyProjectValidator.cs" />

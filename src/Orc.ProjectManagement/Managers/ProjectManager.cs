@@ -133,7 +133,7 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Validating to see if we can load the project from '{0}'", location);
 
-            if (!await _projectValidator.CanStartLoadingProject(location))
+            if (!await _projectValidator.CanStartLoadingProjectAsync(location))
             {
                 Log.Error("Cannot load project from '{0}'", location);
                 ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location));
@@ -164,7 +164,7 @@ namespace Orc.ProjectManagement
                     Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
                 }
 
-                validationContext = await _projectValidator.ValidateProject(project);
+                validationContext = await _projectValidator.ValidateProjectAsync(project);
                 if (validationContext.HasErrors)
                 {
                     Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));

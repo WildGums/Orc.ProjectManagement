@@ -7,11 +7,9 @@
 
 namespace Orc.ProjectManagement
 {
-    using System.Threading.Tasks;
-
     public class EmptyProjectValidator : ProjectValidatorBase
     {
-        public override async Task<bool> CanStartLoadingProject(string location)
+        public override bool CanStartLoadingProject(string location)
         {
             return true;
         }
