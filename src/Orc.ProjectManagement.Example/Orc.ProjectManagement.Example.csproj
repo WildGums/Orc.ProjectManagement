@@ -144,9 +144,9 @@
     <Folder Include="Services\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Orc.ProjectManagement\Orc.ProjectManagement.csproj">
+    <ProjectReference Include="..\Orc.ProjectManagement\Orc.ProjectManagement.NET40\Orc.ProjectManagement.NET40.csproj">
       <Project>{4258fc75-dd23-4877-a56d-3a077ab57f2d}</Project>
-      <Name>Orc.ProjectManagement</Name>
+      <Name>Orc.ProjectManagement.NET40</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

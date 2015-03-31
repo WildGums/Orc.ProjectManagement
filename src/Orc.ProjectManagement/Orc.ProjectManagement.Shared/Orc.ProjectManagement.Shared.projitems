@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>178985ec-a540-45e9-8348-92f3703da89c</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Orc.ProjectManagement.Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\SolutionAssemblyInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectErrorEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectLoadingEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectUpdatedEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Exceptions\InvalidProjectException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\IProjectManagerExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Initializers\DirectoryProjectInitializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Initializers\EmptyProjectInitializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Initializers\FileProjectInitializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Initializers\Interfaces\IProjectInitializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Managers\Interfaces\IProjectManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Managers\ProjectManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Extensions\IProjectExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Interfaces\IProject.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\ProjectBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ModuleInitializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Properties\AssemblyInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Refreshers\DefaultProjectRefresherSelector.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Refreshers\DirectoryProjectRefresher.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Refreshers\FileProjectRefresher.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Refreshers\Interfaces\IProjectRefresher.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Refreshers\Interfaces\IProjectRefresherSelector.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Refreshers\ProjectRefresherBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Serialization\DefaultProjectSerializerSelector.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Serialization\FixedProjectSerializerSelector.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Serialization\Interfaces\IProjectReader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Serialization\Interfaces\IProjectSerializerSelector.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Serialization\Interfaces\IProjectWriter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectReaderBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectWriterBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\CommandLineService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\ICommandLineService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Validators\DirectoryExistsProjectValidator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Validators\EmptyProjectValidator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Validators\Extensions\IProjectValidatorExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Validators\FileExistsProjectValidator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Validators\Interfaces\IProjectValidator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Validators\ProjectValidatorBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Watchers\ProjectWatcherBase.cs" />
+  </ItemGroup>
+</Project>
