@@ -8,6 +8,7 @@
 namespace Orc.ProjectManagement
 {
     using System;
+    using System.Threading.Tasks;
     using Catel;
     using Catel.Data;
 
@@ -50,7 +51,7 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Methods
-        protected virtual void OnLoading(string location, ref bool cancel)
+        protected virtual async Task OnLoading(ProjectCancelEventArgs e)
         {
         }
 
@@ -94,11 +95,9 @@ namespace Orc.ProjectManagement
         {
         }
 
-        private void OnProjectLoading(object sender, ProjectCancelEventArgs e)
+        private async Task OnProjectLoading(object sender, ProjectCancelEventArgs e)
         {
-            var cancel = e.Cancel;
-            OnLoading(e.Location, ref cancel);
-            e.Cancel = cancel;
+            await OnLoading(e);
         }
 
         private void OnProjectLoadingFailed(object sender, ProjectErrorEventArgs e)

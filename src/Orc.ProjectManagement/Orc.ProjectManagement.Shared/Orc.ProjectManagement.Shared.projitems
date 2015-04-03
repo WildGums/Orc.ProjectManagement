@@ -6,7 +6,7 @@
     <SharedGUID>178985ec-a540-45e9-8348-92f3703da89c</SharedGUID>
   </PropertyGroup>
   <PropertyGroup Label="Configuration">
-    <Import_RootNamespace>Orc.ProjectManagement.Shared</Import_RootNamespace>
+    <Import_RootNamespace>Orc.ProjectManagement</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)..\..\SolutionAssemblyInfo.cs" />
@@ -14,7 +14,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectCancelEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectUpdatedEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventHandlers\AsyncEventHandler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Exceptions\InvalidProjectException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\AsyncEventHandlerExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\IProjectManagerExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Initializers\DirectoryProjectInitializer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Initializers\EmptyProjectInitializer.cs" />
