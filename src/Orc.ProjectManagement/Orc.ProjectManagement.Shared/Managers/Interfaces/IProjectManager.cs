@@ -1,8 +1,9 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="IProjectManager.cs" company="Simulation Modelling Services">
-//   Copyright (c) 2008 - 2014 Simulation Modelling Services. All rights reserved.
+// <copyright file="IProjectManager.cs" company="Wild Gums">
+//   Copyright (c) 2008 - 2015 Wild Gums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
+
 
 namespace Orc.ProjectManagement
 {
@@ -11,28 +12,30 @@ namespace Orc.ProjectManagement
 
     public interface IProjectManager
     {
+        #region Properties
         IProject Project { get; }
         string Location { get; }
+        #endregion
 
-        event EventHandler<ProjectLoadingEventArgs> ProjectLoading;
+        #region Methods
+        event EventHandler<ProjectCancelEventArgs> ProjectLoading;
         event EventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
         event EventHandler<ProjectEventArgs> ProjectLoadingCanceled;
         event EventHandler<ProjectEventArgs> ProjectLoaded;
-
-        event EventHandler<ProjectEventArgs> ProjectSaving;
+        event EventHandler<ProjectCancelEventArgs> ProjectSaving;
         event EventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
+        event EventHandler<ProjectEventArgs> ProjectSavingCanceled;
         event EventHandler<ProjectEventArgs> ProjectSaved;
-
         event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated;
         event EventHandler<EventArgs> ProjectRefreshRequired;
-
-        event EventHandler<ProjectEventArgs> ProjectClosing;
+        event EventHandler<ProjectCancelEventArgs> ProjectClosing;
+        event EventHandler<ProjectEventArgs> ProjectClosingCanceled;
         event EventHandler<ProjectEventArgs> ProjectClosed;
-
         Task Initialize();
         Task Refresh();
         Task Load(string location);
         Task Save(string location = null);
         void Close();
+        #endregion
     }
 }

@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectManager.cs" company="Simulation Modelling Services">
-//   Copyright (c) 2008 - 2014 Simulation Modelling Services. All rights reserved.
+// <copyright file="ProjectManager.cs" company="Wild Gums">
+//   Copyright (c) 2008 - 2015 Wild Gums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -16,17 +16,17 @@ namespace Orc.ProjectManagement
 
     public class ProjectManager : IProjectManager
     {
+        #region Fields
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
-
-        private readonly IProjectValidator _projectValidator;
+        private readonly string _initialLocation;
         private readonly IProjectRefresherSelector _projectRefresherSelector;
         private readonly IProjectSerializerSelector _projectSerializerSelector;
-
-        private string _initialLocation;
-        private IProject _project;
-        private IProjectRefresher _projectRefresher;
+        private readonly IProjectValidator _projectValidator;
         private bool _isLoading;
         private bool _isSaving;
+        private IProject _project;
+        private IProjectRefresher _projectRefresher;
+        #endregion
 
         #region Constructors
         public ProjectManager(IProjectValidator projectValidator, IProjectInitializer projectInitializer, IProjectRefresherSelector projectRefresherSelector, IProjectSerializerSelector projectSerializerSelector)
@@ -67,18 +67,20 @@ namespace Orc.ProjectManagement
         #region Events
         public event EventHandler<EventArgs> ProjectRefreshRequired;
 
-        public event EventHandler<ProjectLoadingEventArgs> ProjectLoading;
+        public event EventHandler<ProjectCancelEventArgs> ProjectLoading;
         public event EventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
         public event EventHandler<ProjectEventArgs> ProjectLoadingCanceled;
         public event EventHandler<ProjectEventArgs> ProjectLoaded;
 
-        public event EventHandler<ProjectEventArgs> ProjectSaving;
+        public event EventHandler<ProjectCancelEventArgs> ProjectSaving;
         public event EventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
+        public event EventHandler<ProjectEventArgs> ProjectSavingCanceled;
         public event EventHandler<ProjectEventArgs> ProjectSaved;
 
         public event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated;
 
-        public event EventHandler<ProjectEventArgs> ProjectClosing;
+        public event EventHandler<ProjectCancelEventArgs> ProjectClosing;
+        public event EventHandler<ProjectEventArgs> ProjectClosingCanceled;
         public event EventHandler<ProjectEventArgs> ProjectClosed;
         #endregion
 
@@ -114,80 +116,71 @@ namespace Orc.ProjectManagement
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
-            Log.Debug("Loading project from '{0}'", location);
-
-            _isLoading = true;
-
-            var eventArgs = new ProjectLoadingEventArgs(location);
-            ProjectLoading.SafeInvoke(this, eventArgs);
-
-            if (eventArgs.Cancel)
+            using (new DisposableToken(null, token => _isLoading = true, token => _isLoading = false))
             {
-                Log.Debug("Canceled loading of project from '{0}'", location);
-                ProjectLoadingCanceled.SafeInvoke(this, new ProjectEventArgs(location));
+                Log.Debug("Loading project from '{0}'", location);
 
-                _isLoading = true;
+                var cancelEventArgs = new ProjectCancelEventArgs(location);
+                ProjectLoading.SafeInvoke(this, cancelEventArgs);
 
-                return;
-            }
-
-            Log.Debug("Validating to see if we can load the project from '{0}'", location);
-
-            if (!await _projectValidator.CanStartLoadingProjectAsync(location))
-            {
-                Log.Error("Cannot load project from '{0}'", location);
-                ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location));
-
-                _isLoading = false;
-
-                return;
-            }
-
-            var projectReader = _projectSerializerSelector.GetReader(location);
-            if (projectReader == null)
-            {
-                _isLoading = false;
-
-                Log.ErrorAndThrowException<InvalidOperationException>(string.Format("No project reader is found for location '{0}'", location));
-            }
-
-            Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
-
-            IProject project;
-            IValidationContext validationContext = null;
-
-            try
-            {
-                project = await projectReader.Read(location);
-                if (project == null)
+                if (cancelEventArgs.Cancel)
                 {
-                    Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
+                    Log.Debug("Canceled loading of project from '{0}'", location);
+                    ProjectLoadingCanceled.SafeInvoke(this, new ProjectEventArgs(location));
+
+                    return;
                 }
 
-                validationContext = await _projectValidator.ValidateProjectAsync(project);
-                if (validationContext.HasErrors)
+                Log.Debug("Validating to see if we can load the project from '{0}'", location);
+
+                if (!await _projectValidator.CanStartLoadingProjectAsync(location))
                 {
-                    Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
+                    Log.Error("Cannot load project from '{0}'", location);
+                    ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location));
+
+                    return;
                 }
+
+                var projectReader = _projectSerializerSelector.GetReader(location);
+                if (projectReader == null)
+                {
+                    Log.ErrorAndThrowException<InvalidOperationException>(string.Format("No project reader is found for location '{0}'", location));
+                }
+
+                Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
+
+                IProject project;
+                IValidationContext validationContext = null;
+
+                try
+                {
+                    project = await projectReader.Read(location);
+                    if (project == null)
+                    {
+                        Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
+                    }
+
+                    validationContext = await _projectValidator.ValidateProjectAsync(project);
+                    if (validationContext.HasErrors)
+                    {
+                        Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to load project from '{0}'", location);
+                    ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, ex, validationContext));
+
+                    return;
+                }
+
+                Location = location;
+                Project = project;
+
+                ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
+
+                Log.Info("Loaded project from '{0}'", location);
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to load project from '{0}'", location);
-                ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, ex, validationContext));
-
-                _isLoading = false;
-
-                return;
-            }
-
-            Location = location;
-            Project = project;
-
-            ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
-
-            _isLoading = false;
-
-            Log.Info("Loaded project from '{0}'", location);
         }
 
         public async Task Save(string location = null)
@@ -204,43 +197,45 @@ namespace Orc.ProjectManagement
                 location = Location;
             }
 
-            Log.Debug("Saving project '{0}' to '{1}'", project, location);
-
-            _isSaving = true;
-
-            var eventArgs = new ProjectEventArgs(project);
-            ProjectSaving.SafeInvoke(this, eventArgs);
-
-            var projectWriter = _projectSerializerSelector.GetWriter(location);
-            if (projectWriter == null)
+            using (new DisposableToken(null, token => _isSaving = true, token => _isSaving = false))
             {
-                _isSaving = false;
+                Log.Debug("Saving project '{0}' to '{1}'", project, location);
 
-                Log.ErrorAndThrowException<NotSupportedException>(string.Format("No project writer is found for location '{0}'", location));
+                var cancelEventArgs = new ProjectCancelEventArgs(project);
+                ProjectSaving.SafeInvoke(this, cancelEventArgs);
+
+                if (cancelEventArgs.Cancel)
+                {
+                    Log.Debug("Canceled saving of project to '{0}'", location);
+                    ProjectSavingCanceled.SafeInvoke(this, new ProjectEventArgs(project));
+                    return;
+                }
+
+                var projectWriter = _projectSerializerSelector.GetWriter(location);
+                if (projectWriter == null)
+                {
+                    Log.ErrorAndThrowException<NotSupportedException>(string.Format("No project writer is found for location '{0}'", location));
+                }
+
+                Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);
+
+                try
+                {
+                    await projectWriter.Write(project, location);
+                    Location = location;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to save project '{0}' to '{1}'", project, location);
+                    ProjectSavingFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, ex));
+
+                    return;
+                }
+
+                ProjectSaved.SafeInvoke(this, new ProjectEventArgs(project));
+
+                Log.Info("Saved project '{0}' to '{1}'", project, location);
             }
-
-            Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);
-
-            try
-            {
-                await projectWriter.Write(project, location);
-                Location = location;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to save project '{0}' to '{1}'", project, location);
-                ProjectSavingFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, ex));
-
-                _isSaving = false;
-
-                return;
-            }
-
-            ProjectSaved.SafeInvoke(this, eventArgs);
-
-            _isSaving = false;
-
-            Log.Info("Saved project '{0}' to '{1}'", project, location);
         }
 
         public void Close()
@@ -253,13 +248,20 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Closing project '{0}'", project);
 
-            var eventArgs = new ProjectEventArgs(project);
-            ProjectClosing.SafeInvoke(this, eventArgs);
+            var cancelEventArgs = new ProjectCancelEventArgs(project);
+            ProjectClosing.SafeInvoke(this, cancelEventArgs);
+
+            if (cancelEventArgs.Cancel)
+            {
+                Log.Debug("Canceled closing project '{0}'", project);
+                ProjectClosingCanceled.SafeInvoke(this, new ProjectEventArgs(project));
+                return;
+            }
 
             Project = null;
             Location = null;
 
-            ProjectClosed.SafeInvoke(this, eventArgs);
+            ProjectClosed.SafeInvoke(this, new ProjectEventArgs(project));
 
             Log.Info("Closed project '{0}'", project);
         }

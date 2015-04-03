@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="WorkspaceWatcherBase.cs" company="Orchestra development team">
-//   Copyright (c) 2008 - 2014 Orchestra development team. All rights reserved.
+// <copyright file="ProjectWatcherBase.cs" company="Wild Gums">
+//   Copyright (c) 2008 - 2015 Wild Gums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -13,7 +13,9 @@ namespace Orc.ProjectManagement
 
     public abstract class ProjectWatcherBase
     {
+        #region Fields
         private readonly IProjectManager _projectManager;
+        #endregion
 
         #region Constructors
         protected ProjectWatcherBase(IProjectManager projectManager)
@@ -48,7 +50,7 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Methods
-        protected virtual void OnLoading(string location)
+        protected virtual void OnLoading(string location, ref bool cancel)
         {
         }
 
@@ -64,7 +66,7 @@ namespace Orc.ProjectManagement
         {
         }
 
-        protected virtual void OnSaving(IProject project)
+        protected virtual void OnSaving(IProject project, ref bool cancel)
         {
         }
 
@@ -76,7 +78,7 @@ namespace Orc.ProjectManagement
         {
         }
 
-        protected virtual void OnClosing(IProject project)
+        protected virtual void OnClosing(IProject project, ref bool cancel)
         {
         }
 
@@ -92,9 +94,11 @@ namespace Orc.ProjectManagement
         {
         }
 
-        private void OnProjectLoading(object sender, ProjectEventArgs e)
+        private void OnProjectLoading(object sender, ProjectCancelEventArgs e)
         {
-            OnLoading(e.Location);
+            var cancel = e.Cancel;
+            OnLoading(e.Location, ref cancel);
+            e.Cancel = cancel;
         }
 
         private void OnProjectLoadingFailed(object sender, ProjectErrorEventArgs e)
@@ -112,9 +116,11 @@ namespace Orc.ProjectManagement
             OnLoaded(e.Project);
         }
 
-        private void OnProjectSaving(object sender, ProjectEventArgs e)
+        private void OnProjectSaving(object sender, ProjectCancelEventArgs e)
         {
-            OnSaving(e.Project);
+            var cancel = e.Cancel;
+            OnSaving(e.Project, ref cancel);
+            e.Cancel = cancel;
         }
 
         private void OnProjectSavingFailed(object sender, ProjectErrorEventArgs e)
@@ -127,9 +133,11 @@ namespace Orc.ProjectManagement
             OnSaved(e.Project);
         }
 
-        private void OnProjectClosing(object sender, ProjectEventArgs e)
+        private void OnProjectClosing(object sender, ProjectCancelEventArgs e)
         {
-            OnClosing(e.Project);
+            var cancel = e.Cancel;
+            OnClosing(e.Project, ref cancel);
+            e.Cancel = cancel;
         }
 
         private void OnProjectClosed(object sender, ProjectEventArgs e)

@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectEventArgs.cs" company="Wild Gums">
+// <copyright file="ProjectCancelEventArgs.cs" company="Wild Gums">
 //   Copyright (c) 2008 - 2015 Wild Gums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
@@ -7,17 +7,19 @@
 
 namespace Orc.ProjectManagement
 {
-    using System;
+    using System.ComponentModel;
 
-    public class ProjectEventArgs : EventArgs
+    public class ProjectCancelEventArgs : CancelEventArgs
     {
         #region Constructors
-        public ProjectEventArgs(string location)
+        public ProjectCancelEventArgs(string location, bool cancel = false)
+            : base(cancel)
         {
             Location = location;
         }
 
-        public ProjectEventArgs(IProject project)
+        public ProjectCancelEventArgs(IProject project, bool cancel = false)
+            : base(cancel)
         {
             Project = project;
 
