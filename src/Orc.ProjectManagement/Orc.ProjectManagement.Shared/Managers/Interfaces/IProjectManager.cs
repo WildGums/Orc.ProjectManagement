@@ -33,9 +33,9 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
         Task Initialize();
         Task Refresh();
-        Task Load(string location);
-        Task Save(string location = null);
-        Task Close();
+        Task<bool> Load(string location);
+        Task<bool> Save(string location = null);
+        Task<bool> Close();
         #endregion
     }
 }

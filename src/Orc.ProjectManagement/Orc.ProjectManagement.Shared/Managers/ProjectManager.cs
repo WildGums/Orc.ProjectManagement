@@ -112,7 +112,7 @@ namespace Orc.ProjectManagement
             Log.Info("Refreshed project from '{0}'", location);
         }
 
-        public async Task Load(string location)
+        public async Task<bool> Load(string location)
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
@@ -128,7 +128,7 @@ namespace Orc.ProjectManagement
                     Log.Debug("Canceled loading of project from '{0}'", location);
                     await ProjectLoadingCanceled.SafeInvoke(this, new ProjectEventArgs(location));
 
-                    return;
+                    return false;
                 }
 
                 Log.Debug("Validating to see if we can load the project from '{0}'", location);
@@ -138,7 +138,7 @@ namespace Orc.ProjectManagement
                     Log.Error("Cannot load project from '{0}'", location);
                     await ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location));
 
-                    return;
+                    return false;
                 }
 
                 var projectReader = _projectSerializerSelector.GetReader(location);
@@ -177,7 +177,7 @@ namespace Orc.ProjectManagement
                 {
                     await ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, error, validationContext));
 
-                    return;
+                    return false;
                 }
 
                 Location = location;
@@ -187,15 +187,17 @@ namespace Orc.ProjectManagement
 
                 Log.Info("Loaded project from '{0}'", location);
             }
+
+            return true;
         }
 
-        public async Task Save(string location = null)
+        public async Task<bool> Save(string location = null)
         {
             var project = Project;
             if (project == null)
             {
                 Log.Error("Cannot save empty project");
-                throw new InvalidProjectException(project);
+                return false;
             }
 
             if (string.IsNullOrWhiteSpace(location))
@@ -214,7 +216,7 @@ namespace Orc.ProjectManagement
                 {
                     Log.Debug("Canceled saving of project to '{0}'", location);
                     await ProjectSavingCanceled.SafeInvoke(this, new ProjectEventArgs(project));
-                    return;
+                    return false;
                 }
 
                 var projectWriter = _projectSerializerSelector.GetWriter(location);
@@ -241,7 +243,7 @@ namespace Orc.ProjectManagement
                 {
                     await ProjectSavingFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, error));
 
-                    return;
+                    return false;
                 }
 
                 await ProjectSaved.SafeInvoke(this, new ProjectEventArgs(project));
@@ -249,14 +251,16 @@ namespace Orc.ProjectManagement
                 var peojectString = project.ToString();
                 Log.Info("Saved project '{0}' to '{1}'", peojectString, location);
             }
+
+            return true;
         }
 
-        public async Task Close()
+        public async Task<bool> Close()
         {
             var project = Project;
             if (project == null)
             {
-                return;
+                return false;
             }
 
             Log.Debug("Closing project '{0}'", project);
@@ -268,7 +272,7 @@ namespace Orc.ProjectManagement
             {
                 Log.Debug("Canceled closing project '{0}'", project);
                 await ProjectClosingCanceled.SafeInvoke(this, new ProjectEventArgs(project));
-                return;
+                return false;
             }
 
             Project = null;
@@ -277,6 +281,8 @@ namespace Orc.ProjectManagement
             await ProjectClosed.SafeInvoke(this, new ProjectEventArgs(project));
 
             Log.Info("Closed project '{0}'", project);
+
+            return true;
         }
 
         private void HandleProjectUpdate(IProject oldProject, IProject newProject)
