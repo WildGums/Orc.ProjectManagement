@@ -68,20 +68,20 @@ namespace Orc.ProjectManagement
         public event EventHandler<EventArgs> ProjectRefreshRequired;
 
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoading;
-        public event EventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
-        public event EventHandler<ProjectEventArgs> ProjectLoadingCanceled;
-        public event EventHandler<ProjectEventArgs> ProjectLoaded;
+        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
+        public event AsyncEventHandler<ProjectEventArgs> ProjectLoadingCanceled;
+        public event AsyncEventHandler<ProjectEventArgs> ProjectLoaded;
 
-        public event EventHandler<ProjectCancelEventArgs> ProjectSaving;
-        public event EventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
-        public event EventHandler<ProjectEventArgs> ProjectSavingCanceled;
-        public event EventHandler<ProjectEventArgs> ProjectSaved;
+        public event AsyncEventHandler<ProjectCancelEventArgs> ProjectSaving;
+        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
+        public event AsyncEventHandler<ProjectEventArgs> ProjectSavingCanceled;
+        public event AsyncEventHandler<ProjectEventArgs> ProjectSaved;
 
         public event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated;
 
-        public event EventHandler<ProjectCancelEventArgs> ProjectClosing;
-        public event EventHandler<ProjectEventArgs> ProjectClosingCanceled;
-        public event EventHandler<ProjectEventArgs> ProjectClosed;
+        public event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosing;
+        public event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
+        public event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
         #endregion
 
         #region IProjectManager Members
@@ -126,7 +126,7 @@ namespace Orc.ProjectManagement
                 if (cancelEventArgs.Cancel)
                 {
                     Log.Debug("Canceled loading of project from '{0}'", location);
-                    ProjectLoadingCanceled.SafeInvoke(this, new ProjectEventArgs(location));
+                    await ProjectLoadingCanceled.SafeInvoke(this, new ProjectEventArgs(location));
 
                     return;
                 }
@@ -136,7 +136,7 @@ namespace Orc.ProjectManagement
                 if (!await _projectValidator.CanStartLoadingProjectAsync(location))
                 {
                     Log.Error("Cannot load project from '{0}'", location);
-                    ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location));
+                    await ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location));
 
                     return;
                 }
@@ -149,9 +149,10 @@ namespace Orc.ProjectManagement
 
                 Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
 
-                IProject project;
+                IProject project = null;
                 IValidationContext validationContext = null;
 
+                Exception error = null;
                 try
                 {
                     project = await projectReader.Read(location);
@@ -168,8 +169,13 @@ namespace Orc.ProjectManagement
                 }
                 catch (Exception ex)
                 {
+                    error = ex;
                     Log.Error(ex, "Failed to load project from '{0}'", location);
-                    ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, ex, validationContext));
+                }
+
+                if (error != null)
+                {
+                    await ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, error, validationContext));
 
                     return;
                 }
@@ -177,7 +183,7 @@ namespace Orc.ProjectManagement
                 Location = location;
                 Project = project;
 
-                ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
+                await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
 
                 Log.Info("Loaded project from '{0}'", location);
             }
@@ -202,12 +208,12 @@ namespace Orc.ProjectManagement
                 Log.Debug("Saving project '{0}' to '{1}'", project, location);
 
                 var cancelEventArgs = new ProjectCancelEventArgs(project);
-                ProjectSaving.SafeInvoke(this, cancelEventArgs);
+                await ProjectSaving.SafeInvoke(this, cancelEventArgs);
 
                 if (cancelEventArgs.Cancel)
                 {
                     Log.Debug("Canceled saving of project to '{0}'", location);
-                    ProjectSavingCanceled.SafeInvoke(this, new ProjectEventArgs(project));
+                    await ProjectSavingCanceled.SafeInvoke(this, new ProjectEventArgs(project));
                     return;
                 }
 
@@ -219,6 +225,7 @@ namespace Orc.ProjectManagement
 
                 Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);
 
+                Exception error = null;
                 try
                 {
                     await projectWriter.Write(project, location);
@@ -226,19 +233,25 @@ namespace Orc.ProjectManagement
                 }
                 catch (Exception ex)
                 {
+                    error = ex;
                     Log.Error(ex, "Failed to save project '{0}' to '{1}'", project, location);
-                    ProjectSavingFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, ex));
+                }
+
+                if (error != null)
+                {
+                    await ProjectSavingFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, error));
 
                     return;
                 }
 
-                ProjectSaved.SafeInvoke(this, new ProjectEventArgs(project));
+                await ProjectSaved.SafeInvoke(this, new ProjectEventArgs(project));
 
-                Log.Info("Saved project '{0}' to '{1}'", project, location);
+                var peojectString = project.ToString();
+                Log.Info("Saved project '{0}' to '{1}'", peojectString, location);
             }
         }
 
-        public void Close()
+        public async Task Close()
         {
             var project = Project;
             if (project == null)
@@ -249,19 +262,19 @@ namespace Orc.ProjectManagement
             Log.Debug("Closing project '{0}'", project);
 
             var cancelEventArgs = new ProjectCancelEventArgs(project);
-            ProjectClosing.SafeInvoke(this, cancelEventArgs);
+            await ProjectClosing.SafeInvoke(this, cancelEventArgs);
 
             if (cancelEventArgs.Cancel)
             {
                 Log.Debug("Canceled closing project '{0}'", project);
-                ProjectClosingCanceled.SafeInvoke(this, new ProjectEventArgs(project));
+                await ProjectClosingCanceled.SafeInvoke(this, new ProjectEventArgs(project));
                 return;
             }
 
             Project = null;
             Location = null;
 
-            ProjectClosed.SafeInvoke(this, new ProjectEventArgs(project));
+            await ProjectClosed.SafeInvoke(this, new ProjectEventArgs(project));
 
             Log.Info("Closed project '{0}'", project);
         }

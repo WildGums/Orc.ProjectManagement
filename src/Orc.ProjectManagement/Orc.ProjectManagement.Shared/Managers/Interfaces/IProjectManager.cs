@@ -19,23 +19,23 @@ namespace Orc.ProjectManagement
 
         #region Methods
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoading;
-        event EventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
-        event EventHandler<ProjectEventArgs> ProjectLoadingCanceled;
-        event EventHandler<ProjectEventArgs> ProjectLoaded;
-        event EventHandler<ProjectCancelEventArgs> ProjectSaving;
-        event EventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
-        event EventHandler<ProjectEventArgs> ProjectSavingCanceled;
-        event EventHandler<ProjectEventArgs> ProjectSaved;
+        event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
+        event AsyncEventHandler<ProjectEventArgs> ProjectLoadingCanceled;
+        event AsyncEventHandler<ProjectEventArgs> ProjectLoaded;
+        event AsyncEventHandler<ProjectCancelEventArgs> ProjectSaving;
+        event AsyncEventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
+        event AsyncEventHandler<ProjectEventArgs> ProjectSavingCanceled;
+        event AsyncEventHandler<ProjectEventArgs> ProjectSaved;
         event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated;
         event EventHandler<EventArgs> ProjectRefreshRequired;
-        event EventHandler<ProjectCancelEventArgs> ProjectClosing;
-        event EventHandler<ProjectEventArgs> ProjectClosingCanceled;
-        event EventHandler<ProjectEventArgs> ProjectClosed;
+        event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosing;
+        event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
+        event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
         Task Initialize();
         Task Refresh();
         Task Load(string location);
         Task Save(string location = null);
-        void Close();
+        Task Close();
         #endregion
     }
 }

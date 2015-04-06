@@ -55,35 +55,35 @@ namespace Orc.ProjectManagement
         {
         }
 
-        protected virtual void OnLoadingFailed(string location, Exception exception, IValidationContext validationContext)
+        protected virtual async Task OnLoadingFailed(string location, Exception exception, IValidationContext validationContext)
         {
         }
 
-        protected virtual void OnLoadingCanceled(string location)
+        protected virtual async Task OnLoadingCanceled(string location)
         {
         }
 
-        protected virtual void OnLoaded(IProject project)
+        protected virtual async Task OnLoaded(IProject project)
         {
         }
 
-        protected virtual void OnSaving(IProject project, ref bool cancel)
+        protected virtual async Task OnSaving(ProjectCancelEventArgs e)
         {
         }
 
-        protected virtual void OnSavingFailed(IProject project, Exception exception)
+        protected virtual async Task OnSavingFailed(IProject project, Exception exception)
         {
         }
 
-        protected virtual void OnSaved(IProject project)
+        protected virtual async Task OnSaved(IProject project)
         {
         }
 
-        protected virtual void OnClosing(IProject project, ref bool cancel)
+        protected virtual async Task OnClosing(ProjectCancelEventArgs e)
         {
         }
 
-        protected virtual void OnClosed(IProject project)
+        protected virtual async Task OnClosed(IProject project)
         {
         }
 
@@ -100,48 +100,44 @@ namespace Orc.ProjectManagement
             await OnLoading(e);
         }
 
-        private void OnProjectLoadingFailed(object sender, ProjectErrorEventArgs e)
+        private async Task OnProjectLoadingFailed(object sender, ProjectErrorEventArgs e)
         {
-            OnLoadingFailed(e.Location, e.Exception, e.ValidationContext);
+            await OnLoadingFailed(e.Location, e.Exception, e.ValidationContext);
         }
 
-        protected void OnProjectLoadingCanceled(object sender, ProjectEventArgs e)
+        protected async Task OnProjectLoadingCanceled(object sender, ProjectEventArgs e)
         {
-            OnLoadingCanceled(e.Location);
+            await OnLoadingCanceled(e.Location);
         }
 
-        private void OnProjectLoaded(object sender, ProjectEventArgs e)
+        private async Task OnProjectLoaded(object sender, ProjectEventArgs e)
         {
-            OnLoaded(e.Project);
+            await OnLoaded(e.Project);
         }
 
-        private void OnProjectSaving(object sender, ProjectCancelEventArgs e)
+        private async Task OnProjectSaving(object sender, ProjectCancelEventArgs e)
         {
-            var cancel = e.Cancel;
-            OnSaving(e.Project, ref cancel);
-            e.Cancel = cancel;
+            await OnSaving(e);
         }
 
-        private void OnProjectSavingFailed(object sender, ProjectErrorEventArgs e)
+        private async Task OnProjectSavingFailed(object sender, ProjectErrorEventArgs e)
         {
-            OnSavingFailed(e.Project, e.Exception);
+            await OnSavingFailed(e.Project, e.Exception);
         }
 
-        private void OnProjectSaved(object sender, ProjectEventArgs e)
+        private async Task OnProjectSaved(object sender, ProjectEventArgs e)
         {
-            OnSaved(e.Project);
+            await OnSaved(e.Project);
         }
 
-        private void OnProjectClosing(object sender, ProjectCancelEventArgs e)
+        private async Task OnProjectClosing(object sender, ProjectCancelEventArgs e)
         {
-            var cancel = e.Cancel;
-            OnClosing(e.Project, ref cancel);
-            e.Cancel = cancel;
+            await OnClosing(e);
         }
 
-        private void OnProjectClosed(object sender, ProjectEventArgs e)
+        private async Task OnProjectClosed(object sender, ProjectEventArgs e)
         {
-            OnClosed(e.Project);
+            await OnClosed(e.Project);
         }
 
         private void OnProjectUpdated(object sender, ProjectUpdatedEventArgs e)

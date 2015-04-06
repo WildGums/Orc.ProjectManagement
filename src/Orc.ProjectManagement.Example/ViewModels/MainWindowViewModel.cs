@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="MainWindowViewModel.cs" company="Orchestra development team">
-//   Copyright (c) 2008 - 2014 Orchestra development team. All rights reserved.
+// <copyright file="MainWindowViewModel.cs" company="Wild Gums">
+//   Copyright (c) 2008 - 2015 Wild Gums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -8,11 +8,9 @@
 namespace Orc.ProjectManagement.Example.ViewModels
 {
     using System;
-    using System.ComponentModel;
     using System.IO;
     using System.Threading.Tasks;
     using Catel;
-    using Catel.Data;
     using Catel.Fody;
     using Catel.Logging;
     using Catel.MVVM;
@@ -24,15 +22,15 @@ namespace Orc.ProjectManagement.Example.ViewModels
     /// </summary>
     public class MainWindowViewModel : ViewModelBase
     {
-        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
-
+        #region Fields
         private const string TextFilter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
-
-        private readonly IProjectManager _projectManager;
-        private readonly IOpenFileService _openFileService;
-        private readonly ISaveFileService _saveFileService;
-        private readonly IProcessService _processService;
+        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
         private readonly IMessageService _messageService;
+        private readonly IOpenFileService _openFileService;
+        private readonly IProcessService _processService;
+        private readonly IProjectManager _projectManager;
+        private readonly ISaveFileService _saveFileService;
+        #endregion
 
         #region Constructors
         /// <summary>
@@ -52,10 +50,10 @@ namespace Orc.ProjectManagement.Example.ViewModels
             _processService = processService;
             _messageService = messageService;
 
-            LoadProject = new Command(OnLoadProjectExecute);
-            RefreshProject = new Command(OnRefreshProjectExecute, OnRefreshProjectCanExecute);
-            SaveProject = new Command(OnSaveProjectExecute, OnSaveProjectCanExecute);
-            SaveProjectAs = new Command(OnSaveProjectAsExecute, OnSaveProjectAsCanExecute);
+            LoadProject = new TaskCommand(OnLoadProjectExecute);
+            RefreshProject = new TaskCommand(OnRefreshProjectExecute, OnRefreshProjectCanExecute);
+            SaveProject = new TaskCommand(OnSaveProjectExecute, OnSaveProjectCanExecute);
+            SaveProjectAs = new TaskCommand(OnSaveProjectAsExecute, OnSaveProjectAsCanExecute);
             CloseProject = new Command(OnCloseProjectExecute, OnCloseProjectCanExecute);
             OpenFile = new Command(OnOpenFileExecute, OnOpenFileCanExecute);
         }
@@ -76,84 +74,6 @@ namespace Orc.ProjectManagement.Example.ViewModels
         [Expose("MiddleName")]
         [Expose("LastName")]
         public PersonProject Project { get; private set; }
-        #endregion
-
-        #region Commands
-        public Command LoadProject { get; private set; }
-
-        private void OnLoadProjectExecute()
-        {
-            _openFileService.InitialDirectory = Path.Combine(Environment.CurrentDirectory, "Data");
-            _openFileService.Filter = TextFilter;
-            if (_openFileService.DetermineFile())
-            {
-                _projectManager.Load(_openFileService.FileName);
-            }
-        }
-
-        public Command RefreshProject { get; private set; }
-
-        private bool OnRefreshProjectCanExecute()
-        {
-            return _projectManager.Project != null;
-        }
-
-        private void OnRefreshProjectExecute()
-        {
-            _projectManager.Refresh();
-        }
-
-        public Command SaveProject { get; private set; }
-
-        private bool OnSaveProjectCanExecute()
-        {
-            return _projectManager.Project != null;
-        }
-
-        private void OnSaveProjectExecute()
-        {
-            _projectManager.Save();
-        }
-
-        public Command SaveProjectAs { get; private set; }
-
-        private bool OnSaveProjectAsCanExecute()
-        {
-            return _projectManager.Project != null;
-        }
-
-        private void OnSaveProjectAsExecute()
-        {
-            _saveFileService.Filter = TextFilter;
-            if (_saveFileService.DetermineFile())
-            {
-                _projectManager.Save(_openFileService.FileName);
-            }
-        }
-
-        public Command CloseProject { get; private set; }
-
-        private bool OnCloseProjectCanExecute()
-        {
-            return _projectManager.Project != null;
-        }
-
-        private void OnCloseProjectExecute()
-        {
-            _projectManager.Close();
-        }
-
-        public Command OpenFile { get; private set; }
-
-        private bool OnOpenFileCanExecute()
-        {
-            return _projectManager.Project != null;
-        }
-
-        private void OnOpenFileExecute()
-        {
-            _processService.StartProcess(_projectManager.Location);
-        }
         #endregion
 
         #region Methods
@@ -181,6 +101,84 @@ namespace Orc.ProjectManagement.Example.ViewModels
         private void ReloadProject()
         {
             Project = _projectManager.GetProject<PersonProject>();
+        }
+        #endregion
+
+        #region Commands
+        public TaskCommand LoadProject { get; private set; }
+
+        private async Task OnLoadProjectExecute()
+        {
+            _openFileService.InitialDirectory = Path.Combine(Environment.CurrentDirectory, "Data");
+            _openFileService.Filter = TextFilter;
+            if (_openFileService.DetermineFile())
+            {
+                await _projectManager.Load(_openFileService.FileName);
+            }
+        }
+
+        public TaskCommand RefreshProject { get; private set; }
+
+        private bool OnRefreshProjectCanExecute()
+        {
+            return _projectManager.Project != null;
+        }
+
+        private async Task OnRefreshProjectExecute()
+        {
+            await _projectManager.Refresh();
+        }
+
+        public TaskCommand SaveProject { get; private set; }
+
+        private bool OnSaveProjectCanExecute()
+        {
+            return _projectManager.Project != null;
+        }
+
+        private async Task OnSaveProjectExecute()
+        {
+            await _projectManager.Save();
+        }
+
+        public TaskCommand SaveProjectAs { get; private set; }
+
+        private bool OnSaveProjectAsCanExecute()
+        {
+            return _projectManager.Project != null;
+        }
+
+        private async Task OnSaveProjectAsExecute()
+        {
+            _saveFileService.Filter = TextFilter;
+            if (_saveFileService.DetermineFile())
+            {
+                await _projectManager.Save(_openFileService.FileName);
+            }
+        }
+
+        public Command CloseProject { get; private set; }
+
+        private bool OnCloseProjectCanExecute()
+        {
+            return _projectManager.Project != null;
+        }
+
+        private void OnCloseProjectExecute()
+        {
+            _projectManager.Close();
+        }
+
+        public Command OpenFile { get; private set; }
+
+        private bool OnOpenFileCanExecute()
+        {
+            return _projectManager.Project != null;
+        }
+
+        private void OnOpenFileExecute()
+        {
+            _processService.StartProcess(_projectManager.Location);
         }
         #endregion
     }

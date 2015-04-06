@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectManagerFacts.cs" company="Orchestra development team">
-//   Copyright (c) 2008 - 2014 Orchestra development team. All rights reserved.
+// <copyright file="ProjectManagerFacts.cs" company="Wild Gums">
+//   Copyright (c) 2008 - 2015 Wild Gums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -15,18 +15,21 @@ namespace Orc.ProjectManagement.Test.Managers
 
     public class ProjectManagerFacts
     {
+        #region Methods
         private static ProjectManager GetProjectManager()
         {
-            var projectManager = new ProjectManager(new EmptyProjectValidator(), new EmptyProjectInitializer(), 
-                new DefaultProjectRefresherSelector(ServiceLocator.Default, TypeFactory.Default), 
+            var projectManager = new ProjectManager(new EmptyProjectValidator(), new EmptyProjectInitializer(),
+                new DefaultProjectRefresherSelector(ServiceLocator.Default, TypeFactory.Default),
                 new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
 
             return projectManager;
         }
+        #endregion
 
         [TestFixture]
         public class TheLoadMethod
         {
+            #region Methods
             [TestCase("myLocation")]
             public async Task UpdatesLocationAfterLoadingProject(string newLocation)
             {
@@ -58,7 +61,7 @@ namespace Orc.ProjectManagement.Test.Managers
                 var projectManager = GetProjectManager();
 
                 var eventRaised = false;
-                projectManager.ProjectLoadingFailed += (sender, e) => eventRaised = true;
+                projectManager.ProjectLoadingFailed += async (sender, e) => eventRaised = true;
 
                 await projectManager.Load("cannotload");
 
@@ -72,7 +75,7 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 var eventRaised = false;
                 projectManager.ProjectLoading += async (sender, e) => e.Cancel = true;
-                projectManager.ProjectLoadingCanceled += (sender, e) => eventRaised = true;
+                projectManager.ProjectLoadingCanceled += async (sender, e) => eventRaised = true;
 
                 await projectManager.Load("dummyLocation");
 
@@ -85,17 +88,19 @@ namespace Orc.ProjectManagement.Test.Managers
                 var projectManager = GetProjectManager();
 
                 var eventRaised = false;
-                projectManager.ProjectLoaded += (sender, e) => eventRaised = true;
+                projectManager.ProjectLoaded += async (sender, e) => eventRaised = true;
 
                 await projectManager.Load("dummyLocation");
 
                 Assert.IsTrue(eventRaised);
             }
+            #endregion
         }
 
         [TestFixture]
         public class TheRefreshMethod
         {
+            #region Methods
             [TestCase]
             public async Task DoesNothingWithoutProject()
             {
@@ -122,11 +127,13 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 Assert.IsTrue(eventRaised);
             }
+            #endregion
         }
 
         [TestFixture]
         public class TheSaveMethod
         {
+            #region Methods
             [TestCase("myLocation")]
             public async Task UpdatesLocationAfterSavingProject(string newLocation)
             {
@@ -149,7 +156,7 @@ namespace Orc.ProjectManagement.Test.Managers
                 await projectManager.Load("dummyLocation");
 
                 var eventRaised = false;
-                projectManager.ProjectSaving += (sender, e) => eventRaised = true;
+                projectManager.ProjectSaving += async (sender, e) => eventRaised = true;
 
                 await projectManager.Save();
 
@@ -164,17 +171,19 @@ namespace Orc.ProjectManagement.Test.Managers
                 await projectManager.Load("dummyLocation");
 
                 var eventRaised = false;
-                projectManager.ProjectSaved += (sender, e) => eventRaised = true;
+                projectManager.ProjectSaved += async (sender, e) => eventRaised = true;
 
                 await projectManager.Save();
 
                 Assert.IsTrue(eventRaised);
             }
+            #endregion
         }
 
         [TestFixture]
         public class TheCloseMethod
         {
+            #region Methods
             [TestCase]
             public async Task UpdatesProjectAfterClosingProject()
             {
@@ -184,7 +193,7 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 Assert.IsNotNull(projectManager.Project);
 
-                projectManager.Close();
+                await projectManager.Close();
 
                 Assert.IsNull(projectManager.Project);
             }
@@ -198,7 +207,7 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 Assert.AreEqual("dummyLocation", projectManager.Location);
 
-                projectManager.Close();
+                await projectManager.Close();
 
                 Assert.AreEqual(null, projectManager.Location);
             }
@@ -211,9 +220,9 @@ namespace Orc.ProjectManagement.Test.Managers
                 await projectManager.Load("dummyLocation");
 
                 var eventRaised = false;
-                projectManager.ProjectClosing += (sender, e) => eventRaised = true;
+                projectManager.ProjectClosing += async (sender, e) => eventRaised = true;
 
-                projectManager.Close();
+                await projectManager.Close();
 
                 Assert.IsTrue(eventRaised);
             }
@@ -226,12 +235,13 @@ namespace Orc.ProjectManagement.Test.Managers
                 await projectManager.Load("dummyLocation");
 
                 var eventRaised = false;
-                projectManager.ProjectClosed += (sender, e) => eventRaised = true;
+                projectManager.ProjectClosed += async (sender, e) => eventRaised = true;
 
-                projectManager.Close();
+                await projectManager.Close();
 
                 Assert.IsTrue(eventRaised);
             }
+            #endregion
         }
     }
 }
