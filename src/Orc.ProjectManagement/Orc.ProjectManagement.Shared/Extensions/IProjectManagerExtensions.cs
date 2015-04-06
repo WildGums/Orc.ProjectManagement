@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="IProjectManagerExtensions.cs" company="Orchestra development team">
-//   Copyright (c) 2008 - 2014 Orchestra development team. All rights reserved.
+// <copyright file="IProjectManagerExtensions.cs" company="Wild Gums">
+//   Copyright (c) 2008 - 2015 Wild Gums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -11,12 +11,14 @@ namespace Orc.ProjectManagement
 
     public static class IProjectManagerExtensions
     {
+        #region Methods
         public static TProject GetProject<TProject>(this IProjectManager projectManager)
             where TProject : IProject
         {
             Argument.IsNotNull(() => projectManager);
 
-            return (TProject)projectManager.Project;
+            return (TProject) projectManager.Project;
         }
+        #endregion
     }
 }
