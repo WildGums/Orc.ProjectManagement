@@ -31,16 +31,18 @@ namespace Orc.ProjectManagement
             projectManager.ProjectLoaded += OnProjectLoaded;
 
             projectManager.ProjectSaving += OnProjectSaving;
+            projectManager.ProjectSavingCanceled += OnProjectSavingCanceled;
             projectManager.ProjectSavingFailed += OnProjectSavingFailed;
             projectManager.ProjectSaved += OnProjectSaved;
 
             projectManager.ProjectClosing += OnProjectClosing;
+            projectManager.ProjectClosingCanceled += OnProjectClosingCanceled;
             projectManager.ProjectClosed += OnProjectClosed;
 
             projectManager.ProjectUpdated += OnProjectUpdated;
 
             projectManager.ProjectRefreshRequired += OnProjectRefreshRequired;
-        }
+        }        
         #endregion
 
         #region Properties
@@ -71,6 +73,10 @@ namespace Orc.ProjectManagement
         {
         }
 
+        protected virtual async Task OnSavingCanceled(IProject project)
+        {
+        }
+
         protected virtual async Task OnSavingFailed(IProject project, Exception exception)
         {
         }
@@ -84,6 +90,10 @@ namespace Orc.ProjectManagement
         }
 
         protected virtual async Task OnClosed(IProject project)
+        {
+        }
+
+        protected virtual async Task OnClosingCanceled(IProject project)
         {
         }
 
@@ -120,6 +130,11 @@ namespace Orc.ProjectManagement
             await OnSaving(e);
         }
 
+        private async Task OnProjectSavingCanceled(object sender, ProjectEventArgs e)
+        {
+            await OnSavingCanceled(e.Project);
+        }
+
         private async Task OnProjectSavingFailed(object sender, ProjectErrorEventArgs e)
         {
             await OnSavingFailed(e.Project, e.Exception);
@@ -133,6 +148,11 @@ namespace Orc.ProjectManagement
         private async Task OnProjectClosing(object sender, ProjectCancelEventArgs e)
         {
             await OnClosing(e);
+        }
+
+        private async Task OnProjectClosingCanceled(object sender, ProjectEventArgs e)
+        {
+            await OnClosingCanceled(e.Project);
         }
 
         private async Task OnProjectClosed(object sender, ProjectEventArgs e)
