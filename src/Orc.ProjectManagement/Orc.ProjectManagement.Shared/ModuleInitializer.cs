@@ -20,6 +20,6 @@ public static class ModuleInitializer
         serviceLocator.RegisterType<IProjectInitializer, EmptyProjectInitializer>();
         serviceLocator.RegisterType<IProjectValidator, EmptyProjectValidator>();
         serviceLocator.RegisterType<IProjectRefresherSelector, DefaultProjectRefresherSelector>();
-        serviceLocator.RegisterType<IProjectSerializerSelector, DefaultProjectSerializerSelector>();
+        serviceLocator.RegisterType<IProjectSerializerSelector, DefaultProjectSerializerSelector>(registerIfAlreadyRegistered:false);
     }
 }
