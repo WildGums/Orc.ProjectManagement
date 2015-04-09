@@ -9,6 +9,7 @@ namespace Orc.ProjectManagement
 {
     using System;
     using System.Threading.Tasks;
+    using Catel;
 
     public interface IProjectManager
     {
