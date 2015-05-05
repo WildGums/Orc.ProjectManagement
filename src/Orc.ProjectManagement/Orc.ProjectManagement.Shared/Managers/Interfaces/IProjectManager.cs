@@ -8,6 +8,7 @@
 namespace Orc.ProjectManagement
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Catel;
 
@@ -15,6 +16,7 @@ namespace Orc.ProjectManagement
     {
         #region Properties
         IProject Project { get; }
+        IEnumerable<IProject> Projects { get; }
         string Location { get; }
         #endregion
 
@@ -32,11 +34,17 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosing;
         event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
         event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
+        event AsyncEventHandler<ProjectCancelEventArgs> ProjectSelecting;
+        event AsyncEventHandler<ProjectEventArgs> ProjectSelected;
+        event AsyncEventHandler<ProjectEventArgs> ProjectSelectionCanceled;
+        event AsyncEventHandler<ProjectErrorEventArgs> ProjectSelectionFailed;
         Task Initialize();
         Task Refresh();
         Task<bool> Load(string location);
         Task<bool> Save(string location = null);
+        Task<bool> Save(IProject project, string location);
         Task<bool> Close();
+        Task<bool> Close(IProject project);
         #endregion
     }
 }

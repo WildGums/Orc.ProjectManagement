@@ -8,6 +8,7 @@
 namespace Orc.ProjectManagement
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Catel;
     using Catel.Data;
@@ -43,10 +44,14 @@ namespace Orc.ProjectManagement
             var location = projectInitializer.GetInitialLocation();
 
             _initialLocation = location;
+
+            Projects = new List<IProject>();
         }
         #endregion
 
         #region Properties
+        public IEnumerable<IProject> Projects { get; private set; }
+
         public string Location { get; private set; }
 
         public IProject Project
@@ -82,6 +87,10 @@ namespace Orc.ProjectManagement
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosing;
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
+        public event AsyncEventHandler<ProjectCancelEventArgs> ProjectSelecting;
+        public event AsyncEventHandler<ProjectEventArgs> ProjectSelected;
+        public event AsyncEventHandler<ProjectEventArgs> ProjectSelectionCanceled;
+        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectSelectionFailed;
         #endregion
 
         #region IProjectManager Members
@@ -205,6 +214,14 @@ namespace Orc.ProjectManagement
                 location = Location;
             }
 
+            return await Save(project, location);
+        }
+
+        public async Task<bool> Save(IProject project, string location)
+        {
+            Argument.IsNotNull(() => project);
+            Argument.IsNotNullOrEmpty(() => location);
+
             using (new DisposableToken(null, token => _isSaving = true, token => _isSaving = false))
             {
                 Log.Debug("Saving project '{0}' to '{1}'", project, location);
@@ -262,6 +279,13 @@ namespace Orc.ProjectManagement
             {
                 return false;
             }
+
+            return await Close(project);
+        }
+
+        public async Task<bool> Close(IProject project)
+        {
+            Argument.IsNotNull(() => project);
 
             Log.Debug("Closing project '{0}'", project);
 
