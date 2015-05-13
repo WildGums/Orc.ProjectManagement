@@ -12,26 +12,21 @@ namespace Orc.ProjectManagement
     public class ProjectCancelEventArgs : CancelEventArgs
     {
         #region Constructors
-        public ProjectCancelEventArgs(string location, bool cancel = false)
-            : base(cancel)
-        {
-            Location = location;
-        }
-
         public ProjectCancelEventArgs(IProject project, bool cancel = false)
             : base(cancel)
         {
             Project = project;
-
-            if (project != null)
-            {
-                Location = project.Location;
-            }
         }
         #endregion
 
         #region Properties
-        public string Location { get; private set; }
+        [ObsoleteEx(Message = "In order to use project location without project in CancelEventArgs, use ProjectLocationCancelEventArgs",
+            RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        public string Location
+        {
+            get { return Project.Location; }
+        }
+
         public IProject Project { get; private set; }
         #endregion
     }

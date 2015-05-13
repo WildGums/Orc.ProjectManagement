@@ -80,7 +80,7 @@ namespace Orc.ProjectManagement
         #region Events
         public event EventHandler<EventArgs> ProjectRefreshRequired;
 
-        public event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoading;
+        public event AsyncEventHandler<ProjectLocationCancelEventArgs> ProjectLoading;
         public event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
         public event AsyncEventHandler<ProjectEventArgs> ProjectLoadingCanceled;
         public event AsyncEventHandler<ProjectEventArgs> ProjectLoaded;
@@ -146,7 +146,7 @@ namespace Orc.ProjectManagement
             {
                 Log.Debug("Loading project from '{0}'", location);
 
-                var cancelEventArgs = new ProjectCancelEventArgs(location);
+                var cancelEventArgs = new ProjectLocationCancelEventArgs(location);
                 await ProjectLoading.SafeInvoke(this, cancelEventArgs);
 
                 if (cancelEventArgs.Cancel)

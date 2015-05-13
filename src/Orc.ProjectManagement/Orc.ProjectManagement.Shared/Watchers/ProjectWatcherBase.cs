@@ -53,7 +53,7 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Methods
-        protected virtual async Task OnLoading(ProjectCancelEventArgs e)
+        protected virtual async Task OnLoading(ProjectLocationCancelEventArgs e)
         {
         }
 
@@ -105,7 +105,7 @@ namespace Orc.ProjectManagement
         {
         }
 
-        private async Task OnProjectLoading(object sender, ProjectCancelEventArgs e)
+        private async Task OnProjectLoading(object sender, ProjectLocationCancelEventArgs e)
         {
             await OnLoading(e);
         }

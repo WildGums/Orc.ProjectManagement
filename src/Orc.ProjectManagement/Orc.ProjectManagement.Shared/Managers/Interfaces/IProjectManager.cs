@@ -27,7 +27,7 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Methods
-        event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoading;
+        event AsyncEventHandler<ProjectLocationCancelEventArgs> ProjectLoading;
         event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
         event AsyncEventHandler<ProjectEventArgs> ProjectLoadingCanceled;
         event AsyncEventHandler<ProjectEventArgs> ProjectLoaded;
