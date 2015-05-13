@@ -11,7 +11,6 @@ namespace Orc.ProjectManagement
     using System.Threading.Tasks;
     using Catel;
     using Catel.Data;
-    using Catel.IoC;
     using Catel.Logging;
     using Catel.Reflection;
 
@@ -23,7 +22,6 @@ namespace Orc.ProjectManagement
         private readonly IProjectRefresherSelector _projectRefresherSelector;
         private readonly IProjectSerializerSelector _projectSerializerSelector;
         private readonly IProjectValidator _projectValidator;
-        private readonly IProjectVisualizer _projectVisualizer;
         private bool _isLoading;
         private bool _isSaving;
         private IProject _project;
@@ -31,8 +29,7 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Constructors
-        public ProjectManager(IProjectValidator projectValidator, IProjectInitializer projectInitializer, IProjectRefresherSelector projectRefresherSelector,
-            IProjectSerializerSelector projectSerializerSelector)
+        public ProjectManager(IProjectValidator projectValidator, IProjectInitializer projectInitializer, IProjectRefresherSelector projectRefresherSelector, IProjectSerializerSelector projectSerializerSelector)
         {
             Argument.IsNotNull(() => projectInitializer);
             Argument.IsNotNull(() => projectValidator);
@@ -42,13 +39,6 @@ namespace Orc.ProjectManagement
             _projectValidator = projectValidator;
             _projectRefresherSelector = projectRefresherSelector;
             _projectSerializerSelector = projectSerializerSelector;
-
-            var serviceLocator = this.GetServiceLocator();
-
-            if (serviceLocator.IsTypeRegistered<IProjectVisualizer>())
-            {
-                _projectVisualizer = serviceLocator.ResolveType<IProjectVisualizer>();
-            }
 
             var location = projectInitializer.GetInitialLocation();
 
@@ -193,14 +183,7 @@ namespace Orc.ProjectManagement
                 Location = location;
                 Project = project;
 
-                if (_projectVisualizer != null)
-                {
-                    _projectVisualizer.ExecuteWhenReady(project, async () => await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project)));
-                }
-                else
-                {
-                    await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
-                }
+                await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
 
                 Log.Info("Loaded project from '{0}'", location);
             }

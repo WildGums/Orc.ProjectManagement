@@ -48,8 +48,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Validators\FileExistsProjectValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\Interfaces\IProjectValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\ProjectValidatorBase.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Visualizers\Interfaces\IProjectVisualizer.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Visualizers\ProjectVisualizerBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Watchers\ProjectWatcherBase.cs" />
   </ItemGroup>
 </Project>
