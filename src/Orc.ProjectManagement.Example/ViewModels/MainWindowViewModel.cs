@@ -121,7 +121,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
         private bool OnRefreshProjectCanExecute()
         {
-            return _projectManager.Project != null;
+            return _projectManager.SelectedProject != null;
         }
 
         private async Task OnRefreshProjectExecute()
@@ -133,7 +133,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
         private bool OnSaveProjectCanExecute()
         {
-            return _projectManager.Project != null;
+            return _projectManager.SelectedProject != null;
         }
 
         private async Task OnSaveProjectExecute()
@@ -145,7 +145,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
         private bool OnSaveProjectAsCanExecute()
         {
-            return _projectManager.Project != null;
+            return _projectManager.SelectedProject != null;
         }
 
         private async Task OnSaveProjectAsExecute()
@@ -161,7 +161,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
         private bool OnCloseProjectCanExecute()
         {
-            return _projectManager.Project != null;
+            return _projectManager.SelectedProject != null;
         }
 
         private void OnCloseProjectExecute()
@@ -173,12 +173,12 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
         private bool OnOpenFileCanExecute()
         {
-            return _projectManager.Project != null;
+            return _projectManager.SelectedProject != null;
         }
 
         private void OnOpenFileExecute()
         {
-            _processService.StartProcess(_projectManager.Location);
+            _processService.StartProcess(_projectManager.SelectedProject.Location);
         }
         #endregion
     }

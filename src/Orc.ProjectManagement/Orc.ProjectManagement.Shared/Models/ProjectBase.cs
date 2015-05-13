@@ -34,6 +34,11 @@ namespace Orc.ProjectManagement
             IsDirty = false;
         }
 
+        public void MarkAsDirty()
+        {
+            IsDirty = true;
+        }
+
         public override string ToString()
         {
             return Title;

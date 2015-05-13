@@ -8,7 +8,9 @@
 namespace Orc.ProjectManagement
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
     using Catel;
     using Catel.Data;
@@ -25,8 +27,9 @@ namespace Orc.ProjectManagement
         private readonly IProjectValidator _projectValidator;
         private bool _isLoading;
         private bool _isSaving;
-        private IProject _project;
+        private Stack<string> _selectionHistory;
         private IProjectRefresher _projectRefresher;
+        private IDictionary<string, IProject> _projects;
         #endregion
 
         #region Constructors
@@ -41,32 +44,37 @@ namespace Orc.ProjectManagement
             _projectRefresherSelector = projectRefresherSelector;
             _projectSerializerSelector = projectSerializerSelector;
 
+            _projects = new ConcurrentDictionary<string, IProject>();
+            _selectionHistory = new Stack<string>();
+
             var location = projectInitializer.GetInitialLocation();
 
             _initialLocation = location;
-
-            Projects = new List<IProject>();
         }
         #endregion
 
         #region Properties
-        public IEnumerable<IProject> Projects { get; private set; }
-
-        public string Location { get; private set; }
-
-        public IProject Project
+        public IEnumerable<IProject> Projects
         {
-            get { return _project; }
-            private set
+            get { return _projects.Values; }
+        }
+
+        [ObsoleteEx(Message = "Use SelectedProject.Location instead", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        public string Location {
+            get
             {
-                var oldProject = _project;
-                var newProject = value;
-
-                _project = value;
-
-                HandleProjectUpdate(oldProject, newProject);
+                var selectedProject = SelectedProject;
+                return selectedProject == null ? string.Empty : selectedProject.Location;
             }
         }
+
+        [ObsoleteEx(ReplacementTypeOrMember = "SelectedProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        public IProject Project
+        {
+            get { return SelectedProject; }
+        }
+
+        public IProject SelectedProject { get; private set; }
         #endregion
 
         #region Events
@@ -107,12 +115,21 @@ namespace Orc.ProjectManagement
 
         public async Task Refresh()
         {
-            if (Project == null)
+            var project = Project;
+
+            if (project == null)
             {
                 return;
             }
 
-            var location = Location;
+            await Refresh(project);
+        }
+
+        public async Task Refresh(IProject project)
+        {
+            Argument.IsNotNull(() => project);
+
+            var location = project.Location;
 
             Log.Debug("Refreshing project from '{0}'", location);
 
@@ -121,7 +138,7 @@ namespace Orc.ProjectManagement
             Log.Info("Refreshed project from '{0}'", location);
         }
 
-        public async Task<bool> Load(string location)
+        public async Task<bool> Load(string location, bool selectLoaded = true)
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
@@ -189,8 +206,27 @@ namespace Orc.ProjectManagement
                     return false;
                 }
 
-                Location = location;
-                Project = project;
+                if (project != null)
+                {
+                    IProject oldProject;
+
+                    var key = project.Location;
+
+                    _projects.TryGetValue(key, out oldProject);
+
+                    _projects[key] = project;
+
+                    if (oldProject != null)
+                    {
+                        HandleProjectUpdate(oldProject, project);
+                    }
+                }
+                
+
+                if (selectLoaded || _projects.Count > 1)
+                {
+                    await SelectProject(project);
+                }
 
                 await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
 
@@ -211,7 +247,7 @@ namespace Orc.ProjectManagement
 
             if (string.IsNullOrWhiteSpace(location))
             {
-                location = Location;
+                location = project.Location;
             }
 
             return await Save(project, location);
@@ -248,7 +284,6 @@ namespace Orc.ProjectManagement
                 try
                 {
                     await projectWriter.Write(project, location);
-                    Location = location;
                 }
                 catch (Exception ex)
                 {
@@ -299,12 +334,97 @@ namespace Orc.ProjectManagement
                 return false;
             }
 
-            Project = null;
-            Location = null;
+            var location = project.Location;
+
+            if (_projects.ContainsKey(location))
+            {
+                var valuePair = _projects.First(x => Equals(x.Key, location));
+                _projects.Remove(valuePair);
+            }
+
+            var selectedProject = SelectedProject;
+
+            if (selectedProject != null && Equals(selectedProject.Location, location))
+            {
+                var lastSelected = GetLastSelected();
+                if (lastSelected == null)
+                {
+                    await ClearSelection();
+                }
+                else
+                {
+                    await SelectProject(lastSelected, false);
+                }
+            }
 
             await ProjectClosed.SafeInvoke(this, new ProjectEventArgs(project));
 
             Log.Info("Closed project '{0}'", project);
+
+            return true;
+        }
+
+        private async Task ClearSelection()
+        {
+            // TODO: add events
+            SelectedProject = null;
+        }
+
+        private IProject GetLastSelected()
+        {
+            IProject projectToSelect = null;
+            while (_selectionHistory.Any() && projectToSelect == null)
+            {
+                var projectId = _selectionHistory.Pop();
+                _projects.TryGetValue(projectId, out projectToSelect);
+            }
+
+            return projectToSelect;
+        }
+
+        public async Task<bool> SelectProject(IProject project, bool rememberPrevious = true)
+        {
+            if (project == null)
+            {
+                return false;
+            }
+
+            var eventArgs = new ProjectCancelEventArgs(project);
+
+            await ProjectSelecting.SafeInvoke(this, eventArgs);
+
+            if (eventArgs.Cancel)
+            {
+                await ProjectSelectionCanceled.SafeInvoke(this, new ProjectEventArgs(project));
+                return false;
+            }
+
+            Exception exception = null;
+
+            try
+            {
+                var location = project.Location;
+                var selectedProject = SelectedProject;
+
+                if (rememberPrevious && selectedProject != null && !Equals(selectedProject.Location, location))
+                {
+                    _selectionHistory.Push(location);
+                }
+
+                SelectedProject = project;
+            }
+            catch(Exception ex)
+            {
+                exception = ex;
+            }
+
+            if (exception != null)
+            {
+                await ProjectSelectionFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, exception));
+                return false;
+            }
+
+            await ProjectSelected.SafeInvoke(this, new ProjectEventArgs(project));
 
             return true;
         }

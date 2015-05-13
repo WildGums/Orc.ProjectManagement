@@ -15,9 +15,15 @@ namespace Orc.ProjectManagement
     public interface IProjectManager
     {
         #region Properties
+        [ObsoleteEx(ReplacementTypeOrMember = "SelectedProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         IProject Project { get; }
+
         IEnumerable<IProject> Projects { get; }
+
+        [ObsoleteEx(ReplacementTypeOrMember = "SelectedProject.Location", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         string Location { get; }
+
+        IProject SelectedProject { get; }
         #endregion
 
         #region Methods
@@ -40,11 +46,13 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectErrorEventArgs> ProjectSelectionFailed;
         Task Initialize();
         Task Refresh();
-        Task<bool> Load(string location);
+        Task Refresh(IProject project);
+        Task<bool> Load(string location, bool selectLoaded = true);
         Task<bool> Save(string location = null);
         Task<bool> Save(IProject project, string location);
         Task<bool> Close();
         Task<bool> Close(IProject project);
+        Task<bool> SelectProject(IProject project, bool rememberPrevious = true);
         #endregion
     }
 }

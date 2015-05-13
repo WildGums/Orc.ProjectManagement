@@ -35,11 +35,11 @@ namespace Orc.ProjectManagement.Test.Managers
             {
                 var projectManager = GetProjectManager();
 
-                Assert.AreEqual(null, projectManager.Location);
+                Assert.AreEqual(null, projectManager.SelectedProject);
 
                 await projectManager.Load(newLocation);
 
-                Assert.AreEqual(newLocation, projectManager.Location);
+                Assert.AreEqual(newLocation, projectManager.SelectedProject.Location);
             }
 
             [TestCase]
@@ -106,11 +106,11 @@ namespace Orc.ProjectManagement.Test.Managers
             {
                 var projectManager = GetProjectManager();
 
-                Assert.IsNull(projectManager.Project);
+                Assert.IsNull(projectManager.SelectedProject);
 
                 await projectManager.Refresh();
 
-                Assert.IsNull(projectManager.Project);
+                Assert.IsNull(projectManager.SelectedProject);
             }
 
             [TestCase]
@@ -141,11 +141,11 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 await projectManager.Load("dummyLocation");
 
-                Assert.AreEqual("dummyLocation", projectManager.Location);
+                Assert.AreEqual("dummyLocation", projectManager.SelectedProject.Location);
 
                 await projectManager.Save(newLocation);
 
-                Assert.AreEqual(newLocation, projectManager.Location);
+                Assert.AreEqual(newLocation, projectManager.SelectedProject.Location);
             }
 
             [TestCase]
@@ -191,11 +191,11 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 await projectManager.Load("dummyLocation");
 
-                Assert.IsNotNull(projectManager.Project);
+                Assert.IsNotNull(projectManager.SelectedProject);
 
                 await projectManager.Close();
 
-                Assert.IsNull(projectManager.Project);
+                Assert.IsNull(projectManager.SelectedProject);
             }
 
             [TestCase]
@@ -205,11 +205,11 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 await projectManager.Load("dummyLocation");
 
-                Assert.AreEqual("dummyLocation", projectManager.Location);
+                Assert.AreEqual("dummyLocation", projectManager.SelectedProject.Location);
 
                 await projectManager.Close();
 
-                Assert.AreEqual(null, projectManager.Location);
+                Assert.AreEqual(null, projectManager.SelectedProject);
             }
 
             [TestCase]
