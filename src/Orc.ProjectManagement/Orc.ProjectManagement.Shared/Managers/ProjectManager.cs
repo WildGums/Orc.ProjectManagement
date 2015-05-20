@@ -63,7 +63,7 @@ namespace Orc.ProjectManagement
         public string Location {
             get
             {
-                var selectedProject = SelectedProject;
+                var selectedProject = CurrentProject;
                 return selectedProject == null ? string.Empty : selectedProject.Location;
             }
         }
@@ -71,18 +71,39 @@ namespace Orc.ProjectManagement
         [ObsoleteEx(ReplacementTypeOrMember = "SelectedProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         public IProject Project
         {
-            get { return SelectedProject; }
+            get { return CurrentProject; }
         }
 
-        public IProject SelectedProject { get; private set; }
+        public IProject CurrentProject { get; private set; }
         #endregion
 
         #region Events
         public event EventHandler<EventArgs> ProjectRefreshRequired;
 
-        public event AsyncEventHandler<ProjectLocationCancelEventArgs> ProjectLoading;
-        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
-        public event AsyncEventHandler<ProjectEventArgs> ProjectLoadingCanceled;
+        [ObsoleteEx(ReplacementTypeOrMember = "ProjectLocationLoading", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        public event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoading
+        {
+            add { throw new NotSupportedException("You're trying to subscribe to obsolete event 'ProjectLoading'. Use 'ProjectLocationLoading' instead"); }
+            remove{}
+        }
+
+        [ObsoleteEx(ReplacementTypeOrMember = "ProjectLocationLoadingFailed", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailed
+        {
+            add { throw new NotSupportedException("You're trying to subscribe to obsolete event 'ProjectLoadingFailed'. Use 'ProjectLocationLoadingFailed' instead"); }
+            remove { }
+        }
+
+        [ObsoleteEx(ReplacementTypeOrMember = "ProjectLocationLoadingCanceled", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        public event AsyncEventHandler<ProjectEventArgs> ProjectLoadingCanceled
+        {
+            add { throw new NotSupportedException("You're trying to subscribe to obsolete event 'ProjectLoadingCanceled'. Use 'ProjectLocationLoadingCanceled' instead"); }
+            remove { }
+        }
+
+        public event AsyncEventHandler<ProjectLocationCancelEventArgs> ProjectLocationLoading;
+        public event AsyncEventHandler<ProjectLocationErrorEventArgs> ProjectLocationLoadingFailed;
+        public event AsyncEventHandler<ProjectLocationEventArgs> ProjectLocationLoadingCanceled;
         public event AsyncEventHandler<ProjectEventArgs> ProjectLoaded;
 
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectSaving;
@@ -95,10 +116,10 @@ namespace Orc.ProjectManagement
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosing;
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
-        public event AsyncEventHandler<ProjectCancelEventArgs> ProjectSelecting;
-        public event AsyncEventHandler<ProjectEventArgs> ProjectSelected;
-        public event AsyncEventHandler<ProjectEventArgs> ProjectSelectionCanceled;
-        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectSelectionFailed;
+        public event AsyncEventHandler<ProjectCancelEventArgs> ChangingCurrentProject;
+        public event AsyncEventHandler<ProjectEventArgs> CurrentProjectChanged;
+        public event AsyncEventHandler<ProjectEventArgs> ChangingCurrentProjectCanceled;
+        public event AsyncEventHandler<ProjectErrorEventArgs> ChangingCurrentProjectFailed;
         #endregion
 
         #region IProjectManager Members
@@ -147,12 +168,13 @@ namespace Orc.ProjectManagement
                 Log.Debug("Loading project from '{0}'", location);
 
                 var cancelEventArgs = new ProjectLocationCancelEventArgs(location);
-                await ProjectLoading.SafeInvoke(this, cancelEventArgs);
+
+                await ProjectLocationLoading.SafeInvoke(this, cancelEventArgs);
 
                 if (cancelEventArgs.Cancel)
                 {
                     Log.Debug("Canceled loading of project from '{0}'", location);
-                    await ProjectLoadingCanceled.SafeInvoke(this, new ProjectEventArgs(location));
+                    await ProjectLocationLoadingCanceled.SafeInvoke(this, new ProjectLocationEventArgs(location));
 
                     return false;
                 }
@@ -162,7 +184,7 @@ namespace Orc.ProjectManagement
                 if (!await _projectValidator.CanStartLoadingProjectAsync(location))
                 {
                     Log.Error("Cannot load project from '{0}'", location);
-                    await ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location));
+                    await ProjectLocationLoadingFailed.SafeInvoke(this, new ProjectLocationErrorEventArgs(location));
 
                     return false;
                 }
@@ -201,7 +223,7 @@ namespace Orc.ProjectManagement
 
                 if (error != null)
                 {
-                    await ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, error, validationContext));
+                    await ProjectLocationLoadingFailed.SafeInvoke(this, new ProjectLocationErrorEventArgs(location, error, validationContext));
 
                     return false;
                 }
@@ -225,7 +247,7 @@ namespace Orc.ProjectManagement
 
                 if (selectLoaded || _projects.Count > 1)
                 {
-                    await SelectProject(project);
+                    await SetCurrentProject(project);
                 }
 
                 await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
@@ -342,7 +364,7 @@ namespace Orc.ProjectManagement
                 _projects.Remove(valuePair);
             }
 
-            var selectedProject = SelectedProject;
+            var selectedProject = CurrentProject;
 
             if (selectedProject != null && Equals(selectedProject.Location, location))
             {
@@ -353,7 +375,7 @@ namespace Orc.ProjectManagement
                 }
                 else
                 {
-                    await SelectProject(lastSelected, false);
+                    await SetCurrentProject(lastSelected, false);
                 }
             }
 
@@ -367,7 +389,7 @@ namespace Orc.ProjectManagement
         private async Task ClearSelection()
         {
             // TODO: add events
-            SelectedProject = null;
+            CurrentProject = null;
         }
 
         private IProject GetLastSelected()
@@ -382,7 +404,7 @@ namespace Orc.ProjectManagement
             return projectToSelect;
         }
 
-        public async Task<bool> SelectProject(IProject project, bool rememberPrevious = true)
+        public async Task<bool> SetCurrentProject(IProject project, bool rememberPrevious = true)
         {
             if (project == null)
             {
@@ -391,11 +413,11 @@ namespace Orc.ProjectManagement
 
             var eventArgs = new ProjectCancelEventArgs(project);
 
-            await ProjectSelecting.SafeInvoke(this, eventArgs);
+            await ChangingCurrentProject.SafeInvoke(this, eventArgs);
 
             if (eventArgs.Cancel)
             {
-                await ProjectSelectionCanceled.SafeInvoke(this, new ProjectEventArgs(project));
+                await ChangingCurrentProjectCanceled.SafeInvoke(this, new ProjectEventArgs(project));
                 return false;
             }
 
@@ -404,14 +426,14 @@ namespace Orc.ProjectManagement
             try
             {
                 var location = project.Location;
-                var selectedProject = SelectedProject;
+                var selectedProject = CurrentProject;
 
                 if (rememberPrevious && selectedProject != null && !Equals(selectedProject.Location, location))
                 {
                     _selectionHistory.Push(location);
                 }
 
-                SelectedProject = project;
+                CurrentProject = project;
             }
             catch(Exception ex)
             {
@@ -420,11 +442,11 @@ namespace Orc.ProjectManagement
 
             if (exception != null)
             {
-                await ProjectSelectionFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, exception));
+                await ChangingCurrentProjectFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, exception));
                 return false;
             }
 
-            await ProjectSelected.SafeInvoke(this, new ProjectEventArgs(project));
+            await CurrentProjectChanged.SafeInvoke(this, new ProjectEventArgs(project));
 
             return true;
         }

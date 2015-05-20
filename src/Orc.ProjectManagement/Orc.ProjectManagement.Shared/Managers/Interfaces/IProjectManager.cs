@@ -15,21 +15,28 @@ namespace Orc.ProjectManagement
     public interface IProjectManager
     {
         #region Properties
-        [ObsoleteEx(ReplacementTypeOrMember = "SelectedProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        [ObsoleteEx(ReplacementTypeOrMember = "CurrentProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         IProject Project { get; }
 
         IEnumerable<IProject> Projects { get; }
 
-        [ObsoleteEx(ReplacementTypeOrMember = "SelectedProject.Location", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        [ObsoleteEx(ReplacementTypeOrMember = "CurrentProject.Location", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         string Location { get; }
 
-        IProject SelectedProject { get; }
+        IProject CurrentProject { get; }
         #endregion
 
         #region Methods
-        event AsyncEventHandler<ProjectLocationCancelEventArgs> ProjectLoading;
+        [ObsoleteEx(ReplacementTypeOrMember = "ProjectLocationLoading", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoading;
+        [ObsoleteEx(ReplacementTypeOrMember = "ProjectLocationLoadingFailed", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
+        [ObsoleteEx(ReplacementTypeOrMember = "ProjectLocationLoadingCanceled", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         event AsyncEventHandler<ProjectEventArgs> ProjectLoadingCanceled;
+
+        event AsyncEventHandler<ProjectLocationCancelEventArgs> ProjectLocationLoading;
+        event AsyncEventHandler<ProjectLocationErrorEventArgs> ProjectLocationLoadingFailed;
+        event AsyncEventHandler<ProjectLocationEventArgs> ProjectLocationLoadingCanceled;
         event AsyncEventHandler<ProjectEventArgs> ProjectLoaded;
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectSaving;
         event AsyncEventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
@@ -40,10 +47,10 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosing;
         event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
         event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
-        event AsyncEventHandler<ProjectCancelEventArgs> ProjectSelecting;
-        event AsyncEventHandler<ProjectEventArgs> ProjectSelected;
-        event AsyncEventHandler<ProjectEventArgs> ProjectSelectionCanceled;
-        event AsyncEventHandler<ProjectErrorEventArgs> ProjectSelectionFailed;
+        event AsyncEventHandler<ProjectCancelEventArgs> ChangingCurrentProject;
+        event AsyncEventHandler<ProjectEventArgs> CurrentProjectChanged;
+        event AsyncEventHandler<ProjectEventArgs> ChangingCurrentProjectCanceled;
+        event AsyncEventHandler<ProjectErrorEventArgs> ChangingCurrentProjectFailed;
         Task Initialize();
         Task Refresh();
         Task Refresh(IProject project);
@@ -52,7 +59,7 @@ namespace Orc.ProjectManagement
         Task<bool> Save(IProject project, string location);
         Task<bool> Close();
         Task<bool> Close(IProject project);
-        Task<bool> SelectProject(IProject project, bool rememberPrevious = true);
+        Task<bool> SetCurrentProject(IProject project, bool rememberPrevious = true);
         #endregion
     }
 }

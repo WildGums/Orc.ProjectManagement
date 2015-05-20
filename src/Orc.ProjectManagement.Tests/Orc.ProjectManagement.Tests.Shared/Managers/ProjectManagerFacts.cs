@@ -35,11 +35,11 @@ namespace Orc.ProjectManagement.Test.Managers
             {
                 var projectManager = GetProjectManager();
 
-                Assert.AreEqual(null, projectManager.SelectedProject);
+                Assert.AreEqual(null, projectManager.CurrentProject);
 
                 await projectManager.Load(newLocation);
 
-                Assert.AreEqual(newLocation, projectManager.SelectedProject.Location);
+                Assert.AreEqual(newLocation, projectManager.CurrentProject.Location);
             }
 
             [TestCase]
@@ -48,7 +48,7 @@ namespace Orc.ProjectManagement.Test.Managers
                 var projectManager = GetProjectManager();
 
                 var eventRaised = false;
-                projectManager.ProjectLoading += async (sender, e) => eventRaised = true;
+                projectManager.ProjectLocationLoading += async (sender, e) => eventRaised = true;
 
                 await projectManager.Load("dummyLocation");
 
@@ -56,12 +56,12 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectLoadingFailedEvent()
+            public async Task RaisesProjectLocationLoadingFailedEvent()
             {
                 var projectManager = GetProjectManager();
 
                 var eventRaised = false;
-                projectManager.ProjectLoadingFailed += async (sender, e) => eventRaised = true;
+                projectManager.ProjectLocationLoadingFailed += async (sender, e) => eventRaised = true;
 
                 await projectManager.Load("cannotload");
 
@@ -69,13 +69,13 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectLoadingCanceledEvent()
+            public async Task RaisesProjectLocationLoadingCanceledEvent()
             {
                 var projectManager = GetProjectManager();
 
                 var eventRaised = false;
-                projectManager.ProjectLoading += async (sender, e) => e.Cancel = true;
-                projectManager.ProjectLoadingCanceled += async (sender, e) => eventRaised = true;
+                projectManager.ProjectLocationLoading += async (sender, e) => e.Cancel = true;
+                projectManager.ProjectLocationLoadingCanceled += async (sender, e) => eventRaised = true;
 
                 await projectManager.Load("dummyLocation");
 
@@ -106,11 +106,11 @@ namespace Orc.ProjectManagement.Test.Managers
             {
                 var projectManager = GetProjectManager();
 
-                Assert.IsNull(projectManager.SelectedProject);
+                Assert.IsNull(projectManager.CurrentProject);
 
                 await projectManager.Refresh();
 
-                Assert.IsNull(projectManager.SelectedProject);
+                Assert.IsNull(projectManager.CurrentProject);
             }
 
             [TestCase]
@@ -141,11 +141,11 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 await projectManager.Load("dummyLocation");
 
-                Assert.AreEqual("dummyLocation", projectManager.SelectedProject.Location);
+                Assert.AreEqual("dummyLocation", projectManager.CurrentProject.Location);
 
                 await projectManager.Save(newLocation);
 
-                Assert.AreEqual(newLocation, projectManager.SelectedProject.Location);
+                Assert.AreEqual(newLocation, projectManager.CurrentProject.Location);
             }
 
             [TestCase]
@@ -191,11 +191,11 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 await projectManager.Load("dummyLocation");
 
-                Assert.IsNotNull(projectManager.SelectedProject);
+                Assert.IsNotNull(projectManager.CurrentProject);
 
                 await projectManager.Close();
 
-                Assert.IsNull(projectManager.SelectedProject);
+                Assert.IsNull(projectManager.CurrentProject);
             }
 
             [TestCase]
@@ -205,11 +205,11 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 await projectManager.Load("dummyLocation");
 
-                Assert.AreEqual("dummyLocation", projectManager.SelectedProject.Location);
+                Assert.AreEqual("dummyLocation", projectManager.CurrentProject.Location);
 
                 await projectManager.Close();
 
-                Assert.AreEqual(null, projectManager.SelectedProject);
+                Assert.AreEqual(null, projectManager.CurrentProject);
             }
 
             [TestCase]

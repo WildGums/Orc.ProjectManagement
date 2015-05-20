@@ -25,9 +25,9 @@ namespace Orc.ProjectManagement
 
             _projectManager = projectManager;
 
-            projectManager.ProjectLoading += OnProjectLoading;
-            projectManager.ProjectLoadingFailed += OnProjectLoadingFailed;
-            projectManager.ProjectLoadingCanceled += OnProjectLoadingCanceled;
+            projectManager.ProjectLocationLoading += OnProjectLocationLoading;
+            projectManager.ProjectLocationLoadingFailed += OnProjectLocationLoadingFailed;
+            projectManager.ProjectLocationLoadingCanceled += OnProjectLocationLoadingCanceled;
             projectManager.ProjectLoaded += OnProjectLoaded;
 
             projectManager.ProjectSaving += OnProjectSaving;
@@ -42,7 +42,12 @@ namespace Orc.ProjectManagement
             projectManager.ProjectUpdated += OnProjectUpdated;
 
             projectManager.ProjectRefreshRequired += OnProjectRefreshRequired;
-        }        
+
+            projectManager.ChangingCurrentProject += OnChangingCurrentProject;
+            projectManager.ChangingCurrentProjectCanceled += OnChangingCurrentProjectCanceled;
+            projectManager.ChangingCurrentProjectFailed += OnChangingCurrentProjectFailed;
+            projectManager.CurrentProjectChanged += OnCurrentProjectChanged;
+        }
         #endregion
 
         #region Properties
@@ -53,7 +58,12 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Methods
-        protected virtual async Task OnLoading(ProjectLocationCancelEventArgs e)
+        [ObsoleteEx(ReplacementTypeOrMember = "OnLoadingFromLocation", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        protected virtual async Task OnLoading(ProjectCancelEventArgs e)
+        {
+        }
+
+        protected virtual async Task OnLoadingFromLocation(ProjectLocationCancelEventArgs e)
         {
         }
 
@@ -105,17 +115,33 @@ namespace Orc.ProjectManagement
         {
         }
 
-        private async Task OnProjectLoading(object sender, ProjectLocationCancelEventArgs e)
+        protected virtual async Task OnCurrentProjectChanged(ProjectEventArgs e)
         {
-            await OnLoading(e);
         }
 
-        private async Task OnProjectLoadingFailed(object sender, ProjectErrorEventArgs e)
+        protected virtual async Task OnChangingCurrentProjectFailed(IProject project, Exception exception)
+        {
+        }
+
+        protected virtual async Task OnChangingCurrentProjectCanceled(IProject project)
+        {
+        }
+
+        protected virtual async Task OnChangingCurrentProject(IProject project)
+        {
+        }
+
+        private async Task OnProjectLocationLoading(object sender, ProjectLocationCancelEventArgs e)
+        {
+            await OnLoadingFromLocation(e);
+        }
+
+        private async Task OnProjectLocationLoadingFailed(object sender, ProjectLocationErrorEventArgs e)
         {
             await OnLoadingFailed(e.Location, e.Exception, e.ValidationContext);
         }
 
-        protected async Task OnProjectLoadingCanceled(object sender, ProjectEventArgs e)
+        protected async Task OnProjectLocationLoadingCanceled(object sender, ProjectLocationEventArgs e)
         {
             await OnLoadingCanceled(e.Location);
         }
@@ -168,6 +194,26 @@ namespace Orc.ProjectManagement
         private void OnProjectRefreshRequired(object sender, EventArgs e)
         {
             OnProjectRefreshRequired();
+        }
+
+        private async Task OnCurrentProjectChanged(object sender, ProjectEventArgs e)
+        {
+            await OnCurrentProjectChanged(e);
+        }
+
+        private async Task OnChangingCurrentProjectFailed(object sender, ProjectErrorEventArgs e)
+        {
+            await OnChangingCurrentProjectFailed(e.Project, e.Exception);
+        }
+
+        private async Task OnChangingCurrentProjectCanceled(object sender, ProjectEventArgs e)
+        {
+            await OnChangingCurrentProjectCanceled(e.Project);
+        }
+
+        private async Task OnChangingCurrentProject(object sender, ProjectCancelEventArgs e)
+        {
+            await OnChangingCurrentProject(e.Project);
         }
         #endregion
     }

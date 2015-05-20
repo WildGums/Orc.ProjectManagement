@@ -8,6 +8,7 @@
 namespace Orc.ProjectManagement
 {
     using System.ComponentModel;
+    using Catel;
 
     public class ProjectCancelEventArgs : CancelEventArgs
     {
@@ -24,7 +25,7 @@ namespace Orc.ProjectManagement
             RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         public string Location
         {
-            get { return Project.Location; }
+            get { return Project == null ? string.Empty : Project.Location; }
         }
 
         public IProject Project { get; private set; }
