@@ -238,16 +238,7 @@ namespace Orc.ProjectManagement
 
                     _projects[key] = project;
 
-                    if (oldProject != null)
-                    {
-                        HandleProjectUpdate(oldProject, project);
-                    }
-                }
-                
-
-                if (selectLoaded || _projects.Count > 1)
-                {
-                    await SetCurrentProject(project);
+                    await HandleProjectUpdate(oldProject, project, selectLoaded);
                 }
 
                 await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
@@ -451,7 +442,7 @@ namespace Orc.ProjectManagement
             return true;
         }
 
-        private void HandleProjectUpdate(IProject oldProject, IProject newProject)
+        private async Task HandleProjectUpdate(IProject oldProject, IProject newProject, bool selectNewProject)
         {
             if (_projectRefresher != null)
             {
@@ -487,6 +478,11 @@ namespace Orc.ProjectManagement
                 catch (Exception ex)
                 {
                     Log.Warning(ex, "Failed to subscribe to project refresher");
+                }
+
+                if (selectNewProject || _projects.Count > 1)
+                {
+                    await SetCurrentProject(newProject);
                 }
             }
 

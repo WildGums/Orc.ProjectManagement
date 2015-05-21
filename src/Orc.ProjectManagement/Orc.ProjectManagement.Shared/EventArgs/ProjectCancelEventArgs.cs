@@ -8,7 +8,6 @@
 namespace Orc.ProjectManagement
 {
     using System.ComponentModel;
-    using Catel;
 
     public class ProjectCancelEventArgs : CancelEventArgs
     {
