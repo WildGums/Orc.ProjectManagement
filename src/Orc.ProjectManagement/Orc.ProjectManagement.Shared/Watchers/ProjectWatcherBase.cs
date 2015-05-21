@@ -141,7 +141,7 @@ namespace Orc.ProjectManagement
             await OnLoadingFailed(e.Location, e.Exception, e.ValidationContext);
         }
 
-        protected async Task OnProjectLocationLoadingCanceled(object sender, ProjectLocationEventArgs e)
+        private async Task OnProjectLocationLoadingCanceled(object sender, ProjectLocationEventArgs e)
         {
             await OnLoadingCanceled(e.Location);
         }
