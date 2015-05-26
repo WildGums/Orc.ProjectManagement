@@ -117,13 +117,14 @@ namespace Orc.ProjectManagement
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosing;
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
-        public event AsyncEventHandler<ProjectCancelEventArgs> ChangingCurrentProject;
+        public event AsyncEventHandler<ProjectUpdatedCancelEventArgs> CurrentProjectChanging;
         public event AsyncEventHandler<ProjectUpdatedEventArgs> CurrentProjectChanged;
         public event AsyncEventHandler<ProjectEventArgs> ChangingCurrentProjectCanceled;
         public event AsyncEventHandler<ProjectErrorEventArgs> ChangingCurrentProjectFailed;
         #endregion
 
         #region IProjectManager Members
+        // TODO: consider how to remove this method
         public async Task Initialize()
         {
             var location = _initialLocation;
@@ -155,7 +156,7 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Refreshing project from '{0}'", location);
 
-            await Load(location);
+            await Load(location, false);
 
             Log.Info("Refreshed project from '{0}'", location);
         }
@@ -233,9 +234,11 @@ namespace Orc.ProjectManagement
                 {
                     _projects[project.Location] = project;
 
-                    if (updateCurrent)
+                    var currentProject = CurrentProject;
+
+                    if (updateCurrent && currentProject != null)
                     {
-                        await Close(project);
+                        await Close(currentProject);
                     }
 
                     try
@@ -254,16 +257,11 @@ namespace Orc.ProjectManagement
                         Log.Warning(ex, "Failed to subscribe to project refresher");
                     }
 
-                    var currentProject = CurrentProject;
-
-                    if (updateCurrent || _projects.Count == 1)
-                    {
-                        await SetCurrentProject(project);
-                    }
+                    await SetCurrentProject(project);
 
                     if (updateCurrent && !Equals(currentProject, CurrentProject))
                     {
-                        ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(currentProject, CurrentProject));
+                        ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(currentProject, currentProject));
                     }
                 }
 
@@ -398,19 +396,13 @@ namespace Orc.ProjectManagement
                 projectRefresher.Updated -= OnProjectRefresherUpdated;
             }
 
-            var selectedProject = CurrentProject;
+            var currentProject = CurrentProject;
 
-            if (selectedProject != null && Equals(selectedProject.Location, location))
+            if (currentProject != null && Equals(currentProject.Location, location))
             {
                 var lastSelected = GetLastSelected();
-                if (lastSelected == null)
-                {
-                    await ClearSelection();
-                }
-                else
-                {
-                    await SetCurrentProject(lastSelected, false);
-                }
+
+                await SetCurrentProject(lastSelected, false);
             }
 
             await ProjectClosed.SafeInvoke(this, new ProjectEventArgs(project));
@@ -418,12 +410,6 @@ namespace Orc.ProjectManagement
             Log.Info("Closed project '{0}'", project);
 
             return true;
-        }
-
-        private async Task ClearSelection()
-        {
-            // TODO: add events
-            CurrentProject = null;
         }
 
         private IProject GetLastSelected()
@@ -440,16 +426,16 @@ namespace Orc.ProjectManagement
 
         public async Task<bool> SetCurrentProject(IProject project, bool rememberPrevious = true)
         {
-            if (project == null)
+            var currentProject = CurrentProject;
+
+            if (project == null || Equals(currentProject, project))
             {
                 return false;
             }
 
-            var currentProject = CurrentProject;
+            var eventArgs = new ProjectUpdatedCancelEventArgs(currentProject, project);
 
-            var eventArgs = new ProjectCancelEventArgs(project);
-
-            await ChangingCurrentProject.SafeInvoke(this, eventArgs);
+            await CurrentProjectChanging.SafeInvoke(this, eventArgs);
 
             if (eventArgs.Cancel)
             {
@@ -480,6 +466,7 @@ namespace Orc.ProjectManagement
                 await ChangingCurrentProjectFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, exception));
                 return false;
             }
+
 
             await CurrentProjectChanged.SafeInvoke(this, new ProjectUpdatedEventArgs(currentProject, project));
 

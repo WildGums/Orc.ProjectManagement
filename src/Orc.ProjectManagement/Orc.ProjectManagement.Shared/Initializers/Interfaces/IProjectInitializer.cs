@@ -7,8 +7,9 @@
 
 namespace Orc.ProjectManagement
 {
+    // TODO: consider how to remove this interface
     public interface IProjectInitializer
-    {
+    {        
         string GetInitialLocation();
     }
 }

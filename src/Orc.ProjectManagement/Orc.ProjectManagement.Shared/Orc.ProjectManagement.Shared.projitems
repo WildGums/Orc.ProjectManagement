@@ -16,6 +16,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectLocationCancelEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectLocationErrorEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectLocationEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectUpdatedCancelEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectUpdatedEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Exceptions\InvalidProjectException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\IProjectManagerExtensions.cs" />
