@@ -127,13 +127,13 @@ namespace Orc.ProjectManagement
         // TODO: consider how to remove this method
         public async Task Initialize()
         {
-            var location = _initialLocation;
+           /* var location = _initialLocation;
             if (!string.IsNullOrEmpty(location))
             {
                 Log.Debug("Initial location is '{0}', loading initial project", location);
 
                 await Load(location);
-            }
+            }*/
         }
 
         public async Task Refresh()
