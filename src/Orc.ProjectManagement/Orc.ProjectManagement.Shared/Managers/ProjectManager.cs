@@ -28,8 +28,8 @@ namespace Orc.ProjectManagement
         private bool _isLoading;
         private bool _isSaving;
         private Stack<string> _selectionHistory;
-        private IProjectRefresher _projectRefresher;
         private IDictionary<string, IProject> _projects;
+        private IDictionary<string, IProjectRefresher> _projectRefreshers;
         #endregion
 
         #region Constructors
@@ -45,6 +45,7 @@ namespace Orc.ProjectManagement
             _projectSerializerSelector = projectSerializerSelector;
 
             _projects = new ConcurrentDictionary<string, IProject>();
+            _projectRefreshers = new ConcurrentDictionary<string, IProjectRefresher>();
             _selectionHistory = new Stack<string>();
 
             var location = projectInitializer.GetInitialLocation();
@@ -117,7 +118,7 @@ namespace Orc.ProjectManagement
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
         public event AsyncEventHandler<ProjectCancelEventArgs> ChangingCurrentProject;
-        public event AsyncEventHandler<ProjectEventArgs> CurrentProjectChanged;
+        public event AsyncEventHandler<ProjectUpdatedEventArgs> CurrentProjectChanged;
         public event AsyncEventHandler<ProjectEventArgs> ChangingCurrentProjectCanceled;
         public event AsyncEventHandler<ProjectErrorEventArgs> ChangingCurrentProjectFailed;
         #endregion
@@ -159,7 +160,7 @@ namespace Orc.ProjectManagement
             Log.Info("Refreshed project from '{0}'", location);
         }
 
-        public async Task<bool> Load(string location, bool selectLoaded = true)
+        public async Task<bool> Load(string location, bool updateCurrent = true)
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
@@ -230,15 +231,40 @@ namespace Orc.ProjectManagement
 
                 if (project != null)
                 {
-                    IProject oldProject;
+                    _projects[project.Location] = project;
 
-                    var key = project.Location;
+                    if (updateCurrent)
+                    {
+                        await Close(project);
+                    }
 
-                    _projects.TryGetValue(key, out oldProject);
+                    try
+                    {
+                        var projectRefresher = _projectRefresherSelector.GetProjectRefresher(project.Location);
+                        if (projectRefresher != null)
+                        {
+                            Log.Debug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
 
-                    _projects[key] = project;
+                            projectRefresher.Updated += OnProjectRefresherUpdated;
+                            projectRefresher.Subscribe();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, "Failed to subscribe to project refresher");
+                    }
 
-                    await HandleProjectUpdate(oldProject, project, selectLoaded);
+                    var currentProject = CurrentProject;
+
+                    if (updateCurrent || _projects.Count == 1)
+                    {
+                        await SetCurrentProject(project);
+                    }
+
+                    if (updateCurrent && !Equals(currentProject, CurrentProject))
+                    {
+                        ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(currentProject, CurrentProject));
+                    }
                 }
 
                 await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
@@ -351,8 +377,25 @@ namespace Orc.ProjectManagement
 
             if (_projects.ContainsKey(location))
             {
-                var valuePair = _projects.First(x => Equals(x.Key, location));
-                _projects.Remove(valuePair);
+                _projects.Remove(location);
+            }
+
+            IProjectRefresher projectRefresher;
+
+            if (_projectRefreshers.TryGetValue(project.Location, out projectRefresher) && projectRefresher != null)
+            {
+                try
+                {
+                    Log.Debug("Unsubscribing from project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
+
+                    projectRefresher.Unsubscribe();
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed to unsubscribe from project refresher");
+                }
+
+                projectRefresher.Updated -= OnProjectRefresherUpdated;
             }
 
             var selectedProject = CurrentProject;
@@ -402,6 +445,8 @@ namespace Orc.ProjectManagement
                 return false;
             }
 
+            var currentProject = CurrentProject;
+
             var eventArgs = new ProjectCancelEventArgs(project);
 
             await ChangingCurrentProject.SafeInvoke(this, eventArgs);
@@ -417,9 +462,8 @@ namespace Orc.ProjectManagement
             try
             {
                 var location = project.Location;
-                var selectedProject = CurrentProject;
 
-                if (rememberPrevious && selectedProject != null && !Equals(selectedProject.Location, location))
+                if (rememberPrevious && currentProject != null && !Equals(currentProject.Location, location))
                 {
                     _selectionHistory.Push(location);
                 }
@@ -437,56 +481,9 @@ namespace Orc.ProjectManagement
                 return false;
             }
 
-            await CurrentProjectChanged.SafeInvoke(this, new ProjectEventArgs(project));
+            await CurrentProjectChanged.SafeInvoke(this, new ProjectUpdatedEventArgs(currentProject, project));
 
             return true;
-        }
-
-        private async Task HandleProjectUpdate(IProject oldProject, IProject newProject, bool selectNewProject)
-        {
-            if (_projectRefresher != null)
-            {
-                try
-                {
-                    Log.Debug("Unsubscribing from project refresher '{0}'", _projectRefresher.GetType().GetSafeFullName());
-
-                    _projectRefresher.Unsubscribe();
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Failed to unsubscribe from project refresher");
-                }
-
-                _projectRefresher.Updated -= OnProjectRefresherUpdated;
-                _projectRefresher = null;
-            }
-
-            if (newProject != null)
-            {
-                try
-                {
-                    var projectRefresher = _projectRefresherSelector.GetProjectRefresher(newProject.Location);
-                    if (projectRefresher != null)
-                    {
-                        Log.Debug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
-
-                        _projectRefresher = projectRefresher;
-                        _projectRefresher.Updated += OnProjectRefresherUpdated;
-                        _projectRefresher.Subscribe();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Failed to subscribe to project refresher");
-                }
-
-                if (selectNewProject || _projects.Count > 1)
-                {
-                    await SetCurrentProject(newProject);
-                }
-            }
-
-            ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(oldProject, newProject));
         }
 
         private void OnProjectRefresherUpdated(object sender, EventArgs e)

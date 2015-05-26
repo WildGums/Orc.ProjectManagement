@@ -48,13 +48,13 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
         event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
         event AsyncEventHandler<ProjectCancelEventArgs> ChangingCurrentProject;
-        event AsyncEventHandler<ProjectEventArgs> CurrentProjectChanged;
+        event AsyncEventHandler<ProjectUpdatedEventArgs> CurrentProjectChanged;
         event AsyncEventHandler<ProjectEventArgs> ChangingCurrentProjectCanceled;
         event AsyncEventHandler<ProjectErrorEventArgs> ChangingCurrentProjectFailed;
         Task Initialize();
         Task Refresh();
         Task Refresh(IProject project);
-        Task<bool> Load(string location, bool selectLoaded = true);
+        Task<bool> Load(string location, bool UpdateCurrent = true);
         Task<bool> Save(string location = null);
         Task<bool> Save(IProject project, string location);
         Task<bool> Close();

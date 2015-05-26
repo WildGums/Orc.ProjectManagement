@@ -115,7 +115,7 @@ namespace Orc.ProjectManagement
         {
         }
 
-        protected virtual async Task OnCurrentProjectChanged(ProjectEventArgs e)
+        protected virtual async Task OnCurrentProjectChanged(IProject oldProject, IProject newProject)
         {
         }
 
@@ -196,9 +196,9 @@ namespace Orc.ProjectManagement
             OnProjectRefreshRequired();
         }
 
-        private async Task OnCurrentProjectChanged(object sender, ProjectEventArgs e)
+        private async Task OnCurrentProjectChanged(object sender, ProjectUpdatedEventArgs e)
         {
-            await OnCurrentProjectChanged(e);
+            await OnCurrentProjectChanged(e.OldProject, e.NewProject);
         }
 
         private async Task OnChangingCurrentProjectFailed(object sender, ProjectErrorEventArgs e)
