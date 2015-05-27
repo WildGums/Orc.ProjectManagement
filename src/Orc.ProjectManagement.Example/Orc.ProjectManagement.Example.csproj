@@ -105,7 +105,6 @@
     <Compile Include="Logging\TextBoxLogListener.cs" />
     <Compile Include="Models\PersonProject.cs" />
     <Compile Include="ModuleInitializer.cs" />
-    <Compile Include="ProjectManagement\Initializers\PersonProjectInitializer.cs" />
     <Compile Include="ProjectManagement\PersonProjectReader.cs" />
     <Compile Include="ProjectManagement\PersonProjectWriter.cs" />
     <Compile Include="ProjectManagement\Watchers\RefreshProjectWatcher.cs" />

@@ -7,7 +7,7 @@
 
 namespace Orc.ProjectManagement
 {
-    // TODO: consider how to remove this interface
+    [ObsoleteEx(RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
     public interface IProjectInitializer
     {        
         string GetInitialLocation();

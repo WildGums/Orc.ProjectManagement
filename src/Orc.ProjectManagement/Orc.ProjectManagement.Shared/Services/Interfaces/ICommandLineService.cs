@@ -7,6 +7,7 @@
 
 namespace Orc.ProjectManagement.Services
 {
+    [ObsoleteEx(Message = "Use Catel.Services.IStartUpInfoProvider instead", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
     public interface ICommandLineService
     {
         /// <summary>
