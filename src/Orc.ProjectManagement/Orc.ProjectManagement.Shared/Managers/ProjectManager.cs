@@ -245,15 +245,15 @@ namespace Orc.ProjectManagement
                         Log.Warning(ex, "Failed to subscribe to project refresher");
                     }
 
+                    await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
+
                     await SetCurrentProject(project);
 
                     if (updateCurrent && !Equals(currentProject, CurrentProject))
                     {
-                        ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(currentProject, currentProject));
+                        ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(currentProject, CurrentProject));
                     }
                 }
-
-                await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
 
                 Log.Info("Loaded project from '{0}'", location);
             }
