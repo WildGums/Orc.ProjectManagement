@@ -58,12 +58,12 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Methods
-        [ObsoleteEx(ReplacementTypeOrMember = "OnLoadingFromLocation", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        [ObsoleteEx(ReplacementTypeOrMember = "OnLoading(ProjectLocationCancelEventArgs e)", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         protected virtual async Task OnLoading(ProjectCancelEventArgs e)
         {
         }
 
-        protected virtual async Task OnLoadingFromLocation(ProjectLocationCancelEventArgs e)
+        protected virtual async Task OnLoading(ProjectLocationCancelEventArgs e)
         {
         }
 
@@ -133,7 +133,7 @@ namespace Orc.ProjectManagement
 
         private async Task OnProjectLocationLoading(object sender, ProjectLocationCancelEventArgs e)
         {
-            await OnLoadingFromLocation(e);
+            await OnLoading(e);
         }
 
         private async Task OnProjectLocationLoadingFailed(object sender, ProjectLocationErrorEventArgs e)

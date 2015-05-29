@@ -17,7 +17,7 @@ namespace Orc.ProjectManagement
         {
             Argument.IsNotNull(() => projectManager);
 
-            return (TProject) projectManager.Project;
+            return (TProject)projectManager.CurrentProject;
         }
         #endregion
     }
