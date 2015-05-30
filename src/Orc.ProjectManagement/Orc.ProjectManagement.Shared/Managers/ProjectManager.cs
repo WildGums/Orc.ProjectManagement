@@ -359,6 +359,8 @@ namespace Orc.ProjectManagement
                 return false;
             }
 
+            await SetCurrentProject(null, false);
+
             var location = project.Location;
 
             if (_projects.ContainsKey(location))
@@ -416,7 +418,10 @@ namespace Orc.ProjectManagement
         {
             var currentProject = CurrentProject;
 
-            if (project == null || Equals(currentProject, project))
+            var currentProjectLocation = currentProject == null ? null : currentProject.Location;
+            var newProjectLocation = project == null ? null : project.Location;
+
+            if (string.Equals(currentProjectLocation, newProjectLocation))
             {
                 return false;
             }
@@ -435,11 +440,9 @@ namespace Orc.ProjectManagement
 
             try
             {
-                var location = project.Location;
-
-                if (rememberPrevious && currentProject != null && !Equals(currentProject.Location, location))
+                if (rememberPrevious && !string.IsNullOrWhiteSpace(currentProjectLocation))
                 {
-                    _selectionHistory.Push(location);
+                    _selectionHistory.Push(currentProjectLocation);
                 }
 
                 CurrentProject = project;
