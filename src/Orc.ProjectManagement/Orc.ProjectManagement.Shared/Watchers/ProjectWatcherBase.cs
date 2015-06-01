@@ -43,10 +43,10 @@ namespace Orc.ProjectManagement
 
             projectManager.ProjectRefreshRequired += OnProjectRefreshRequired;
 
-            projectManager.CurrentProjectChanging += OnCurrentProjectChanging;
-            projectManager.ChangingCurrentProjectCanceled += OnCurrentProjectChangingCanceled;
-            projectManager.ChangingCurrentProjectFailed += OnCurrentProjectChangingFailed;
-            projectManager.CurrentProjectChanged += OnCurrentProjectChanged;
+            projectManager.ActiveProjectChanging += OnActiveProjectChanging;
+            projectManager.ActiveProjectChangingCanceled += OnActiveProjectChangingCanceled;
+            projectManager.ActiveProjectChangingFailed += OnActiveProjectChangingFailed;
+            projectManager.ActiveProjectChanged += OnActiveProjectChanged;
         }
         #endregion
 
@@ -115,19 +115,19 @@ namespace Orc.ProjectManagement
         {
         }
 
-        protected virtual async Task OnCurrentProjectChanged(IProject oldProject, IProject newProject)
+        protected virtual async Task OnActiveProjectChanged(IProject oldProject, IProject newProject)
         {
         }
 
-        protected virtual async Task OnCurrentProjectChangingFailed(IProject project, Exception exception)
+        protected virtual async Task OnActiveProjectChangingFailed(IProject project, Exception exception)
         {
         }
 
-        protected virtual async Task OnCurrentProjectChangingCanceled(IProject project)
+        protected virtual async Task OnActiveProjectChangingCanceled(IProject project)
         {
         }
 
-        protected virtual async Task OnCurrentProjectChanging(ProjectUpdatedCancelEventArgs e)
+        protected virtual async Task OnActiveProjectChanging(ProjectUpdatedCancelEventArgs e)
         {
         }
 
@@ -196,24 +196,24 @@ namespace Orc.ProjectManagement
             OnProjectRefreshRequired();
         }
 
-        private async Task OnCurrentProjectChanged(object sender, ProjectUpdatedEventArgs e)
+        private async Task OnActiveProjectChanged(object sender, ProjectUpdatedEventArgs e)
         {
-            await OnCurrentProjectChanged(e.OldProject, e.NewProject);
+            await OnActiveProjectChanged(e.OldProject, e.NewProject);
         }
 
-        private async Task OnCurrentProjectChangingFailed(object sender, ProjectErrorEventArgs e)
+        private async Task OnActiveProjectChangingFailed(object sender, ProjectErrorEventArgs e)
         {
-            await OnCurrentProjectChangingFailed(e.Project, e.Exception);
+            await OnActiveProjectChangingFailed(e.Project, e.Exception);
         }
 
-        private async Task OnCurrentProjectChangingCanceled(object sender, ProjectEventArgs e)
+        private async Task OnActiveProjectChangingCanceled(object sender, ProjectEventArgs e)
         {
-            await OnCurrentProjectChangingCanceled(e.Project);
+            await OnActiveProjectChangingCanceled(e.Project);
         }
 
-        private async Task OnCurrentProjectChanging(object sender, ProjectUpdatedCancelEventArgs e)
+        private async Task OnActiveProjectChanging(object sender, ProjectUpdatedCancelEventArgs e)
         {
-            await OnCurrentProjectChanging(e);
+            await OnActiveProjectChanging(e);
         }
         #endregion
     }

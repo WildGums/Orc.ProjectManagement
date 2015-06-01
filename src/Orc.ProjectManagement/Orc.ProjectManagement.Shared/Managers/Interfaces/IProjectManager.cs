@@ -15,15 +15,15 @@ namespace Orc.ProjectManagement
     public interface IProjectManager
     {
         #region Properties
-        [ObsoleteEx(ReplacementTypeOrMember = "CurrentProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        [ObsoleteEx(ReplacementTypeOrMember = "ActiveProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         IProject Project { get; }
 
         IEnumerable<IProject> Projects { get; }
 
-        [ObsoleteEx(ReplacementTypeOrMember = "CurrentProject.Location", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        [ObsoleteEx(ReplacementTypeOrMember = "ActiveProject.Location", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         string Location { get; }
 
-        IProject CurrentProject { get; }
+        IProject ActiveProject { get; }
         #endregion
 
         #region Methods
@@ -47,10 +47,10 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosing;
         event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
         event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
-        event AsyncEventHandler<ProjectUpdatedCancelEventArgs> CurrentProjectChanging;
-        event AsyncEventHandler<ProjectUpdatedEventArgs> CurrentProjectChanged;
-        event AsyncEventHandler<ProjectEventArgs> ChangingCurrentProjectCanceled;
-        event AsyncEventHandler<ProjectErrorEventArgs> ChangingCurrentProjectFailed;
+        event AsyncEventHandler<ProjectUpdatedCancelEventArgs> ActiveProjectChanging;
+        event AsyncEventHandler<ProjectUpdatedEventArgs> ActiveProjectChanged;
+        event AsyncEventHandler<ProjectEventArgs> ActiveProjectChangingCanceled;
+        event AsyncEventHandler<ProjectErrorEventArgs> ActiveProjectChangingFailed;
         Task Initialize();
         Task Refresh();
         Task Refresh(IProject project);
@@ -59,7 +59,7 @@ namespace Orc.ProjectManagement
         Task<bool> Save(IProject project, string location);
         Task<bool> Close();
         Task<bool> Close(IProject project);
-        Task<bool> SetCurrentProject(IProject project);
+        Task<bool> SetActiveProject(IProject project);
         #endregion
     }
 }

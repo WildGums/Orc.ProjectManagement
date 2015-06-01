@@ -58,22 +58,22 @@ namespace Orc.ProjectManagement
             get { return _projects.Values; }
         }
 
-        [ObsoleteEx(Message = "Use CurrentProject.Location instead", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        [ObsoleteEx(Message = "Use ActiveProject.Location instead", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         public string Location {
             get
             {
-                var currentProject = CurrentProject;
-                return currentProject == null ? string.Empty : currentProject.Location;
+                var activeProject = ActiveProject;
+                return activeProject == null ? string.Empty : activeProject.Location;
             }
         }
 
-        [ObsoleteEx(ReplacementTypeOrMember = "CurrentProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        [ObsoleteEx(ReplacementTypeOrMember = "ActiveProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         public IProject Project
         {
-            get { return CurrentProject; }
+            get { return ActiveProject; }
         }
 
-        public IProject CurrentProject { get; private set; }
+        public IProject ActiveProject { get; private set; }
         #endregion
 
         #region Events
@@ -115,10 +115,10 @@ namespace Orc.ProjectManagement
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosing;
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
-        public event AsyncEventHandler<ProjectUpdatedCancelEventArgs> CurrentProjectChanging;
-        public event AsyncEventHandler<ProjectUpdatedEventArgs> CurrentProjectChanged;
-        public event AsyncEventHandler<ProjectEventArgs> ChangingCurrentProjectCanceled;
-        public event AsyncEventHandler<ProjectErrorEventArgs> ChangingCurrentProjectFailed;
+        public event AsyncEventHandler<ProjectUpdatedCancelEventArgs> ActiveProjectChanging;
+        public event AsyncEventHandler<ProjectUpdatedEventArgs> ActiveProjectChanged;
+        public event AsyncEventHandler<ProjectEventArgs> ActiveProjectChangingCanceled;
+        public event AsyncEventHandler<ProjectErrorEventArgs> ActiveProjectChangingFailed;
         #endregion
 
         #region IProjectManager Members
@@ -133,7 +133,7 @@ namespace Orc.ProjectManagement
 
         public async Task Refresh()
         {
-            var project = CurrentProject;
+            var project = ActiveProject;
 
             if (project == null)
             {
@@ -149,20 +149,20 @@ namespace Orc.ProjectManagement
 
             var location = project.Location;
 
-            var currrentProjectLocation = CurrentProject == null ? null : CurrentProject.Location;
+            var currrentProjectLocation = ActiveProject == null ? null : ActiveProject.Location;
 
             Log.Debug("Refreshing project from '{0}'", location);
 
             if (string.Equals(currrentProjectLocation, location))
             {
-                await SetCurrentProject(null);
+                await SetActiveProject(null);
             }
 
             await Load(location, false);
 
             if (string.Equals(currrentProjectLocation, location))
             {
-                await SetCurrentProject(project);
+                await SetActiveProject(project);
             }
 
             Log.Info("Refreshed project from '{0}'", location);
@@ -242,11 +242,11 @@ namespace Orc.ProjectManagement
                     var projectLocation = project.Location;
                     _projects[projectLocation] = project;
 
-                    var currentProject = CurrentProject;
+                    var activeProject = ActiveProject;
 
-                    if (updateCurrent && currentProject != null)
+                    if (updateCurrent && activeProject != null)
                     {
-                        await Close(currentProject);
+                        await Close(activeProject);
                     }
 
                     IProjectRefresher projectRefresher;
@@ -278,11 +278,11 @@ namespace Orc.ProjectManagement
                     
                     await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
 
-                    await SetCurrentProject(project);
+                    await SetActiveProject(project);
 
-                    if (updateCurrent && !Equals(currentProject, CurrentProject))
+                    if (updateCurrent && !Equals(activeProject, ActiveProject))
                     {
-                        ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(currentProject, CurrentProject));
+                        ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, ActiveProject));
                     }
                 }
 
@@ -294,7 +294,7 @@ namespace Orc.ProjectManagement
 
         public async Task<bool> Save(string location = null)
         {
-            var project = CurrentProject;
+            var project = ActiveProject;
             if (project == null)
             {
                 Log.Error("Cannot save empty project");
@@ -365,7 +365,7 @@ namespace Orc.ProjectManagement
 
         public async Task<bool> Close()
         {
-            var project = CurrentProject;
+            var project = ActiveProject;
             if (project == null)
             {
                 return false;
@@ -390,7 +390,7 @@ namespace Orc.ProjectManagement
                 return false;
             }
 
-            await SetCurrentProject(null);
+            await SetActiveProject(null);
 
             var location = project.Location;
 
@@ -419,7 +419,7 @@ namespace Orc.ProjectManagement
 
             var lastAcive = GetLastActiveProject();
 
-            await SetCurrentProject(lastAcive);
+            await SetActiveProject(lastAcive);
 
             await ProjectClosed.SafeInvoke(this, new ProjectEventArgs(project));
 
@@ -440,25 +440,25 @@ namespace Orc.ProjectManagement
             return projectToActivate;
         }
 
-        public async Task<bool> SetCurrentProject(IProject project)
+        public async Task<bool> SetActiveProject(IProject project)
         {
-            var currentProject = CurrentProject;
+            var activeProject = ActiveProject;
 
-            var currentProjectLocation = currentProject == null ? null : currentProject.Location;
+            var activeProjectLocation = activeProject == null ? null : activeProject.Location;
             var newProjectLocation = project == null ? null : project.Location;
 
-            if (string.Equals(currentProjectLocation, newProjectLocation))
+            if (string.Equals(activeProjectLocation, newProjectLocation))
             {
                 return false;
             }
 
-            var eventArgs = new ProjectUpdatedCancelEventArgs(currentProject, project);
+            var eventArgs = new ProjectUpdatedCancelEventArgs(activeProject, project);
 
-            await CurrentProjectChanging.SafeInvoke(this, eventArgs);
+            await ActiveProjectChanging.SafeInvoke(this, eventArgs);
 
             if (eventArgs.Cancel)
             {
-                await ChangingCurrentProjectCanceled.SafeInvoke(this, new ProjectEventArgs(project));
+                await ActiveProjectChangingCanceled.SafeInvoke(this, new ProjectEventArgs(project));
                 return false;
             }
 
@@ -471,7 +471,7 @@ namespace Orc.ProjectManagement
                     _activationHistory.Push(newProjectLocation);
                 }
 
-                CurrentProject = project;
+                ActiveProject = project;
             }
             catch(Exception ex)
             {
@@ -480,12 +480,12 @@ namespace Orc.ProjectManagement
 
             if (exception != null)
             {
-                await ChangingCurrentProjectFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, exception));
+                await ActiveProjectChangingFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, exception));
                 return false;
             }
 
 
-            await CurrentProjectChanged.SafeInvoke(this, new ProjectUpdatedEventArgs(currentProject, project));
+            await ActiveProjectChanged.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, project));
 
             return true;
         }
