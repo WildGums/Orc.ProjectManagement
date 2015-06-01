@@ -26,7 +26,7 @@ namespace Orc.ProjectManagement
         private readonly IProjectValidator _projectValidator;
         private bool _isLoading;
         private bool _isSaving;
-        private Stack<string> _selectionHistory;
+        private Stack<string> _activationHistory;
         private IDictionary<string, IProject> _projects;
         private IDictionary<string, IProjectRefresher> _projectRefreshers;
         #endregion
@@ -44,7 +44,7 @@ namespace Orc.ProjectManagement
 
             _projects = new ConcurrentDictionary<string, IProject>();
             _projectRefreshers = new ConcurrentDictionary<string, IProjectRefresher>();
-            _selectionHistory = new Stack<string>();
+            _activationHistory = new Stack<string>();
         }
         #endregion
 
@@ -54,16 +54,16 @@ namespace Orc.ProjectManagement
             get { return _projects.Values; }
         }
 
-        [ObsoleteEx(Message = "Use SelectedProject.Location instead", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        [ObsoleteEx(Message = "Use CurrentProject.Location instead", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         public string Location {
             get
             {
-                var selectedProject = CurrentProject;
-                return selectedProject == null ? string.Empty : selectedProject.Location;
+                var currentProject = CurrentProject;
+                return currentProject == null ? string.Empty : currentProject.Location;
             }
         }
 
-        [ObsoleteEx(ReplacementTypeOrMember = "SelectedProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        [ObsoleteEx(ReplacementTypeOrMember = "CurrentProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         public IProject Project
         {
             get { return CurrentProject; }
@@ -386,14 +386,9 @@ namespace Orc.ProjectManagement
                 projectRefresher.Updated -= OnProjectRefresherUpdated;
             }
 
-            var currentProject = CurrentProject;
+            var lastAcive = GetLastActiveProject();
 
-            if (currentProject != null && Equals(currentProject.Location, location))
-            {
-                var lastSelected = GetLastSelected();
-
-                await SetCurrentProject(lastSelected, false);
-            }
+            await SetCurrentProject(lastAcive, false);
 
             await ProjectClosed.SafeInvoke(this, new ProjectEventArgs(project));
 
@@ -402,16 +397,16 @@ namespace Orc.ProjectManagement
             return true;
         }
 
-        private IProject GetLastSelected()
+        private IProject GetLastActiveProject()
         {
-            IProject projectToSelect = null;
-            while (_selectionHistory.Any() && projectToSelect == null)
+            IProject projectToActivate = null;
+            while (_activationHistory.Any() && projectToActivate == null)
             {
-                var projectId = _selectionHistory.Pop();
-                _projects.TryGetValue(projectId, out projectToSelect);
+                var projectId = _activationHistory.Pop();
+                _projects.TryGetValue(projectId, out projectToActivate);
             }
 
-            return projectToSelect;
+            return projectToActivate;
         }
 
         public async Task<bool> SetCurrentProject(IProject project, bool rememberPrevious = true)
@@ -440,9 +435,9 @@ namespace Orc.ProjectManagement
 
             try
             {
-                if (rememberPrevious && !string.IsNullOrWhiteSpace(currentProjectLocation))
+                if (rememberPrevious && !string.IsNullOrWhiteSpace(newProjectLocation))
                 {
-                    _selectionHistory.Push(currentProjectLocation);
+                    _activationHistory.Push(newProjectLocation);
                 }
 
                 CurrentProject = project;
