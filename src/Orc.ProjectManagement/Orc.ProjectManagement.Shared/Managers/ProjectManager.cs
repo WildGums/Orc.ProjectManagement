@@ -126,7 +126,7 @@ namespace Orc.ProjectManagement
 
         public async Task Refresh()
         {
-            var project = Project;
+            var project = CurrentProject;
 
             if (project == null)
             {
@@ -142,9 +142,21 @@ namespace Orc.ProjectManagement
 
             var location = project.Location;
 
+            var currrentProjectLocation = CurrentProject == null ? null : CurrentProject.Location;
+
             Log.Debug("Refreshing project from '{0}'", location);
 
+            if (string.Equals(currrentProjectLocation, location))
+            {
+                await SetCurrentProject(null);
+            }
+
             await Load(location, false);
+
+            if (string.Equals(currrentProjectLocation, location))
+            {
+                await SetCurrentProject(project);
+            }
 
             Log.Info("Refreshed project from '{0}'", location);
         }
@@ -220,7 +232,8 @@ namespace Orc.ProjectManagement
 
                 if (project != null)
                 {
-                    _projects[project.Location] = project;
+                    var projectLocation = project.Location;
+                    _projects[projectLocation] = project;
 
                     var currentProject = CurrentProject;
 
@@ -229,22 +242,33 @@ namespace Orc.ProjectManagement
                         await Close(currentProject);
                     }
 
-                    try
+                    IProjectRefresher projectRefresher;
+
+                    if (!_projectRefreshers.TryGetValue(projectLocation, out projectRefresher) || projectRefresher == null)
                     {
-                        var projectRefresher = _projectRefresherSelector.GetProjectRefresher(project.Location);
+                        try
+                        {
+                            projectRefresher = _projectRefresherSelector.GetProjectRefresher(projectLocation);
+
+                            if (projectRefresher != null)
+                            {
+                                Log.Debug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
+
+                                projectRefresher.Updated += OnProjectRefresherUpdated;
+                                projectRefresher.Subscribe();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning(ex, "Failed to subscribe to project refresher");
+                        }
+
                         if (projectRefresher != null)
                         {
-                            Log.Debug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
-
-                            projectRefresher.Updated += OnProjectRefresherUpdated;
-                            projectRefresher.Subscribe();
+                            _projectRefreshers[projectLocation] = projectRefresher;
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Log.Warning(ex, "Failed to subscribe to project refresher");
-                    }
-
+                    
                     await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
 
                     await SetCurrentProject(project);
@@ -263,7 +287,7 @@ namespace Orc.ProjectManagement
 
         public async Task<bool> Save(string location = null)
         {
-            var project = Project;
+            var project = CurrentProject;
             if (project == null)
             {
                 Log.Error("Cannot save empty project");
@@ -334,7 +358,7 @@ namespace Orc.ProjectManagement
 
         public async Task<bool> Close()
         {
-            var project = Project;
+            var project = CurrentProject;
             if (project == null)
             {
                 return false;
@@ -359,7 +383,7 @@ namespace Orc.ProjectManagement
                 return false;
             }
 
-            await SetCurrentProject(null, false);
+            await SetCurrentProject(null);
 
             var location = project.Location;
 
@@ -388,7 +412,7 @@ namespace Orc.ProjectManagement
 
             var lastAcive = GetLastActiveProject();
 
-            await SetCurrentProject(lastAcive, false);
+            await SetCurrentProject(lastAcive);
 
             await ProjectClosed.SafeInvoke(this, new ProjectEventArgs(project));
 
@@ -409,7 +433,7 @@ namespace Orc.ProjectManagement
             return projectToActivate;
         }
 
-        public async Task<bool> SetCurrentProject(IProject project, bool rememberPrevious = true)
+        public async Task<bool> SetCurrentProject(IProject project)
         {
             var currentProject = CurrentProject;
 
@@ -435,7 +459,7 @@ namespace Orc.ProjectManagement
 
             try
             {
-                if (rememberPrevious && !string.IsNullOrWhiteSpace(newProjectLocation))
+                if (!string.IsNullOrWhiteSpace(newProjectLocation))
                 {
                     _activationHistory.Push(newProjectLocation);
                 }

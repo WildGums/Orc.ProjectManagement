@@ -60,7 +60,7 @@ namespace Orc.ProjectManagement
         Task<bool> Save(IProject project, string location);
         Task<bool> Close();
         Task<bool> Close(IProject project);
-        Task<bool> SetCurrentProject(IProject project, bool rememberPrevious = true);
+        Task<bool> SetCurrentProject(IProject project);
         #endregion
     }
 }
