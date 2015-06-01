@@ -23,6 +23,7 @@ namespace Orc.ProjectManagement
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
         private readonly IProjectRefresherSelector _projectRefresherSelector;
         private readonly IProjectSerializerSelector _projectSerializerSelector;
+        private readonly IProjectInitializer _projectInitializer;
         private readonly IProjectValidator _projectValidator;
         private bool _isLoading;
         private bool _isSaving;
@@ -32,15 +33,18 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Constructors
-        public ProjectManager(IProjectValidator projectValidator, IProjectRefresherSelector projectRefresherSelector, IProjectSerializerSelector projectSerializerSelector)
+        public ProjectManager(IProjectValidator projectValidator, IProjectRefresherSelector projectRefresherSelector, IProjectSerializerSelector projectSerializerSelector,
+            IProjectInitializer projectInitializer)
         {
             Argument.IsNotNull(() => projectValidator);
             Argument.IsNotNull(() => projectRefresherSelector);
             Argument.IsNotNull(() => projectSerializerSelector);
+            Argument.IsNotNull(() => projectInitializer);
 
             _projectValidator = projectValidator;
             _projectRefresherSelector = projectRefresherSelector;
             _projectSerializerSelector = projectSerializerSelector;
+            _projectInitializer = projectInitializer;
 
             _projects = new ConcurrentDictionary<string, IProject>();
             _projectRefreshers = new ConcurrentDictionary<string, IProjectRefresher>();
@@ -118,10 +122,13 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region IProjectManager Members
-        [ObsoleteEx(RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         public async Task Initialize()
         {
-
+            foreach (var location in _projectInitializer.GetInitialLocations().Where(x => !string.IsNullOrWhiteSpace(x)))
+            {
+                Log.Debug("Loading initial project from location '{0}'", location);
+                await Load(location);
+            }
         }
 
         public async Task Refresh()

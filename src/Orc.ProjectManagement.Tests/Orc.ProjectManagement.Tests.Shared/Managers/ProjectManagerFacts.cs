@@ -20,7 +20,7 @@ namespace Orc.ProjectManagement.Test.Managers
         {
             var projectManager = new ProjectManager(new EmptyProjectValidator(), 
                 new DefaultProjectRefresherSelector(ServiceLocator.Default, TypeFactory.Default),
-                new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>());
+                new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>(), new EmptyProjectInitializer());
 
             return projectManager;
         }

@@ -51,7 +51,6 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectUpdatedEventArgs> CurrentProjectChanged;
         event AsyncEventHandler<ProjectEventArgs> ChangingCurrentProjectCanceled;
         event AsyncEventHandler<ProjectErrorEventArgs> ChangingCurrentProjectFailed;
-        [ObsoleteEx(RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         Task Initialize();
         Task Refresh();
         Task Refresh(IProject project);
