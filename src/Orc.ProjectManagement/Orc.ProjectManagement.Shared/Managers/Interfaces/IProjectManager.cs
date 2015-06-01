@@ -47,10 +47,10 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosing;
         event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
         event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
-        event AsyncEventHandler<ProjectUpdatedCancelEventArgs> ActiveProjectChanging;
-        event AsyncEventHandler<ProjectUpdatedEventArgs> ActiveProjectChanged;
-        event AsyncEventHandler<ProjectEventArgs> ActiveProjectChangingCanceled;
-        event AsyncEventHandler<ProjectErrorEventArgs> ActiveProjectChangingFailed;
+        event AsyncEventHandler<ProjectUpdatedCancelEventArgs> ProjectActivation;
+        event AsyncEventHandler<ProjectUpdatedEventArgs> ProjectActivated;
+        event AsyncEventHandler<ProjectEventArgs> ProjectActivationCanceled;
+        event AsyncEventHandler<ProjectErrorEventArgs> ProjectActivationFailed;
         Task Initialize();
         Task Refresh();
         Task Refresh(IProject project);

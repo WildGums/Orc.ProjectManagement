@@ -115,10 +115,10 @@ namespace Orc.ProjectManagement
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosing;
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
-        public event AsyncEventHandler<ProjectUpdatedCancelEventArgs> ActiveProjectChanging;
-        public event AsyncEventHandler<ProjectUpdatedEventArgs> ActiveProjectChanged;
-        public event AsyncEventHandler<ProjectEventArgs> ActiveProjectChangingCanceled;
-        public event AsyncEventHandler<ProjectErrorEventArgs> ActiveProjectChangingFailed;
+        public event AsyncEventHandler<ProjectUpdatedCancelEventArgs> ProjectActivation;
+        public event AsyncEventHandler<ProjectUpdatedEventArgs> ProjectActivated;
+        public event AsyncEventHandler<ProjectEventArgs> ProjectActivationCanceled;
+        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectActivationFailed;
         #endregion
 
         #region IProjectManager Members
@@ -454,11 +454,11 @@ namespace Orc.ProjectManagement
 
             var eventArgs = new ProjectUpdatedCancelEventArgs(activeProject, project);
 
-            await ActiveProjectChanging.SafeInvoke(this, eventArgs);
+            await ProjectActivation.SafeInvoke(this, eventArgs);
 
             if (eventArgs.Cancel)
             {
-                await ActiveProjectChangingCanceled.SafeInvoke(this, new ProjectEventArgs(project));
+                await ProjectActivationCanceled.SafeInvoke(this, new ProjectEventArgs(project));
                 return false;
             }
 
@@ -480,12 +480,12 @@ namespace Orc.ProjectManagement
 
             if (exception != null)
             {
-                await ActiveProjectChangingFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, exception));
+                await ProjectActivationFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, exception));
                 return false;
             }
 
 
-            await ActiveProjectChanged.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, project));
+            await ProjectActivated.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, project));
 
             return true;
         }
