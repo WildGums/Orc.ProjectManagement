@@ -7,9 +7,13 @@
 
 namespace Orc.ProjectManagement
 {
-    [ObsoleteEx(RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+    using System.Collections.Generic;
+
     public interface IProjectInitializer
-    {        
+    {
+        [ObsoleteEx(ReplacementTypeOrMember = "GetInitialLocations", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         string GetInitialLocation();
+
+        IEnumerable<string> GetInitialLocations();
     }
 }

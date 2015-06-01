@@ -7,6 +7,8 @@
 
 namespace Orc.ProjectManagement
 {
+    using System.Collections.Generic;
+    using System.Linq;
     using Catel;
     using Services;
 
@@ -21,7 +23,13 @@ namespace Orc.ProjectManagement
             _commandLineService = commandLineService;
         }
 
+        [ObsoleteEx(ReplacementTypeOrMember = "GetInitialLocations", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         public virtual string GetInitialLocation()
+        {
+            return GetInitialLocations().FirstOrDefault();
+        }
+
+        public IEnumerable<string> GetInitialLocations()
         {
             string filePath = null;
 
@@ -30,7 +38,7 @@ namespace Orc.ProjectManagement
                 filePath = _commandLineService.Arguments[0];
             }
 
-            return filePath;
+            yield return filePath;
         }
     }
 }

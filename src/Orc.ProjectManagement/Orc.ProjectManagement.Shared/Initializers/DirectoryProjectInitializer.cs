@@ -8,7 +8,9 @@
 namespace Orc.ProjectManagement
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using Catel;
     using Catel.Configuration;
     using Catel.Logging;
@@ -30,7 +32,13 @@ namespace Orc.ProjectManagement
             _commandLineService = commandLineService;
         }
 
+        [ObsoleteEx(ReplacementTypeOrMember = "GetInitialLocations", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         public virtual string GetInitialLocation()
+        {
+            return GetInitialLocations().FirstOrDefault();
+        }
+
+        public virtual IEnumerable<string> GetInitialLocations()
         {
             var dataDirectory = _configurationService.GetValue<string>("DataLocation");
             if (string.IsNullOrWhiteSpace(dataDirectory))
@@ -49,10 +57,10 @@ namespace Orc.ProjectManagement
             if (!Directory.Exists(fullPath))
             {
                 Log.Warning("Cannot use the data directory '{0}', it does not exist", fullPath);
-                return null;
+                yield break;
             }
 
-            return fullPath;
+            yield return fullPath;
         }
     }
 }
