@@ -31,6 +31,8 @@ namespace Orc.ProjectManagement
 
         public static string GetActiveProjectLocation(this IProjectManager projectManager)
         {
+            Argument.IsNotNull(() => projectManager);
+
             var activeProject = projectManager.ActiveProject;
             return activeProject == null ? null : activeProject.Location;
         }
