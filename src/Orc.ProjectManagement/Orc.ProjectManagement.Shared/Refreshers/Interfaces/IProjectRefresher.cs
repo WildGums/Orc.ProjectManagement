@@ -14,7 +14,7 @@ namespace Orc.ProjectManagement
         string Location { get; }
         bool IsSubscribed { get; }
 
-        event EventHandler<EventArgs> Updated;
+        event EventHandler<ProjectEventArgs> Updated;
 
         void Subscribe();
         void Unsubscribe();

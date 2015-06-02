@@ -8,6 +8,7 @@
 namespace Orc.ProjectManagement
 {
     using System;
+    using System.Linq;
     using System.Threading.Tasks;
     using Catel;
     using Catel.Data;
@@ -106,7 +107,7 @@ namespace Orc.ProjectManagement
         {
         }
 
-        protected virtual void OnProjectRefreshRequired()
+        protected virtual void OnProjectRefreshRequired(IProject project)
         {
         }
 
@@ -186,9 +187,12 @@ namespace Orc.ProjectManagement
             OnUpdated(e.OldProject, e.NewProject, e.IsRefresh);
         }
 
-        private void OnProjectRefreshRequired(object sender, EventArgs e)
+        private void OnProjectRefreshRequired(object sender, ProjectEventArgs e)
         {
-            OnProjectRefreshRequired();
+            foreach (var project in _projectManager.Projects.Where(project => string.Equals(project.Location, e.Location)))
+            {
+                OnProjectRefreshRequired(project);
+            }
         }
 
         private async Task OnProjectActivated(object sender, ProjectUpdatedEventArgs e)

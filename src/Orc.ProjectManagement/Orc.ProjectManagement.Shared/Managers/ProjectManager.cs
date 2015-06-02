@@ -77,7 +77,7 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Events
-        public event EventHandler<EventArgs> ProjectRefreshRequired;
+        public event EventHandler<ProjectEventArgs> ProjectRefreshRequired;
 
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoading;
         public event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
@@ -492,14 +492,14 @@ namespace Orc.ProjectManagement
             return project;
         }
 
-        private void OnProjectRefresherUpdated(object sender, EventArgs e)
+        private void OnProjectRefresherUpdated(object sender, ProjectEventArgs e)
         {
             if (_isLoading || _isSaving)
             {
                 return;
             }
 
-            ProjectRefreshRequired.SafeInvoke(this);
+            ProjectRefreshRequired.SafeInvoke(this, e);
         }
         #endregion
     }

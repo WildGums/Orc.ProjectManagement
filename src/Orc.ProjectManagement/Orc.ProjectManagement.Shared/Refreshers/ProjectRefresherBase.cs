@@ -29,7 +29,7 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Events
-        public event EventHandler<EventArgs> Updated;
+        public event EventHandler<ProjectEventArgs> Updated;
         #endregion
 
         #region Methods
@@ -73,7 +73,7 @@ namespace Orc.ProjectManagement
 
         protected void RaiseUpdated()
         {
-            Updated.SafeInvoke(this);
+            Updated.SafeInvoke(this, new ProjectEventArgs(Location));
         }
         #endregion
     }
