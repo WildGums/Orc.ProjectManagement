@@ -28,6 +28,13 @@ namespace Orc.ProjectManagement
 
             return (TProject)projectManager.ActiveProject;
         }
+
+        public static string GetActiveProjectLocation(this IProjectManager projectManager)
+        {
+            var activeProject = projectManager.ActiveProject;
+            return activeProject == null ? null : activeProject.Location;
+        }
+
         #endregion
     }
 }
