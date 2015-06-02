@@ -41,7 +41,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\Interfaces\IProjectWriter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectReaderBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectWriterBase.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Services\CommandLineService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\ICommandLineService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\DirectoryExistsProjectValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\EmptyProjectValidator.cs" />

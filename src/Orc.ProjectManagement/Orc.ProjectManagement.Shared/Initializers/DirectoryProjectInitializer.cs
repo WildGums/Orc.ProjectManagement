@@ -14,22 +14,23 @@ namespace Orc.ProjectManagement
     using Catel;
     using Catel.Configuration;
     using Catel.Logging;
+    using Catel.Services;
     using Services;
 
     public class DirectoryProjectInitializer : IProjectInitializer
     {
+        private readonly IStartUpInfoProvider _startUpInfoProvider;
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
         private readonly IConfigurationService _configurationService;
-        private readonly ICommandLineService _commandLineService;
 
-        public DirectoryProjectInitializer(IConfigurationService configurationService, ICommandLineService commandLineService)
+        public DirectoryProjectInitializer(IConfigurationService configurationService, IStartUpInfoProvider startUpInfoProvider)
         {
             Argument.IsNotNull(() => configurationService);
-            Argument.IsNotNull(() => commandLineService);
-
+            Argument.IsNotNull(() => startUpInfoProvider);
+            
             _configurationService = configurationService;
-            _commandLineService = commandLineService;
+            _startUpInfoProvider = startUpInfoProvider;
         }
 
         [ObsoleteEx(ReplacementTypeOrMember = "GetInitialLocations", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
@@ -48,9 +49,9 @@ namespace Orc.ProjectManagement
                 Log.Info("DataLocation is empty in configuration, determining the data directory automatically to '{0}'", dataDirectory);
             }
 
-            if (_commandLineService.Arguments.Length > 0)
+            if (_startUpInfoProvider.Arguments.Length > 0)
             {
-                dataDirectory = _commandLineService.Arguments[0];
+                dataDirectory = _startUpInfoProvider.Arguments[0];
             }
 
             var fullPath = Path.GetFullPath(dataDirectory);

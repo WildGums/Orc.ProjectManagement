@@ -10,17 +10,18 @@ namespace Orc.ProjectManagement
     using System.Collections.Generic;
     using System.Linq;
     using Catel;
+    using Catel.Services;
     using Services;
 
     public class FileProjectInitializer : IProjectInitializer
     {
-        private readonly ICommandLineService _commandLineService;
+        private readonly IStartUpInfoProvider _startUpInfoProvider;
 
-        public FileProjectInitializer(ICommandLineService commandLineService)
+        public FileProjectInitializer(IStartUpInfoProvider startUpInfoProvider)
         {
-            Argument.IsNotNull(() => commandLineService);
+            Argument.IsNotNull(() => startUpInfoProvider);
 
-            _commandLineService = commandLineService;
+            _startUpInfoProvider = startUpInfoProvider;
         }
 
         [ObsoleteEx(ReplacementTypeOrMember = "GetInitialLocations", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
@@ -33,9 +34,9 @@ namespace Orc.ProjectManagement
         {
             string filePath = null;
 
-            if (_commandLineService.Arguments.Length > 0)
+            if (_startUpInfoProvider.Arguments.Length > 0)
             {
-                filePath = _commandLineService.Arguments[0];
+                filePath = _startUpInfoProvider.Arguments[0];
             }
 
             yield return filePath;
