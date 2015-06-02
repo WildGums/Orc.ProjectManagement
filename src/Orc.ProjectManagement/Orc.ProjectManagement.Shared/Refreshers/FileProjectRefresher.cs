@@ -15,5 +15,10 @@ namespace Orc.ProjectManagement
             : base(Path.GetDirectoryName(location), Path.GetFileName(location))
         {
         }
+
+        protected override string FullPathToLocaion(string fullPath)
+        {
+            return fullPath;
+        }
     }
 }

@@ -71,9 +71,9 @@ namespace Orc.ProjectManagement
 
         protected abstract void UnsubscribeFromLocation(string location);
 
-        protected void RaiseUpdated()
+        protected void RaiseUpdated(string path)
         {
-            Updated.SafeInvoke(this, new ProjectEventArgs(Location));
+            Updated.SafeInvoke(this, new ProjectEventArgs(path));
         }
         #endregion
     }
