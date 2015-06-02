@@ -128,7 +128,9 @@ namespace Orc.ProjectManagement
 
             var location = project.Location;
 
-            var currrentProjectLocation = ActiveProject == null ? null : ActiveProject.Location;
+            var activeProject = ActiveProject;
+
+            var currrentProjectLocation = activeProject == null ? null : activeProject.Location;
 
             Log.Debug("Refreshing project from '{0}'", location);
 
@@ -142,6 +144,8 @@ namespace Orc.ProjectManagement
             if (string.Equals(currrentProjectLocation, location))
             {
                 await SetActiveProject(project);
+
+                ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, ActiveProject));
             }
 
             Log.Info("Refreshed project from '{0}'", location);
