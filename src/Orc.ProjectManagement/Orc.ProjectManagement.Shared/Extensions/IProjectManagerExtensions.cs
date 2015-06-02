@@ -12,6 +12,15 @@ namespace Orc.ProjectManagement
     public static class IProjectManagerExtensions
     {
         #region Methods
+        public static TProject GetActiveProject<TProject>(this IProjectManager projectManager)
+            where TProject : IProject
+        {
+            Argument.IsNotNull(() => projectManager);
+
+            return (TProject)projectManager.ActiveProject;
+        }
+
+        [ObsoleteEx(ReplacementTypeOrMember = "GetActiveProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         public static TProject GetProject<TProject>(this IProjectManager projectManager)
             where TProject : IProject
         {

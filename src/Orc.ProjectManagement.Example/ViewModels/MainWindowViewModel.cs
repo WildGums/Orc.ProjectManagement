@@ -100,7 +100,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
         private void ReloadProject()
         {
-            Project = _projectManager.GetProject<PersonProject>();
+            Project = _projectManager.GetActiveProject<PersonProject>();
         }
         #endregion
 
