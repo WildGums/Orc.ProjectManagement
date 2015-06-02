@@ -25,9 +25,9 @@ namespace Orc.ProjectManagement
 
             _projectManager = projectManager;
 
-            projectManager.ProjectLocationLoading += OnProjectLocationLoading;
-            projectManager.ProjectLocationLoadingFailed += OnProjectLocationLoadingFailed;
-            projectManager.ProjectLocationLoadingCanceled += OnProjectLocationLoadingCanceled;
+            projectManager.ProjectLoading += OnProjectLoading;
+            projectManager.ProjectLoadingFailed += OnProjectLoadingFailed;
+            projectManager.ProjectLoadingCanceled += OnProjectLoadingCanceled;
             projectManager.ProjectLoaded += OnProjectLoaded;
 
             projectManager.ProjectSaving += OnProjectSaving;
@@ -58,12 +58,7 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Methods
-        [ObsoleteEx(ReplacementTypeOrMember = "OnLoading(ProjectLocationCancelEventArgs e)", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         protected virtual async Task OnLoading(ProjectCancelEventArgs e)
-        {
-        }
-
-        protected virtual async Task OnLoading(ProjectLocationCancelEventArgs e)
         {
         }
 
@@ -131,17 +126,17 @@ namespace Orc.ProjectManagement
         {
         }
 
-        private async Task OnProjectLocationLoading(object sender, ProjectLocationCancelEventArgs e)
+        private async Task OnProjectLoading(object sender, ProjectCancelEventArgs e)
         {
             await OnLoading(e);
         }
 
-        private async Task OnProjectLocationLoadingFailed(object sender, ProjectLocationErrorEventArgs e)
+        private async Task OnProjectLoadingFailed(object sender, ProjectErrorEventArgs e)
         {
             await OnLoadingFailed(e.Location, e.Exception, e.ValidationContext);
         }
 
-        private async Task OnProjectLocationLoadingCanceled(object sender, ProjectLocationEventArgs e)
+        private async Task OnProjectLoadingCanceled(object sender, ProjectEventArgs e)
         {
             await OnLoadingCanceled(e.Location);
         }

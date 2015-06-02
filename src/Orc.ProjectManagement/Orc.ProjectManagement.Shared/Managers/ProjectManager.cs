@@ -79,30 +79,9 @@ namespace Orc.ProjectManagement
         #region Events
         public event EventHandler<EventArgs> ProjectRefreshRequired;
 
-        [ObsoleteEx(ReplacementTypeOrMember = "ProjectLocationLoading", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        public event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoading
-        {
-            add { throw new NotSupportedException("You're trying to subscribe to obsolete event 'ProjectLoading'. Use 'ProjectLocationLoading' instead"); }
-            remove{}
-        }
-
-        [ObsoleteEx(ReplacementTypeOrMember = "ProjectLocationLoadingFailed", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailed
-        {
-            add { throw new NotSupportedException("You're trying to subscribe to obsolete event 'ProjectLoadingFailed'. Use 'ProjectLocationLoadingFailed' instead"); }
-            remove { }
-        }
-
-        [ObsoleteEx(ReplacementTypeOrMember = "ProjectLocationLoadingCanceled", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        public event AsyncEventHandler<ProjectEventArgs> ProjectLoadingCanceled
-        {
-            add { throw new NotSupportedException("You're trying to subscribe to obsolete event 'ProjectLoadingCanceled'. Use 'ProjectLocationLoadingCanceled' instead"); }
-            remove { }
-        }
-
-        public event AsyncEventHandler<ProjectLocationCancelEventArgs> ProjectLocationLoading;
-        public event AsyncEventHandler<ProjectLocationErrorEventArgs> ProjectLocationLoadingFailed;
-        public event AsyncEventHandler<ProjectLocationEventArgs> ProjectLocationLoadingCanceled;
+        public event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoading;
+        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
+        public event AsyncEventHandler<ProjectEventArgs> ProjectLoadingCanceled;
         public event AsyncEventHandler<ProjectEventArgs> ProjectLoaded;
 
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectSaving;
@@ -168,7 +147,7 @@ namespace Orc.ProjectManagement
             Log.Info("Refreshed project from '{0}'", location);
         }
 
-        public async Task<bool> Load(string location, bool updateCurrent = true)
+        public async Task<bool> Load(string location, bool updateActive = true)
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
@@ -176,14 +155,14 @@ namespace Orc.ProjectManagement
             {
                 Log.Debug("Loading project from '{0}'", location);
 
-                var cancelEventArgs = new ProjectLocationCancelEventArgs(location);
+                var cancelEventArgs = new ProjectCancelEventArgs(location);
 
-                await ProjectLocationLoading.SafeInvoke(this, cancelEventArgs);
+                await ProjectLoading.SafeInvoke(this, cancelEventArgs);
 
                 if (cancelEventArgs.Cancel)
                 {
                     Log.Debug("Canceled loading of project from '{0}'", location);
-                    await ProjectLocationLoadingCanceled.SafeInvoke(this, new ProjectLocationEventArgs(location));
+                    await ProjectLoadingCanceled.SafeInvoke(this, new ProjectEventArgs(location));
 
                     return false;
                 }
@@ -193,7 +172,7 @@ namespace Orc.ProjectManagement
                 if (!await _projectValidator.CanStartLoadingProjectAsync(location))
                 {
                     Log.Error("Cannot load project from '{0}'", location);
-                    await ProjectLocationLoadingFailed.SafeInvoke(this, new ProjectLocationErrorEventArgs(location));
+                    await ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location));
 
                     return false;
                 }
@@ -232,7 +211,7 @@ namespace Orc.ProjectManagement
 
                 if (error != null)
                 {
-                    await ProjectLocationLoadingFailed.SafeInvoke(this, new ProjectLocationErrorEventArgs(location, error, validationContext));
+                    await ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, error, validationContext));
 
                     return false;
                 }
@@ -244,7 +223,7 @@ namespace Orc.ProjectManagement
 
                     var activeProject = ActiveProject;
 
-                    if (updateCurrent && activeProject != null)
+                    if (updateActive && activeProject != null)
                     {
                         await Close(activeProject);
                     }
@@ -280,7 +259,7 @@ namespace Orc.ProjectManagement
 
                     await SetActiveProject(project);
 
-                    if (updateCurrent && !Equals(activeProject, ActiveProject))
+                    if (updateActive && !Equals(activeProject, ActiveProject))
                     {
                         ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, ActiveProject));
                     }

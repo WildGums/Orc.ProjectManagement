@@ -27,16 +27,10 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Methods
-        [ObsoleteEx(ReplacementTypeOrMember = "ProjectLocationLoading", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoading;
-        [ObsoleteEx(ReplacementTypeOrMember = "ProjectLocationLoadingFailed", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
-        [ObsoleteEx(ReplacementTypeOrMember = "ProjectLocationLoadingCanceled", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         event AsyncEventHandler<ProjectEventArgs> ProjectLoadingCanceled;
 
-        event AsyncEventHandler<ProjectLocationCancelEventArgs> ProjectLocationLoading;
-        event AsyncEventHandler<ProjectLocationErrorEventArgs> ProjectLocationLoadingFailed;
-        event AsyncEventHandler<ProjectLocationEventArgs> ProjectLocationLoadingCanceled;
         event AsyncEventHandler<ProjectEventArgs> ProjectLoaded;
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectSaving;
         event AsyncEventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
@@ -54,7 +48,7 @@ namespace Orc.ProjectManagement
         Task Initialize();
         Task Refresh();
         Task Refresh(IProject project);
-        Task<bool> Load(string location, bool UpdateCurrent = true);
+        Task<bool> Load(string location, bool updateActive = true);
         Task<bool> Save(string location = null);
         Task<bool> Save(IProject project, string location);
         Task<bool> Close();

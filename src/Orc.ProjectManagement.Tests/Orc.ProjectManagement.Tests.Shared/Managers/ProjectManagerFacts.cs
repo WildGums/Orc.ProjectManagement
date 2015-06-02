@@ -48,7 +48,7 @@ namespace Orc.ProjectManagement.Test.Managers
                 var projectManager = GetProjectManager();
 
                 var eventRaised = false;
-                projectManager.ProjectLocationLoading += async (sender, e) => eventRaised = true;
+                projectManager.ProjectLoading += async (sender, e) => eventRaised = true;
 
                 await projectManager.Load("dummyLocation");
 
@@ -61,7 +61,7 @@ namespace Orc.ProjectManagement.Test.Managers
                 var projectManager = GetProjectManager();
 
                 var eventRaised = false;
-                projectManager.ProjectLocationLoadingFailed += async (sender, e) => eventRaised = true;
+                projectManager.ProjectLoadingFailed += async (sender, e) => eventRaised = true;
 
                 await projectManager.Load("cannotload");
 
@@ -74,8 +74,8 @@ namespace Orc.ProjectManagement.Test.Managers
                 var projectManager = GetProjectManager();
 
                 var eventRaised = false;
-                projectManager.ProjectLocationLoading += async (sender, e) => e.Cancel = true;
-                projectManager.ProjectLocationLoadingCanceled += async (sender, e) => eventRaised = true;
+                projectManager.ProjectLoading += async (sender, e) => e.Cancel = true;
+                projectManager.ProjectLoadingCanceled += async (sender, e) => eventRaised = true;
 
                 await projectManager.Load("dummyLocation");
 

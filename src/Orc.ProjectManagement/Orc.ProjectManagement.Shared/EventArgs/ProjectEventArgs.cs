@@ -7,24 +7,29 @@
 
 namespace Orc.ProjectManagement
 {
-    using Catel;
-
     public class ProjectEventArgs : System.EventArgs
     {
         #region Constructors
         public ProjectEventArgs(IProject project)
         {
             Project = project;
+
+            Project = project;
+
+            if (project != null)
+            {
+                Location = project.Location;
+            }
+        }
+
+        public ProjectEventArgs(string location)
+        {
+            Location = location;
         }
         #endregion
 
         #region Properties
-        [ObsoleteEx(ReplacementTypeOrMember = "Project.Location", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        public string Location
-        {
-            get { return Project == null ? string.Empty : Project.Location; }
-        }
-
+        public string Location { get; private set; }
         public IProject Project { get; private set; }
         #endregion
     }
