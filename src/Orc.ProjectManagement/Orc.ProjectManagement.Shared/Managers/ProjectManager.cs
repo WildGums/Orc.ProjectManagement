@@ -189,84 +189,32 @@ namespace Orc.ProjectManagement
 
                 Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
 
-                IProject project = null;
-                IValidationContext validationContext = null;
+                var project = await ReadProjectAndValidate(location, projectReader);
 
-                Exception error = null;
-                try
+                if (project == null)
                 {
-                    project = await projectReader.Read(location);
-                    if (project == null)
-                    {
-                        Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
-                    }
-
-                    validationContext = await _projectValidator.ValidateProjectAsync(project);
-                    if (validationContext.HasErrors)
-                    {
-                        Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    error = ex;
-                    Log.Error(ex, "Failed to load project from '{0}'", location);
-                }
-
-                if (error != null)
-                {
-                    await ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, error, validationContext));
-
                     return false;
                 }
 
-                if (project != null)
+                var projectLocation = project.Location;
+                _projects[projectLocation] = project;
+
+                var activeProject = ActiveProject;
+
+                if (updateActive && activeProject != null)
                 {
-                    var projectLocation = project.Location;
-                    _projects[projectLocation] = project;
+                    await Close(activeProject);
+                }
 
-                    var activeProject = ActiveProject;
+                InitializeProjectRefresher(projectLocation);
 
-                    if (updateActive && activeProject != null)
-                    {
-                        await Close(activeProject);
-                    }
+                await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
 
-                    IProjectRefresher projectRefresher;
+                await SetActiveProject(project);
 
-                    if (!_projectRefreshers.TryGetValue(projectLocation, out projectRefresher) || projectRefresher == null)
-                    {
-                        try
-                        {
-                            projectRefresher = _projectRefresherSelector.GetProjectRefresher(projectLocation);
-
-                            if (projectRefresher != null)
-                            {
-                                Log.Debug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
-
-                                projectRefresher.Updated += OnProjectRefresherUpdated;
-                                projectRefresher.Subscribe();
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Warning(ex, "Failed to subscribe to project refresher");
-                        }
-
-                        if (projectRefresher != null)
-                        {
-                            _projectRefreshers[projectLocation] = projectRefresher;
-                        }
-                    }
-                    
-                    await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
-
-                    await SetActiveProject(project);
-
-                    if (updateActive && !Equals(activeProject, ActiveProject))
-                    {
-                        ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, ActiveProject));
-                    }
+                if (updateActive && !Equals(activeProject, ActiveProject))
+                {
+                    ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, ActiveProject));
                 }
 
                 Log.Info("Loaded project from '{0}'", location);
@@ -382,23 +330,7 @@ namespace Orc.ProjectManagement
                 _projects.Remove(location);
             }
 
-            IProjectRefresher projectRefresher;
-
-            if (_projectRefreshers.TryGetValue(project.Location, out projectRefresher) && projectRefresher != null)
-            {
-                try
-                {
-                    Log.Debug("Unsubscribing from project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
-
-                    projectRefresher.Unsubscribe();
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Failed to unsubscribe from project refresher");
-                }
-
-                projectRefresher.Updated -= OnProjectRefresherUpdated;
-            }
+            ReleaseProjectRefresher(project);
 
             var lastAcive = GetLastActiveProject();
 
@@ -409,18 +341,6 @@ namespace Orc.ProjectManagement
             Log.Info("Closed project '{0}'", project);
 
             return true;
-        }
-
-        private IProject GetLastActiveProject()
-        {
-            IProject projectToActivate = null;
-            while (_activationHistory.Any() && projectToActivate == null)
-            {
-                var projectId = _activationHistory.Pop();
-                _projects.TryGetValue(projectId, out projectToActivate);
-            }
-
-            return projectToActivate;
         }
 
         public async Task<bool> SetActiveProject(IProject project)
@@ -471,6 +391,105 @@ namespace Orc.ProjectManagement
             await ProjectActivated.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, project));
 
             return true;
+        }
+
+        private IProject GetLastActiveProject()
+        {
+            IProject projectToActivate = null;
+            while (_activationHistory.Any() && projectToActivate == null)
+            {
+                var projectId = _activationHistory.Pop();
+                _projects.TryGetValue(projectId, out projectToActivate);
+            }
+
+            return projectToActivate;
+        }
+
+        private void InitializeProjectRefresher(string projectLocation)
+        {
+            IProjectRefresher projectRefresher;
+
+            if (!_projectRefreshers.TryGetValue(projectLocation, out projectRefresher) || projectRefresher == null)
+            {
+                try
+                {
+                    projectRefresher = _projectRefresherSelector.GetProjectRefresher(projectLocation);
+
+                    if (projectRefresher != null)
+                    {
+                        Log.Debug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
+
+                        projectRefresher.Updated += OnProjectRefresherUpdated;
+                        projectRefresher.Subscribe();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed to subscribe to project refresher");
+                }
+
+                if (projectRefresher != null)
+                {
+                    _projectRefreshers[projectLocation] = projectRefresher;
+                }
+            }
+        }
+
+        private void ReleaseProjectRefresher(IProject project)
+        {
+            IProjectRefresher projectRefresher;
+
+            if (_projectRefreshers.TryGetValue(project.Location, out projectRefresher) && projectRefresher != null)
+            {
+                try
+                {
+                    Log.Debug("Unsubscribing from project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
+
+                    projectRefresher.Unsubscribe();
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed to unsubscribe from project refresher");
+                }
+
+                projectRefresher.Updated -= OnProjectRefresherUpdated;
+            }
+        }
+
+        private async Task<IProject> ReadProjectAndValidate(string location, IProjectReader projectReader)
+        {
+            IProject project = null;
+            IValidationContext validationContext = null;
+
+            Exception error = null;
+            try
+            {
+                project = await projectReader.Read(location);
+                if (project == null)
+                {
+                    Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
+                }
+
+                validationContext = await _projectValidator.ValidateProjectAsync(project);
+                if (validationContext.HasErrors)
+                {
+                    Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
+                }
+            }
+            catch (Exception ex)
+            {
+                error = ex;
+                Log.Error(ex, "Failed to load project from '{0}'", location);
+            }
+
+            if (error != null)
+            {
+                await ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, error, validationContext));
+
+                return null;
+            }
+
+            return project;
         }
 
         private void OnProjectRefresherUpdated(object sender, EventArgs e)
