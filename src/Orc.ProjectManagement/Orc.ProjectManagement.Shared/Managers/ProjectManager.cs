@@ -130,28 +130,28 @@ namespace Orc.ProjectManagement
 
             var activeProject = ActiveProject;
 
-            var currrentProjectLocation = activeProject == null ? null : activeProject.Location;
+            var activeProjectLocation = this.GetActiveProjectLocation();
 
             Log.Debug("Refreshing project from '{0}'", location);
 
-            if (string.Equals(currrentProjectLocation, location))
+            var isRefreshingActiveProject = string.Equals(activeProjectLocation, location);
+
+            if (isRefreshingActiveProject)
             {
                 await SetActiveProject(null);
             }
 
-            await Load(location, false);
+            await Load(location, false, isRefreshingActiveProject);
 
-            if (string.Equals(currrentProjectLocation, location))
+            if (isRefreshingActiveProject)
             {
-                await SetActiveProject(project);
-
                 ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, ActiveProject));
             }
 
             Log.Info("Refreshed project from '{0}'", location);
         }
 
-        public async Task<bool> Load(string location, bool updateActive = true)
+        public async Task<bool> Load(string location, bool updateActive = true, bool activateLoaded = true)
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
@@ -210,9 +210,12 @@ namespace Orc.ProjectManagement
 
                 await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
 
-                await SetActiveProject(project);
+                if (activateLoaded)
+                {
+                    await SetActiveProject(project);
+                }
 
-                if (updateActive && !Equals(activeProject, ActiveProject))
+                if (updateActive && !Equals(activeProject, project))
                 {
                     ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, ActiveProject));
                 }
