@@ -30,7 +30,7 @@ namespace Orc.ProjectManagement
             return GetInitialLocations().FirstOrDefault();
         }
 
-        public IEnumerable<string> GetInitialLocations()
+        public virtual IEnumerable<string> GetInitialLocations()
         {
             string filePath = null;
 
