@@ -151,7 +151,22 @@ namespace Orc.ProjectManagement
             Log.Info("Refreshed project from '{0}'", location);
         }
 
-        public async Task<bool> Load(string location, bool updateActive = true, bool activateLoaded = true)
+        public Task<bool> Load(string location)
+        {
+            return LoadProject(location);
+        }
+
+        public Task<bool> Load(string location, bool updateActive)
+        {
+            return LoadProject(location, updateActive);
+        }
+
+        public Task<bool> Load(string location, bool updateActive, bool activateLoaded)
+        {
+            return LoadProject(location, updateActive, activateLoaded);
+        }
+
+        private async Task<bool> LoadProject(string location, bool updateActive = true, bool activateLoaded = true)
         {
             Argument.IsNotNullOrWhitespace("location", location);
 

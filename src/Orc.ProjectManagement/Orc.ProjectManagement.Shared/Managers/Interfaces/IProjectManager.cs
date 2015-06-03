@@ -48,7 +48,9 @@ namespace Orc.ProjectManagement
         Task Initialize();
         Task Refresh();
         Task Refresh(IProject project);
-        Task<bool> Load(string location, bool updateActive = true, bool activateLoaded = true);
+        Task<bool> Load(string location);
+        Task<bool> Load(string location, bool updateActive);
+        Task<bool> Load(string location, bool updateActive, bool activateLoaded);
         Task<bool> Save(string location = null);
         Task<bool> Save(IProject project, string location);
         Task<bool> Close();
