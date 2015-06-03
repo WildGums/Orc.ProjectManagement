@@ -9,17 +9,18 @@ namespace Orc.ProjectManagement
 {
     using System.Threading.Tasks;
     using Catel.Data;
+    using Catel.Threading;
 
     public static class IProjectValidatorExtensions
     {
-        public static async Task<bool> CanStartLoadingProjectAsync(this IProjectValidator projectValidator, string location)
+        public static Task<bool> CanStartLoadingProjectAsync(this IProjectValidator projectValidator, string location)
         {
-            return await Task.Factory.StartNew(() => projectValidator.CanStartLoadingProject(location));
+            return TaskHelper.Run(() => projectValidator.CanStartLoadingProject(location));
         }
 
-        public static async Task<IValidationContext> ValidateProjectAsync(this IProjectValidator projectValidator, IProject project)
+        public static Task<IValidationContext> ValidateProjectAsync(this IProjectValidator projectValidator, IProject project)
         {
-            return await Task.Factory.StartNew(() => projectValidator.ValidateProject(project));
+            return TaskHelper.Run(() => projectValidator.ValidateProject(project));
         }
     }
 }
