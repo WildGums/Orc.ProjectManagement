@@ -16,7 +16,7 @@ namespace Orc.ProjectManagement
         {
         }
 
-        protected override string FullPathToLocaion(string fullPath)
+        protected override string FullPathToLocation(string fullPath)
         {
             return fullPath;
         }

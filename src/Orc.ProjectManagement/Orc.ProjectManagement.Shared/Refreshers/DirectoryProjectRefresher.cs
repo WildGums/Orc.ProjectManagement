@@ -54,7 +54,7 @@ namespace Orc.ProjectManagement
 
                 Log.Debug("Detected change '{0}' for location '{1}'", e.ChangeType, e.FullPath);
 
-                RaiseUpdated(FullPathToLocaion(e.FullPath));
+                RaiseUpdated(FullPathToLocation(e.FullPath));
             }
             finally
             {
@@ -62,7 +62,7 @@ namespace Orc.ProjectManagement
             }
         }
 
-        protected virtual string FullPathToLocaion(string fullPath)
+        protected virtual string FullPathToLocation(string fullPath)
         {
             return Location;
         }
