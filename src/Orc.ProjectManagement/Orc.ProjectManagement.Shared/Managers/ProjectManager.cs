@@ -26,7 +26,7 @@ namespace Orc.ProjectManagement
         private readonly IProjectInitializer _projectInitializer;
         private readonly IProjectValidator _projectValidator;
         private bool _isLoading;
-        private bool _isSaving;
+        private int _savingCounter;
         private Stack<string> _activationHistory;
         private IDictionary<string, IProject> _projects;
         private IDictionary<string, IProjectRefresher> _projectRefreshers;
@@ -53,7 +53,7 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Properties
-        public IEnumerable<IProject> Projects
+        public virtual IEnumerable<IProject> Projects
         {
             get { return _projects.Values; }
         }
@@ -267,7 +267,7 @@ namespace Orc.ProjectManagement
                 location = project.Location;
             }
 
-            using (new DisposableToken(null, token => _isSaving = true, token => _isSaving = false))
+            using (new DisposableToken(null, token => _savingCounter++, token => _savingCounter--))
             {
                 Log.Debug("Saving project '{0}' to '{1}'", project, location);
 
@@ -516,7 +516,7 @@ namespace Orc.ProjectManagement
 
         private void OnProjectRefresherUpdated(object sender, ProjectEventArgs e)
         {
-            if (_isLoading || _isSaving)
+            if (_isLoading || _savingCounter > 0)
             {
                 return;
             }

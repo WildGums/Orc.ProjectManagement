@@ -38,7 +38,6 @@ namespace Orc.ProjectManagement.Tests
 
             var mock = new Mock<T>(MockBehavior.Loose);
 
-            serviceLocator.RegisterInstance(typeof(Mock<T>), mock);
             serviceLocator.RegisterInstance(typeof(T), mock.Object);
         }
 
@@ -58,7 +57,6 @@ namespace Orc.ProjectManagement.Tests
             var mock = factory.Mock<TServiceImplementation>(args);
             var instance = mock.Object;
 
-            serviceLocator.RegisterInstance(typeof(Mock<TService>), Mock.Get<TService>(instance));
             serviceLocator.RegisterInstance(typeof(TService), instance);
         }
 
@@ -72,7 +70,8 @@ namespace Orc.ProjectManagement.Tests
             factory.MockAndRegisterIfNotRegistered<IProjectSerializerSelector, DefaultProjectSerializerSelector>(factory.ServiceLocator);
 
             factory.MockAndRegisterIfNotRegistered<IProjectValidator, EmptyProjectValidator>();
-            factory.MockAndRegisterIfNotRegistered<IProjectRefresherSelector, DefaultProjectRefresherSelector>(Catel.IoC.ServiceLocator.Default, TypeFactory.Default);
+            factory.MockAndRegisterIfNotRegistered<IProjectRefresher>();
+            factory.MockAndRegisterIfNotRegistered<IProjectRefresherSelector>();
 
             factory.MockAndRegisterIfNotRegistered<IProjectInitializer, EmptyProjectInitializer>();
 

@@ -14,7 +14,7 @@ namespace Orc.ProjectManagement.Tests
     {
         public static Mock<T> ResolveMocked<T>(this IServiceLocator serviceLocator) where T : class
         {
-            return serviceLocator.ResolveType<Mock<T>>();
+            return Mock.Get(serviceLocator.ResolveType<T>());
         }
     }
 }

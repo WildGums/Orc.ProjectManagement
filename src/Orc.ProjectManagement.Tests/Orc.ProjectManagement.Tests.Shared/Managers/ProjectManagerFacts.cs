@@ -10,7 +10,9 @@ namespace Orc.ProjectManagement.Test.Managers
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
+    using Catel.IoC;
     using Mocks;
     using Moq;
     using NUnit.Framework;
@@ -264,6 +266,49 @@ namespace Orc.ProjectManagement.Test.Managers
                 await projectManager.Save();
 
                 Assert.IsTrue(eventRaised);
+            }
+
+            [TestCase(5)]
+            public async Task DoesntRaiseProjectRefreshRequiredInParallelSave(int threadsCount)
+            {
+                var factory = Factory.Create().SetupDefault();
+
+                var mockOfProjectManager = factory.Mock<ProjectManager>();
+
+                var projectManager = mockOfProjectManager.Object;
+
+
+                var projectRefresher = factory.ServiceLocator.ResolveType<IProjectRefresher>();
+                var mockOfProjectRefresher = Mock.Get(projectRefresher);
+
+
+                var mockOfProjectWriter = factory.ServiceLocator.ResolveMocked<IProjectWriter>();
+
+                mockOfProjectWriter.Setup(x => x.Write(It.IsAny<IProject>(), It.IsAny<string>())).Callback(() => Thread.Sleep(100)).CallBase().
+                    Callback<IProject, string>((project, location) => mockOfProjectRefresher.Raise(refresher => refresher.Updated += null, new ProjectEventArgs(project))); ;
+
+
+                var mockOfProjectRefresherSelector = factory.ServiceLocator.ResolveMocked<IProjectRefresherSelector>();
+
+                mockOfProjectRefresherSelector.Setup(x => x.GetProjectRefresher(It.IsAny<string>())).
+                    Returns(projectRefresher);
+
+                for (var i = 0; i < threadsCount; i++)
+                {
+                    await projectManager.Load(string.Format("project{0}", i), false);
+                }
+
+                var raisedProjectRefreshRequired = false;
+                projectManager.ProjectRefreshRequired += (sender, args) => raisedProjectRefreshRequired = true;
+
+
+                // Run test
+                var tasks = projectManager.Projects.Select(proj => Task.Factory.StartNew(async () => await projectManager.Save(proj))).Cast<Task>().ToArray();
+                Task.WaitAll(tasks);
+
+
+
+                Assert.IsFalse(raisedProjectRefreshRequired);
             }
         }
 
