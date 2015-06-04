@@ -17,7 +17,7 @@ namespace Orc.ProjectManagement
     using Catel.Logging;
     using Catel.Reflection;
 
-    public class ProjectManager : IProjectManager
+    internal class ProjectManager : IProjectManager
     {
         #region Fields
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
@@ -73,7 +73,7 @@ namespace Orc.ProjectManagement
             get { return ActiveProject; }
         }
 
-        public IProject ActiveProject { get; private set; }
+        public virtual IProject ActiveProject { get; private set; }
         #endregion
 
         #region Events
@@ -122,7 +122,7 @@ namespace Orc.ProjectManagement
             await Refresh(project);
         }
 
-        public async Task Refresh(IProject project)
+        public virtual async Task Refresh(IProject project)
         {
             Argument.IsNotNull(() => project);
 
@@ -151,17 +151,17 @@ namespace Orc.ProjectManagement
             Log.Info("Refreshed project from '{0}'", location);
         }
 
-        public Task<bool> Load(string location)
+        public virtual Task<bool> Load(string location)
         {
             return LoadProject(location);
         }
 
-        public Task<bool> Load(string location, bool updateActive)
+        public virtual Task<bool> Load(string location, bool updateActive)
         {
             return LoadProject(location, updateActive);
         }
 
-        public Task<bool> Load(string location, bool updateActive, bool activateLoaded)
+        public virtual Task<bool> Load(string location, bool updateActive, bool activateLoaded)
         {
             return LoadProject(location, updateActive, activateLoaded);
         }
@@ -323,7 +323,7 @@ namespace Orc.ProjectManagement
             return await Close(project);
         }
 
-        public async Task<bool> Close(IProject project)
+        public virtual async Task<bool> Close(IProject project)
         {
             Argument.IsNotNull(() => project);
 
@@ -361,7 +361,7 @@ namespace Orc.ProjectManagement
             return true;
         }
 
-        public async Task<bool> SetActiveProject(IProject project)
+        public virtual async Task<bool> SetActiveProject(IProject project)
         {
             var activeProject = ActiveProject;
 

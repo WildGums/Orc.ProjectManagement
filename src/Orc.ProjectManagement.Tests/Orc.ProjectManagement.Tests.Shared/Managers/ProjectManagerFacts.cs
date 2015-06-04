@@ -7,33 +7,25 @@
 
 namespace Orc.ProjectManagement.Test.Managers
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
-    using Catel.IoC;
     using Mocks;
+    using Moq;
     using NUnit.Framework;
-    using ProjectManagement.Serialization;
+    using Tests;
 
     public class ProjectManagerFacts
     {
-        #region Methods
-        private static ProjectManager GetProjectManager()
-        {
-            var projectManager = new ProjectManager(new EmptyProjectValidator(), 
-                new DefaultProjectRefresherSelector(ServiceLocator.Default, TypeFactory.Default),
-                new FixedProjectSerializerSelector<MemoryProjectReader, MemoryProjectWriter>(), new EmptyProjectInitializer());
-
-            return projectManager;
-        }
-        #endregion
-
         [TestFixture]
         public class TheLoadMethod
         {
-            #region Methods
             [TestCase("myLocation")]
             public async Task UpdatesLocationAfterLoadingProject(string newLocation)
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 Assert.AreEqual(null, projectManager.ActiveProject);
 
@@ -45,7 +37,8 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public async Task RaisesProjectLoadingEvent()
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 var eventRaised = false;
                 projectManager.ProjectLoading += async (sender, e) => eventRaised = true;
@@ -58,7 +51,8 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public async Task RaisesProjectLocationLoadingFailedEvent()
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 var eventRaised = false;
                 projectManager.ProjectLoadingFailed += async (sender, e) => eventRaised = true;
@@ -71,7 +65,8 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public async Task RaisesProjectLocationLoadingCanceledEvent()
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 var eventRaised = false;
                 projectManager.ProjectLoading += async (sender, e) => e.Cancel = true;
@@ -85,7 +80,8 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public async Task RaisesProjectLoadedEvent()
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 var eventRaised = false;
                 projectManager.ProjectLoaded += async (sender, e) => eventRaised = true;
@@ -94,17 +90,107 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 Assert.IsTrue(eventRaised);
             }
-            #endregion
+        }
+
+        [TestFixture]
+        public class TheLoadMethodWithParameterUpdateActive
+        {
+            [TestCase]
+            public async Task CloseActiveProjectWhileLoadWhenUpdateActiveTrue()
+            {
+                var factory = Factory.Create().SetupDefault();
+                var mock = factory.Mock<ProjectManager>();
+
+                var activeProject = new Project("activeProjectLocation");
+                mock.Setup(pm => pm.ActiveProject).Returns(activeProject);
+
+                await mock.Object.Load("newProjectLocation", true);
+
+                mock.Verify(pm => pm.Close(activeProject), Times.Once);
+            }
+
+            [TestCase]
+            public async Task CloseActiveProjectBeforeLoadedWhenUpdateActiveTrue()
+            {
+                var factory = Factory.Create().SetupDefault();
+                var mock = factory.Mock<ProjectManager>();
+
+                var activeProject = new Project("activeProjectLocation");
+                mock.Setup(pm => pm.ActiveProject).Returns(activeProject);
+
+                var actionsSequence = new List<Tuple<string, object[]>>();
+                ActionSequences.SetupProjectManagerSequences(mock, (s, objects) => actionsSequence.Add(new Tuple<string, object[]>(s, objects)));
+
+                await mock.Object.Load("newProjectLocation", true);
+
+                var indexOfClose = actionsSequence.IndexOf(actionsSequence.FirstOrDefault(x => string.Equals(x.Item1, ActionSequences.ProjectManagerClose)));
+                var indexOfLoaded = actionsSequence.IndexOf(actionsSequence.FirstOrDefault(x => string.Equals(x.Item1, ActionSequences.ProjectManagerProjectLoaded)));
+                Assert.Greater(indexOfLoaded, indexOfClose);
+            }
+
+            [TestCase]
+            public async Task DontCloseAnyProjectsWhileLoadWhenUpdateActiveFalse()
+            {
+                var factory = Factory.Create().SetupDefault();
+                var mock = factory.Mock<ProjectManager>();
+
+                var activeProject = new Project("activeProjectLocation");
+
+                mock.Setup(pm => pm.ActiveProject).Returns(activeProject);
+
+                await mock.Object.Load("newProjectLocation", false);
+
+                mock.Verify(pm => pm.Close(It.IsAny<IProject>()), Times.Never);
+            }
+
+            [TestCase]
+            public async Task DontCloseAnyProjectsWhileLoadWhenUpdateActiveTrueAndActiveProjectNull()
+            {
+                var factory = Factory.Create().SetupDefault();
+                var mock = factory.Mock<ProjectManager>();
+
+                mock.Setup(pm => pm.ActiveProject).Returns((IProject) null);
+
+                await mock.Object.Load("newProjectLocation", true);
+
+                mock.Verify(pm => pm.Close(It.IsAny<IProject>()), Times.Never);
+            }
+
+            [TestCase]
+            public async Task ActivateLoadedProjectWhenUpdateActiveTrue()
+            {
+                var factory = Factory.Create().SetupDefault();
+                var mock = factory.Mock<ProjectManager>();
+
+                var newProjectlocation = "newProjectLocation";
+
+                await mock.Object.Load(newProjectlocation, true);
+
+                mock.Verify(pm => pm.SetActiveProject(It.Is<IProject>(x => string.Equals(newProjectlocation, x.Location))), Times.Once);
+            }
+
+            [TestCase]
+            public async Task DontActivateLoadedProjectWhenUpdateActiveTrue()
+            {
+                var factory = Factory.Create().SetupDefault();
+                var mock = factory.Mock<ProjectManager>();
+
+                var newProjectlocation = "newProjectLocation";
+
+                await mock.Object.Load(newProjectlocation, true);
+
+                mock.Verify(pm => pm.SetActiveProject(It.Is<IProject>(x => string.Equals(newProjectlocation, x.Location))), Times.Once);
+            }
         }
 
         [TestFixture]
         public class TheRefreshMethod
         {
-            #region Methods
             [TestCase]
             public async Task DoesNothingWithoutProject()
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 Assert.IsNull(projectManager.ActiveProject);
 
@@ -116,7 +202,8 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public async Task RaisesProjectUpdatedEvent()
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 await projectManager.Load("dummyLocation");
 
@@ -127,17 +214,16 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 Assert.IsTrue(eventRaised);
             }
-            #endregion
         }
 
         [TestFixture]
         public class TheSaveMethod
         {
-            #region Methods
             [TestCase("myLocation")]
             public async Task UpdatesLocationAfterSavingProject(string newLocation)
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 await projectManager.Load("dummyLocation");
 
@@ -151,7 +237,8 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public async Task RaisesProjectSavingEvent()
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 await projectManager.Load("dummyLocation");
 
@@ -166,7 +253,8 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public async Task RaisesProjectSavedEvent()
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 await projectManager.Load("dummyLocation");
 
@@ -177,17 +265,16 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 Assert.IsTrue(eventRaised);
             }
-            #endregion
         }
 
         [TestFixture]
         public class TheCloseMethod
         {
-            #region Methods
             [TestCase]
             public async Task UpdatesProjectAfterClosingProject()
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 await projectManager.Load("dummyLocation");
 
@@ -201,7 +288,8 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public async Task UpdatesLocationAfterClosingProject()
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 await projectManager.Load("dummyLocation");
 
@@ -215,7 +303,8 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public async Task RaisesProjectClosingEvent()
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 await projectManager.Load("dummyLocation");
 
@@ -230,7 +319,8 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public async Task RaisesProjectClosedEvent()
             {
-                var projectManager = GetProjectManager();
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
 
                 await projectManager.Load("dummyLocation");
 
@@ -241,7 +331,6 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 Assert.IsTrue(eventRaised);
             }
-            #endregion
         }
     }
 }
