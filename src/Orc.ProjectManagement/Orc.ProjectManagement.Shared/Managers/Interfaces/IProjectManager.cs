@@ -52,7 +52,7 @@ namespace Orc.ProjectManagement
         Task<bool> Load(string location, bool updateActive);
         Task<bool> Load(string location, bool updateActive, bool activateLoaded);
         Task<bool> Save(string location = null);
-        Task<bool> Save(IProject project, string location);
+        Task<bool> Save(IProject project, string location = null);
         Task<bool> Close();
         Task<bool> Close(IProject project);
         Task<bool> SetActiveProject(IProject project);

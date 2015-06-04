@@ -258,10 +258,14 @@ namespace Orc.ProjectManagement
             return await Save(project, location);
         }
 
-        public async Task<bool> Save(IProject project, string location)
+        public async Task<bool> Save(IProject project, string location = null)
         {
             Argument.IsNotNull(() => project);
-            Argument.IsNotNullOrEmpty(() => location);
+
+            if (string.IsNullOrWhiteSpace(location))
+            {
+                location = project.Location;
+            }
 
             using (new DisposableToken(null, token => _isSaving = true, token => _isSaving = false))
             {
