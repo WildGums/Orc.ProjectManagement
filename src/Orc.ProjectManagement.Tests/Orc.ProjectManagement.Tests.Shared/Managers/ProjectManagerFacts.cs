@@ -119,12 +119,12 @@ namespace Orc.ProjectManagement.Test.Managers
                 mock.Setup(pm => pm.ActiveProject).Returns(activeProject);
 
                 var actionsSequence = new List<Tuple<string, object[]>>();
-                ActionSequences.SetupProjectManagerSequences(mock, (s, objects) => actionsSequence.Add(new Tuple<string, object[]>(s, objects)));
+                Listener.ListenToProjectManager(mock, (s, objects) => actionsSequence.Add(new Tuple<string, object[]>(s, objects)));
 
                 await mock.Object.Load("newProjectLocation", true);
 
-                var indexOfClose = actionsSequence.IndexOf(actionsSequence.FirstOrDefault(x => string.Equals(x.Item1, ActionSequences.ProjectManagerClose)));
-                var indexOfLoaded = actionsSequence.IndexOf(actionsSequence.FirstOrDefault(x => string.Equals(x.Item1, ActionSequences.ProjectManagerProjectLoaded)));
+                var indexOfClose = actionsSequence.IndexOf(actionsSequence.FirstOrDefault(x => string.Equals(x.Item1, Listener.ProjectManagerClose)));
+                var indexOfLoaded = actionsSequence.IndexOf(actionsSequence.FirstOrDefault(x => string.Equals(x.Item1, Listener.ProjectManagerProjectLoaded)));
                 Assert.Greater(indexOfLoaded, indexOfClose);
             }
 

@@ -11,7 +11,7 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)..\..\SolutionAssemblyInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectUpdatedEventArgsFacts.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Helpers\ActionSequences.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\Listener.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\Extensions\FactoryExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\Extensions\IServiceLocatorExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\Factory.cs" />

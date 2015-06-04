@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ActionSequences.cs" company="Wild Gums">
+// <copyright file="Listener.cs" company="Wild Gums">
 //   Copyright (c) 2008 - 2015 Wild Gums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
@@ -10,7 +10,7 @@ namespace Orc.ProjectManagement.Tests
     using System;
     using Moq;
 
-    internal class ActionSequences
+    internal class Listener
     {
         public const string ProjectManagerLoad = "IProjectManager.Load";
         public const string ProjectManagerSetActiveProject = "IProjectManager.SetActiveProject";
@@ -23,7 +23,7 @@ namespace Orc.ProjectManagement.Tests
         public const string ProjectManagerProjectClosed = "IProjectManager.ProjectClosed";
         public const string ProjectManagerProjectUpdated = "IProjectManager.ProjectUpdated";
 
-        public static void SetupProjectManagerSequences(Mock<ProjectManager> mockOfProjectManager, Action<string, object[]> callbackAction)
+        public static void ListenToProjectManager(Mock<ProjectManager> mockOfProjectManager, Action<string, object[]> callbackAction)
         {
             mockOfProjectManager.Setup(pm => pm.Load(It.IsAny<string>())).CallBase().
                 Callback<string>(location => callbackAction(ProjectManagerLoad, new object[] {location}));
