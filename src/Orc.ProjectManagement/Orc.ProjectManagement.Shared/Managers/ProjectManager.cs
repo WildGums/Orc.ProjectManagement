@@ -89,12 +89,23 @@ namespace Orc.ProjectManagement
         public event AsyncEventHandler<ProjectEventArgs> ProjectSavingCanceled;
         public event AsyncEventHandler<ProjectEventArgs> ProjectSaved;
 
-        public event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated;
+        [ObsoleteEx(Message = "Use ProjectActivated and ProjectRefreshed instead of it.", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
+        public event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated
+        {
+            remove { }
+            add { throw new NotSupportedException("You're trying to subscribe to obsolete event 'ProjectUpdated'. Use ProjectActivated and ProjectRefreshed instead of it."); }
+        }
+
+        public event AsyncEventHandler<ProjectCancelEventArgs> ProjectRefreshing;
+        public event AsyncEventHandler<ProjectEventArgs> ProjectRefreshed;
+        public event AsyncEventHandler<ProjectEventArgs> ProjectRefreshingCanceled;
+        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectRefreshingFailed;
 
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosing;
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
         public event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
-        public event AsyncEventHandler<ProjectUpdatedCancelEventArgs> ProjectActivation;
+
+        public event AsyncEventHandler<ProjectUpdatingCancelEventArgs> ProjectActivation;
         public event AsyncEventHandler<ProjectUpdatedEventArgs> ProjectActivated;
         public event AsyncEventHandler<ProjectEventArgs> ProjectActivationCanceled;
         public event AsyncEventHandler<ProjectErrorEventArgs> ProjectActivationFailed;
@@ -110,65 +121,109 @@ namespace Orc.ProjectManagement
             }
         }
 
-        public async Task Refresh()
+        public async Task<bool> Refresh()
         {
             var project = ActiveProject;
 
             if (project == null)
             {
-                return;
+                return false;
             }
 
-            await Refresh(project);
+            return await Refresh(project);
         }
 
-        public virtual async Task Refresh(IProject project)
+        public virtual async Task<bool> Refresh(IProject project)
         {
             Argument.IsNotNull(() => project);
 
-            var location = project.Location;
-
-            var activeProject = ActiveProject;
+            var projectLocation = project.Location;
 
             var activeProjectLocation = this.GetActiveProjectLocation();
 
-            Log.Debug("Refreshing project from '{0}'", location);
+            Log.Debug("Refreshing project from '{0}'", projectLocation);
 
-            var isRefreshingActiveProject = string.Equals(activeProjectLocation, location);
+            var cancelEventArgs = new ProjectCancelEventArgs(projectLocation);
 
-            if (isRefreshingActiveProject)
+            await ProjectRefreshing.SafeInvoke(this, cancelEventArgs);
+
+            Exception error = null;
+            IValidationContext validationContext = null;
+
+            try
             {
-                await SetActiveProject(null);
+                if (cancelEventArgs.Cancel)
+                {
+                    await ProjectRefreshingCanceled.SafeInvoke(this, new ProjectErrorEventArgs(project));
+                    return false;
+                }
+
+                await Uninstall(project);
+
+                var isRefreshingActiveProject = string.Equals(activeProjectLocation, projectLocation);
+
+                var loadedProject = await QuietlyLoadProject(projectLocation);
+
+                validationContext = await _projectValidator.ValidateProjectAsync(loadedProject);
+                if (validationContext.HasErrors)
+                {
+                    Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", projectLocation));
+                }
+
+                InstallProject(loadedProject);
+
+                await ProjectRefreshed.SafeInvoke(this, new ProjectEventArgs(loadedProject));
+
+                if (isRefreshingActiveProject)
+                {
+                    await SetActiveProject(loadedProject);
+                }
+
+                Log.Info("Refreshed project from '{0}'", projectLocation);
+            }
+            catch (Exception exception)
+            {
+                error = exception;
             }
 
-            await Load(location, false, isRefreshingActiveProject);
-
-            if (isRefreshingActiveProject)
+            if (error == null)
             {
-                ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, ActiveProject));
+                return true;
             }
 
-            Log.Info("Refreshed project from '{0}'", location);
+            var eventArgs = new ProjectErrorEventArgs(project, 
+                new ProjectException(project, string.Format("Failed to load project from location '{0}' while refreshing.", projectLocation), error), 
+                validationContext);
+            await ProjectRefreshingFailed.SafeInvoke(this, eventArgs);
+
+            return false;
         }
 
-        public virtual Task<bool> Load(string location)
-        {
-            return LoadProject(location);
-        }
-
-        public virtual Task<bool> Load(string location, bool updateActive)
-        {
-            return LoadProject(location, updateActive);
-        }
-
-        public virtual Task<bool> Load(string location, bool updateActive, bool activateLoaded)
-        {
-            return LoadProject(location, updateActive, activateLoaded);
-        }
-
-        private async Task<bool> LoadProject(string location, bool updateActive = true, bool activateLoaded = true)
+        public virtual async Task<bool> Load(string location)
         {
             Argument.IsNotNullOrWhitespace("location", location);
+
+            var project = await LoadProject(location);
+
+            await SetActiveProject(project);
+
+            return project != null;
+        }
+
+        public virtual async Task<bool> LoadInactive(string location)
+        {
+            Argument.IsNotNullOrWhitespace("location", location);
+
+            var project = await LoadProject(location);
+
+            return project != null;
+        }
+
+        private async Task<IProject> LoadProject(string location)
+        {
+            Argument.IsNotNullOrWhitespace("location", location);
+
+            IProject project = null;
 
             using (new DisposableToken(null, token => _isLoading = true, token => _isLoading = false))
             {
@@ -183,62 +238,79 @@ namespace Orc.ProjectManagement
                     Log.Debug("Canceled loading of project from '{0}'", location);
                     await ProjectLoadingCanceled.SafeInvoke(this, new ProjectEventArgs(location));
 
-                    return false;
+                    return null;
                 }
 
-                Log.Debug("Validating to see if we can load the project from '{0}'", location);
+                Exception error = null;
+                
+                IValidationContext validationContext = null;
 
-                if (!await _projectValidator.CanStartLoadingProjectAsync(location))
+                try
                 {
-                    Log.Error("Cannot load project from '{0}'", location);
-                    await ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location));
+                    project = await QuietlyLoadProject(location);
 
-                    return false;
+                    validationContext = await _projectValidator.ValidateProjectAsync(project);
+                    if (validationContext.HasErrors)
+                    {
+                        Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
+                    }
+
+                    InstallProject(project);
                 }
-
-                var projectReader = _projectSerializerSelector.GetReader(location);
-                if (projectReader == null)
+                catch (Exception ex)
                 {
-                    Log.ErrorAndThrowException<InvalidOperationException>(string.Format("No project reader is found for location '{0}'", location));
+                    error = ex;
+                    Log.Error(ex, "Failed to load project from '{0}'", location);
                 }
 
-                Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
-
-                var project = await ReadProjectAndValidate(location, projectReader);
-
-                if (project == null)
+                if (error != null)
                 {
-                    return false;
+                    await ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, error, validationContext));
+
+                    return null;
                 }
-
-                var projectLocation = project.Location;
-                _projects[projectLocation] = project;
-
-                var activeProject = ActiveProject;
-
-                if (updateActive && activeProject != null)
-                {
-                    await Close(activeProject);
-                }
-
-                InitializeProjectRefresher(projectLocation);
-
                 await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
-
-                if (activateLoaded)
-                {
-                    await SetActiveProject(project);
-                }
-
-                if (updateActive && !Equals(activeProject, project))
-                {
-                    ProjectUpdated.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, ActiveProject));
-                }
 
                 Log.Info("Loaded project from '{0}'", location);
             }
 
-            return true;
+            return project;
+        }
+
+        private void InstallProject(IProject project)
+        {
+            var projectLocation = project.Location;
+            _projects[projectLocation] = project;
+
+            InitializeProjectRefresher(projectLocation);
+        }
+
+        private async Task<IProject> QuietlyLoadProject(string location)
+        {
+            IProject project;
+
+            Log.Debug("Validating to see if we can load the project from '{0}'", location);
+
+            if (!await _projectValidator.CanStartLoadingProjectAsync(location))
+            {
+                throw new ProjectException(location, String.Format("Cannot load project from '{0}'", location));
+            }
+
+            var projectReader = _projectSerializerSelector.GetReader(location);
+            if (projectReader == null)
+            {
+                Log.ErrorAndThrowException<InvalidOperationException>(string.Format("No project reader is found for location '{0}'", location));
+            }
+
+            Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
+
+            project = await projectReader.Read(location);
+            if (project == null)
+            {
+                Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
+            }
+
+            return project;
         }
 
         public async Task<bool> Save(string location = null)
@@ -343,16 +415,7 @@ namespace Orc.ProjectManagement
                 return false;
             }
 
-            await SetActiveProject(null);
-
-            var location = project.Location;
-
-            if (_projects.ContainsKey(location))
-            {
-                _projects.Remove(location);
-            }
-
-            ReleaseProjectRefresher(project);
+            await Uninstall(project);
 
             var lastAcive = GetLastActiveProject();
 
@@ -363,6 +426,20 @@ namespace Orc.ProjectManagement
             Log.Info("Closed project '{0}'", project);
 
             return true;
+        }
+
+        private async Task Uninstall(IProject project)
+        {
+            await SetActiveProject(null);
+
+            var location = project.Location;
+
+            if (_projects.ContainsKey(location))
+            {
+                _projects.Remove(location);
+            }
+
+            ReleaseProjectRefresher(project);
         }
 
         public virtual async Task<bool> SetActiveProject(IProject project)
@@ -377,7 +454,7 @@ namespace Orc.ProjectManagement
                 return false;
             }
 
-            var eventArgs = new ProjectUpdatedCancelEventArgs(activeProject, project);
+            var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
 
             await ProjectActivation.SafeInvoke(this, eventArgs);
 
@@ -461,7 +538,9 @@ namespace Orc.ProjectManagement
         {
             IProjectRefresher projectRefresher;
 
-            if (_projectRefreshers.TryGetValue(project.Location, out projectRefresher) && projectRefresher != null)
+            var location = project.Location;
+
+            if (_projectRefreshers.TryGetValue(location, out projectRefresher) && projectRefresher != null)
             {
                 try
                 {
@@ -475,47 +554,14 @@ namespace Orc.ProjectManagement
                 }
 
                 projectRefresher.Updated -= OnProjectRefresherUpdated;
+
+                _projectRefreshers.Remove(location);
             }
-        }
-
-        private async Task<IProject> ReadProjectAndValidate(string location, IProjectReader projectReader)
-        {
-            IProject project = null;
-            IValidationContext validationContext = null;
-
-            Exception error = null;
-            try
-            {
-                project = await projectReader.Read(location);
-                if (project == null)
-                {
-                    Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
-                }
-
-                validationContext = await _projectValidator.ValidateProjectAsync(project);
-                if (validationContext.HasErrors)
-                {
-                    Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
-                }
-            }
-            catch (Exception ex)
-            {
-                error = ex;
-                Log.Error(ex, "Failed to load project from '{0}'", location);
-            }
-
-            if (error != null)
-            {
-                await ProjectLoadingFailed.SafeInvoke(this, new ProjectErrorEventArgs(location, error, validationContext));
-
-                return null;
-            }
-
-            return project;
         }
 
         private void OnProjectRefresherUpdated(object sender, ProjectEventArgs e)
         {
+            // TODO: use dictionary for detecting if e.Project is currently loading or saving
             if (_isLoading || _savingCounter > 0)
             {
                 return;

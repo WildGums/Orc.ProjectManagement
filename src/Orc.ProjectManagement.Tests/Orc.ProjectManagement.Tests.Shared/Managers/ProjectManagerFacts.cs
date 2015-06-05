@@ -93,7 +93,7 @@ namespace Orc.ProjectManagement.Test.Managers
                 Assert.IsTrue(eventRaised);
             }
         }
-
+/*
         [TestFixture]
         public class TheLoadMethodWithParameterUpdateActive
         {
@@ -184,7 +184,7 @@ namespace Orc.ProjectManagement.Test.Managers
                 mock.Verify(pm => pm.SetActiveProject(It.Is<IProject>(x => string.Equals(newProjectlocation, x.Location))), Times.Once);
             }
         }
-
+        */
         [TestFixture]
         public class TheRefreshMethod
         {
@@ -202,7 +202,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectUpdatedEvent()
+            public async Task RaisesProjectActivatedEvent()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -210,7 +210,7 @@ namespace Orc.ProjectManagement.Test.Managers
                 await projectManager.Load("dummyLocation");
 
                 var eventRaised = false;
-                projectManager.ProjectUpdated += (sender, e) => eventRaised = true;
+                projectManager.ProjectActivated += async (sender, e) => eventRaised = true;
 
                 await projectManager.Refresh();
 
@@ -277,25 +277,9 @@ namespace Orc.ProjectManagement.Test.Managers
 
                 var projectManager = mockOfProjectManager.Object;
 
-
-                var projectRefresher = factory.ServiceLocator.ResolveType<IProjectRefresher>();
-                var mockOfProjectRefresher = Mock.Get(projectRefresher);
-
-
-                var mockOfProjectWriter = factory.ServiceLocator.ResolveMocked<IProjectWriter>();
-
-                mockOfProjectWriter.Setup(x => x.Write(It.IsAny<IProject>(), It.IsAny<string>())).Callback(() => Thread.Sleep(100)).CallBase().
-                    Callback<IProject, string>((project, location) => mockOfProjectRefresher.Raise(refresher => refresher.Updated += null, new ProjectEventArgs(project))); ;
-
-
-                var mockOfProjectRefresherSelector = factory.ServiceLocator.ResolveMocked<IProjectRefresherSelector>();
-
-                mockOfProjectRefresherSelector.Setup(x => x.GetProjectRefresher(It.IsAny<string>())).
-                    Returns(projectRefresher);
-
                 for (var i = 0; i < threadsCount; i++)
                 {
-                    await projectManager.Load(string.Format("project{0}", i), false);
+                    await projectManager.Load(string.Format("project{0}", i));
                 }
 
                 var raisedProjectRefreshRequired = false;

@@ -7,19 +7,11 @@
 
 namespace Orc.ProjectManagement
 {
+    using System;
     using System.ComponentModel;
 
+    [ObsoleteEx(ReplacementTypeOrMember = "ProjectUpdatingCancelEventArgs", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
     public class ProjectUpdatedCancelEventArgs : CancelEventArgs
     {
-        public ProjectUpdatedCancelEventArgs(IProject oldProject, IProject newProject, bool cancel = false)
-            : base(cancel)
-        {
-            OldProject = oldProject;
-            NewProject = newProject;
-        }
-
-        public IProject OldProject { get; private set; }
-
-        public IProject NewProject { get; private set; }
     }
 }

@@ -7,6 +7,7 @@
 
 namespace Orc.ProjectManagement
 {
+    using System.Threading.Tasks;
     using Catel;
 
     public static class IProjectManagerExtensions
@@ -36,7 +37,6 @@ namespace Orc.ProjectManagement
             var activeProject = projectManager.ActiveProject;
             return activeProject == null ? null : activeProject.Location;
         }
-
         #endregion
     }
 }

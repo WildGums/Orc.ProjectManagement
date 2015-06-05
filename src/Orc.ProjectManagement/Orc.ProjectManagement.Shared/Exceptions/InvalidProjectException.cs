@@ -10,14 +10,11 @@ namespace Orc.ProjectManagement
     using System;
     using Catel;
 
-    public class InvalidProjectException : Exception
+    public class InvalidProjectException : ProjectException
     {
         public InvalidProjectException(IProject project)
-            : base(string.Format("Project '{0}' is invalid at this stage", ObjectToStringHelper.ToString(project)))
+            : base(project, string.Format("Project '{0}' is invalid at this stage", ObjectToStringHelper.ToString(project)))
         {
-            Project = project;
         }
-
-        public IProject Project { get; private set; }
     }
 }

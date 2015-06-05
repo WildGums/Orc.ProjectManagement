@@ -30,27 +30,36 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoading;
         event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailed;
         event AsyncEventHandler<ProjectEventArgs> ProjectLoadingCanceled;
-
         event AsyncEventHandler<ProjectEventArgs> ProjectLoaded;
+
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectSaving;
         event AsyncEventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
         event AsyncEventHandler<ProjectEventArgs> ProjectSavingCanceled;
         event AsyncEventHandler<ProjectEventArgs> ProjectSaved;
+
+        [ObsoleteEx(Message = "Use ProjectActivated and ProjectRefreshed instead of it.", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated;
+
+        event AsyncEventHandler<ProjectCancelEventArgs> ProjectRefreshing;
+        event AsyncEventHandler<ProjectEventArgs> ProjectRefreshed;
+        event AsyncEventHandler<ProjectEventArgs> ProjectRefreshingCanceled;
+        event AsyncEventHandler<ProjectErrorEventArgs> ProjectRefreshingFailed;
+
         event EventHandler<ProjectEventArgs> ProjectRefreshRequired;
+
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosing;
         event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceled;
         event AsyncEventHandler<ProjectEventArgs> ProjectClosed;
-        event AsyncEventHandler<ProjectUpdatedCancelEventArgs> ProjectActivation;
+
+        event AsyncEventHandler<ProjectUpdatingCancelEventArgs> ProjectActivation;
         event AsyncEventHandler<ProjectUpdatedEventArgs> ProjectActivated;
         event AsyncEventHandler<ProjectEventArgs> ProjectActivationCanceled;
         event AsyncEventHandler<ProjectErrorEventArgs> ProjectActivationFailed;
         Task Initialize();
-        Task Refresh();
-        Task Refresh(IProject project);
+        Task<bool> Refresh();
+        Task<bool> Refresh(IProject project);
         Task<bool> Load(string location);
-        Task<bool> Load(string location, bool updateActive);
-        Task<bool> Load(string location, bool updateActive, bool activateLoaded);
+        Task<bool> LoadInactive(string location);
         Task<bool> Save(string location = null);
         Task<bool> Save(IProject project, string location = null);
         Task<bool> Close();

@@ -18,6 +18,7 @@ namespace Orc.ProjectManagement
             NewProject = newProject;
         }
 
+
         public IProject OldProject { get; private set; }
 
         public IProject NewProject { get; private set; }

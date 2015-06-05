@@ -7,6 +7,7 @@
 
 namespace Orc.ProjectManagement.Tests
 {
+    using System.Threading;
     using Catel;
     using Catel.IoC;
     using Moq;
@@ -64,6 +65,36 @@ namespace Orc.ProjectManagement.Tests
         {
             Argument.IsNotNull(() => factory);
 
+            SetupRegistrations(factory);
+
+            SetupBehavior(factory);
+
+            return factory;
+        }
+
+        private static void SetupBehavior(Factory factory)
+        {
+            Argument.IsNotNull(() => factory);
+
+            var projectRefresher = factory.ServiceLocator.ResolveType<IProjectRefresher>();
+            var mockOfProjectRefresher = Mock.Get(projectRefresher);
+
+            var mockOfProjectWriter = factory.ServiceLocator.ResolveMocked<IProjectWriter>();
+
+            mockOfProjectWriter.Setup(x => x.Write(It.IsAny<IProject>(), It.IsAny<string>())).Callback(() => Thread.Sleep(100)).CallBase().
+                Callback<IProject, string>((project, location) => mockOfProjectRefresher.Raise(refresher => refresher.Updated += null, new ProjectEventArgs(project)));
+            ;
+
+            var mockOfProjectRefresherSelector = factory.ServiceLocator.ResolveMocked<IProjectRefresherSelector>();
+
+            mockOfProjectRefresherSelector.Setup(x => x.GetProjectRefresher(It.IsAny<string>())).
+                Returns(projectRefresher);
+        }
+
+        private static void SetupRegistrations(Factory factory)
+        {
+            Argument.IsNotNull(() => factory);
+
             factory.MockAndRegisterIfNotRegistered<IProjectReader, MemoryProjectReader>();
             factory.MockAndRegisterIfNotRegistered<IProjectWriter, MemoryProjectWriter>();
 
@@ -74,8 +105,6 @@ namespace Orc.ProjectManagement.Tests
             factory.MockAndRegisterIfNotRegistered<IProjectRefresherSelector>();
 
             factory.MockAndRegisterIfNotRegistered<IProjectInitializer, EmptyProjectInitializer>();
-
-            return factory;
         }
     }
 }

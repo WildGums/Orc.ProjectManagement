@@ -9,6 +9,7 @@ namespace Orc.ProjectManagement
 {
     using System;
     using System.Linq;
+    using System.Reflection;
     using System.Threading.Tasks;
     using Catel;
     using Catel.Data;
@@ -26,28 +27,7 @@ namespace Orc.ProjectManagement
 
             _projectManager = projectManager;
 
-            projectManager.ProjectLoading += OnProjectLoading;
-            projectManager.ProjectLoadingFailed += OnProjectLoadingFailed;
-            projectManager.ProjectLoadingCanceled += OnProjectLoadingCanceled;
-            projectManager.ProjectLoaded += OnProjectLoaded;
-
-            projectManager.ProjectSaving += OnProjectSaving;
-            projectManager.ProjectSavingCanceled += OnProjectSavingCanceled;
-            projectManager.ProjectSavingFailed += OnProjectSavingFailed;
-            projectManager.ProjectSaved += OnProjectSaved;
-
-            projectManager.ProjectClosing += OnProjectClosing;
-            projectManager.ProjectClosingCanceled += OnProjectClosingCanceled;
-            projectManager.ProjectClosed += OnProjectClosed;
-
-            projectManager.ProjectUpdated += OnProjectUpdated;
-
-            projectManager.ProjectRefreshRequired += OnProjectRefreshRequired;
-
-            projectManager.ProjectActivation += OnProjectActivation;
-            projectManager.ProjectActivationCanceled += OnProjectActivationCanceled;
-            projectManager.ProjectActivationFailed += OnProjectActivationFailed;
-            projectManager.ProjectActivated += OnProjectActivated;
+            Init();
         }
         #endregion
 
@@ -58,7 +38,143 @@ namespace Orc.ProjectManagement
         }
         #endregion
 
-        #region Methods
+        private void Init()
+        {
+            var type = this.GetType();
+            var baseType = type.BaseType;
+
+            if (baseType == null)
+            {
+                return;
+            }
+
+            var methodInfos = from method in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
+                where method.GetBaseDefinition().DeclaringType != method.DeclaringType
+                from subscriber in baseType.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
+                let subscriberName = "Subscribe" + method.Name
+                where string.Equals(subscriber.Name, subscriberName)
+                select subscriber;
+
+            foreach (var methodInfo in methodInfos)
+            {
+                methodInfo.Invoke(this, new object[0]);
+            }
+        }
+
+        private void SubscribeOnLoading()
+        {
+            _projectManager.ProjectLoading += async (sender, e) => await OnLoading(e);
+        }
+
+        private void SubscribeOnLoadingFailed()
+        {
+            _projectManager.ProjectLoadingFailed += async (sender, e) => await OnLoadingFailed(e.Location, e.Exception, e.ValidationContext);
+        }
+
+        private void SubscribeOnLoadingCanceled()
+        {
+            _projectManager.ProjectLoadingCanceled += async (sender, e) => await OnLoadingCanceled(e.Location);
+        }
+
+        private void SubscribeOnLoaded()
+        {
+            _projectManager.ProjectLoaded += async (sender, e) => await OnLoaded(e.Project);
+        }
+
+        private void SubscribeOnSaving()
+        {
+            _projectManager.ProjectSaving += async (sender, e) => await OnSaving(e);
+        }
+
+        private void SubscribeOnSavingCanceled()
+        {
+            _projectManager.ProjectSavingCanceled += async (sender, e) => await OnSavingCanceled(e.Project);
+        }
+
+        private void SubscribeOnSavingFailed()
+        {
+            _projectManager.ProjectSavingFailed += async (sender, e) => await OnSavingFailed(e.Project, e.Exception);
+        }
+
+        private void SubscribeOnSaved()
+        {
+            _projectManager.ProjectSaved += async (sender, e) => await OnSaved(e.Project);
+        }
+
+        private void SubscribeOnClosing()
+        {
+            _projectManager.ProjectClosing += async (sender, e) => await OnClosing(e);
+        }
+
+        private void SubscribeOnClosed()
+        {
+            _projectManager.ProjectClosed += async (sender, e) => await OnClosed(e.Project);
+        }
+
+        private void SubscribeOnClosingCanceled()
+        {
+            _projectManager.ProjectClosingCanceled += async (sender, e) => await OnClosingCanceled(e.Project);
+        }
+
+        private void SubscribeOnRefreshRequired()
+        {
+            _projectManager.ProjectRefreshRequired += OnProjectRefreshRequired;
+        }
+
+        private void OnProjectRefreshRequired(object sender, ProjectEventArgs e)
+        {
+            foreach (var project in _projectManager.Projects.Where(project => string.Equals(project.Location, e.Location)))
+            {
+                OnRefreshRequired(project);
+            }
+        }
+
+        private void SubscribeOnActivated()
+        {
+            _projectManager.ProjectActivated += async (sender, e) => await OnActivated(e.OldProject, e.NewProject);
+            ;
+        }
+
+        private void SubscribeOnActivationFailed()
+        {
+            _projectManager.ProjectActivationFailed += async (sender, e) => await OnActivationFailed(e.Project, e.Exception);
+            ;
+        }
+
+        private void SubscribeOnActivationCanceled()
+        {
+            _projectManager.ProjectActivationCanceled += async (sender, e) => await OnActivationCanceled(e.Project);
+            ;
+        }
+
+        private void SubscribeOnActivation()
+        {
+            _projectManager.ProjectActivation += async (sender, e) => await OnActivation(e);
+            ;
+        }
+
+        private void SubscribeOnRefreshed()
+        {
+            _projectManager.ProjectRefreshed += async (sender, e) => await OnRefreshed(e.Project);
+        }
+
+        private void SubscribeOnRefreshingFailed()
+        {
+            _projectManager.ProjectRefreshingFailed += async (sender, e) => await OnRefreshingFailed(e.Project, e.Exception, e.ValidationContext);
+            ;
+        }
+
+        private void SubscribeOnRefreshingCanceled()
+        {
+            _projectManager.ProjectRefreshingCanceled += async (sender, e) => await OnRefreshingCanceled(e.Project);
+            ;
+        }
+
+        private void SubscribeOnRefreshing()
+        {
+            _projectManager.ProjectRefreshing += async (sender, e) => await OnRefreshing(e);
+        }
+
         protected virtual async Task OnLoading(ProjectCancelEventArgs e)
         {
         }
@@ -103,117 +219,50 @@ namespace Orc.ProjectManagement
         {
         }
 
+        [ObsoleteEx(Message = "Use OnProjectActivated and OnRefreshed instead of it.", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         protected virtual void OnUpdated(IProject oldProject, IProject newProject, bool isRefresh)
         {
         }
 
+        protected virtual void OnRefreshRequired(IProject project)
+        {
+        }
+
+        [ObsoleteEx(ReplacementTypeOrMember = "OnRefreshRequired", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
         protected virtual void OnProjectRefreshRequired(IProject project)
         {
         }
 
-        protected virtual async Task OnProjectActivated(IProject oldProject, IProject newProject)
+        protected virtual async Task OnActivated(IProject oldProject, IProject newProject)
         {
         }
 
-        protected virtual async Task OnProjectActivationFailed(IProject project, Exception exception)
+        protected virtual async Task OnActivationFailed(IProject project, Exception exception)
         {
         }
 
-        protected virtual async Task OnProjectActivationCanceled(IProject project)
+        protected virtual async Task OnActivationCanceled(IProject project)
         {
         }
 
-        protected virtual async Task OnProjectActivation(ProjectUpdatedCancelEventArgs e)
+        protected virtual async Task OnActivation(ProjectUpdatingCancelEventArgs e)
         {
         }
 
-        private async Task OnProjectLoading(object sender, ProjectCancelEventArgs e)
+        protected virtual async Task OnRefreshed(IProject project)
         {
-            await OnLoading(e);
         }
 
-        private async Task OnProjectLoadingFailed(object sender, ProjectErrorEventArgs e)
+        protected virtual async Task OnRefreshingFailed(IProject project, Exception exception, IValidationContext validationContext)
         {
-            await OnLoadingFailed(e.Location, e.Exception, e.ValidationContext);
         }
 
-        private async Task OnProjectLoadingCanceled(object sender, ProjectEventArgs e)
+        protected virtual async Task OnRefreshingCanceled(IProject project)
         {
-            await OnLoadingCanceled(e.Location);
         }
 
-        private async Task OnProjectLoaded(object sender, ProjectEventArgs e)
+        protected virtual async Task OnRefreshing(ProjectCancelEventArgs e)
         {
-            await OnLoaded(e.Project);
         }
-
-        private async Task OnProjectSaving(object sender, ProjectCancelEventArgs e)
-        {
-            await OnSaving(e);
-        }
-
-        private async Task OnProjectSavingCanceled(object sender, ProjectEventArgs e)
-        {
-            await OnSavingCanceled(e.Project);
-        }
-
-        private async Task OnProjectSavingFailed(object sender, ProjectErrorEventArgs e)
-        {
-            await OnSavingFailed(e.Project, e.Exception);
-        }
-
-        private async Task OnProjectSaved(object sender, ProjectEventArgs e)
-        {
-            await OnSaved(e.Project);
-        }
-
-        private async Task OnProjectClosing(object sender, ProjectCancelEventArgs e)
-        {
-            await OnClosing(e);
-        }
-
-        private async Task OnProjectClosingCanceled(object sender, ProjectEventArgs e)
-        {
-            await OnClosingCanceled(e.Project);
-        }
-
-        private async Task OnProjectClosed(object sender, ProjectEventArgs e)
-        {
-            await OnClosed(e.Project);
-        }
-
-        private void OnProjectUpdated(object sender, ProjectUpdatedEventArgs e)
-        {
-            OnUpdated(e.OldProject, e.NewProject, e.IsRefresh);
-        }
-
-        private void OnProjectRefreshRequired(object sender, ProjectEventArgs e)
-        {
-            foreach (var project in _projectManager.Projects.Where(project => string.Equals(project.Location, e.Location)))
-            {
-                OnProjectRefreshRequired(project);
-            }
-        }
-
-        private async Task OnProjectActivated(object sender, ProjectUpdatedEventArgs e)
-        {
-            await OnProjectActivated(e.OldProject, e.NewProject);
-        }
-
-        private async Task OnProjectActivationFailed(object sender, ProjectErrorEventArgs e)
-        {
-            await OnProjectActivationFailed(e.Project, e.Exception);
-        }
-
-        private async Task OnProjectActivationCanceled(object sender, ProjectEventArgs e)
-        {
-            await OnProjectActivationCanceled(e.Project);
-        }
-
-        private async Task OnProjectActivation(object sender, ProjectUpdatedCancelEventArgs e)
-        {
-            await OnProjectActivation(e);
-        }
-        #endregion
     }
 }

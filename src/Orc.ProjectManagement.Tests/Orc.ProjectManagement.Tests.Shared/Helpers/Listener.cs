@@ -27,12 +27,12 @@ namespace Orc.ProjectManagement.Tests
         {
             mockOfProjectManager.Setup(pm => pm.Load(It.IsAny<string>())).CallBase().
                 Callback<string>(location => callbackAction(ProjectManagerLoad, new object[] {location}));
-
+/*
             mockOfProjectManager.Setup(pm => pm.Load(It.IsAny<string>(), It.IsAny<bool>())).CallBase().
-                Callback<string, bool>((location, updateActive) => callbackAction(ProjectManagerLoad, new object[] {location, updateActive}));
+                Callback<string, bool>((location, updateActive) => callbackAction(ProjectManagerLoad, new object[] {location, updateActive}));*/
 
-            mockOfProjectManager.Setup(pm => pm.Load(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>())).CallBase().
-                Callback<string, bool, bool>((location, updateActive, activateLoaded) => callbackAction(ProjectManagerLoad, new object[] {location, updateActive, activateLoaded}));
+/*            mockOfProjectManager.Setup(pm => pm.Load(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>())).CallBase().
+                Callback<string, bool, bool>((location, updateActive, activateLoaded) => callbackAction(ProjectManagerLoad, new object[] {location, updateActive, activateLoaded}));*/
 
             mockOfProjectManager.Setup(pm => pm.SetActiveProject(It.IsAny<IProject>())).CallBase().
                 Callback<IProject>(project => callbackAction(ProjectManagerSetActiveProject, new object[] {project}));
