@@ -25,41 +25,15 @@ namespace Orc.ProjectManagement.Tests
             return projectManager;
         }
 
-        public static void MockAndRegisterIfNotRegistered<T>(this Factory factory)
-            where T : class
+        public static Mock<IProjectManager> MockProjectManager(this Factory factory)
         {
             Argument.IsNotNull(() => factory);
 
-            var serviceLocator = factory.ServiceLocator;
+            var mock = factory.ServiceLocator.ResolveMocked<IProjectManager>();
 
-            if (serviceLocator.IsTypeRegistered<T>())
-            {
-                return;
-            }
-
-            var mock = new Mock<T>(MockBehavior.Loose);
-
-            serviceLocator.RegisterInstance(typeof(T), mock.Object);
+            return mock;
         }
 
-        public static void MockAndRegisterIfNotRegistered<TService, TServiceImplementation>(this Factory factory, params object[] args)
-            where TService : class
-            where TServiceImplementation : class, TService
-        {
-            Argument.IsNotNull(() => factory);
-
-            var serviceLocator = factory.ServiceLocator;
-
-            if (serviceLocator.IsTypeRegistered<TService>())
-            {
-                return;
-            }
-
-            var mock = factory.Mock<TServiceImplementation>(args);
-            var instance = mock.Object;
-
-            serviceLocator.RegisterInstance(typeof(TService), instance);
-        }
 
         public static Factory SetupDefault(this Factory factory)
         {
@@ -83,7 +57,6 @@ namespace Orc.ProjectManagement.Tests
 
             mockOfProjectWriter.Setup(x => x.Write(It.IsAny<IProject>(), It.IsAny<string>())).Callback(() => Thread.Sleep(100)).CallBase().
                 Callback<IProject, string>((project, location) => mockOfProjectRefresher.Raise(refresher => refresher.Updated += null, new ProjectEventArgs(project)));
-            ;
 
             var mockOfProjectRefresherSelector = factory.ServiceLocator.ResolveMocked<IProjectRefresherSelector>();
 
@@ -105,6 +78,44 @@ namespace Orc.ProjectManagement.Tests
             factory.MockAndRegisterIfNotRegistered<IProjectRefresherSelector>();
 
             factory.MockAndRegisterIfNotRegistered<IProjectInitializer, EmptyProjectInitializer>();
+
+            factory.MockAndRegisterIfNotRegistered<IProjectManager, ProjectManager>();
+        }
+
+        private static void MockAndRegisterIfNotRegistered<T>(this Factory factory)
+            where T : class
+        {
+            Argument.IsNotNull(() => factory);
+
+            var serviceLocator = factory.ServiceLocator;
+
+            if (serviceLocator.IsTypeRegistered<T>())
+            {
+                return;
+            }
+
+            var mock = new Mock<T>(MockBehavior.Loose);
+
+            serviceLocator.RegisterInstance(typeof (T), mock.Object);
+        }
+
+        private static void MockAndRegisterIfNotRegistered<TService, TServiceImplementation>(this Factory factory, params object[] args)
+            where TService : class
+            where TServiceImplementation : class, TService
+        {
+            Argument.IsNotNull(() => factory);
+
+            var serviceLocator = factory.ServiceLocator;
+
+            if (serviceLocator.IsTypeRegistered<TService>())
+            {
+                return;
+            }
+
+            var mock = factory.Mock<TServiceImplementation>(args);
+            var instance = mock.Object;
+
+            serviceLocator.RegisterInstance(typeof (TService), instance);
         }
     }
 }

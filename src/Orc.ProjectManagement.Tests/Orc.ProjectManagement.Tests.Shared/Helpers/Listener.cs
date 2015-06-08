@@ -23,16 +23,12 @@ namespace Orc.ProjectManagement.Tests
         public const string ProjectManagerProjectClosed = "IProjectManager.ProjectClosed";
         public const string ProjectManagerProjectUpdated = "IProjectManager.ProjectUpdated";
 
-        public static void ListenToProjectManager(Mock<ProjectManager> mockOfProjectManager, Action<string, object[]> callbackAction)
+        public static void ListenToProjectManager(Factory factory, Action<string, object[]> callbackAction)
         {
+            var mockOfProjectManager = factory.ServiceLocator.ResolveMocked<IProjectManager>();
+
             mockOfProjectManager.Setup(pm => pm.Load(It.IsAny<string>())).CallBase().
                 Callback<string>(location => callbackAction(ProjectManagerLoad, new object[] {location}));
-/*
-            mockOfProjectManager.Setup(pm => pm.Load(It.IsAny<string>(), It.IsAny<bool>())).CallBase().
-                Callback<string, bool>((location, updateActive) => callbackAction(ProjectManagerLoad, new object[] {location, updateActive}));*/
-
-/*            mockOfProjectManager.Setup(pm => pm.Load(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>())).CallBase().
-                Callback<string, bool, bool>((location, updateActive, activateLoaded) => callbackAction(ProjectManagerLoad, new object[] {location, updateActive, activateLoaded}));*/
 
             mockOfProjectManager.Setup(pm => pm.SetActiveProject(It.IsAny<IProject>())).CallBase().
                 Callback<IProject>(project => callbackAction(ProjectManagerSetActiveProject, new object[] {project}));
@@ -54,8 +50,6 @@ namespace Orc.ProjectManagement.Tests
             projectManager.ProjectClosing += async (sender, args) => callbackAction(ProjectManagerProjectClosing, new[] { sender, args });
 
             projectManager.ProjectClosed += async (sender, args) => callbackAction(ProjectManagerProjectClosed, new[] { sender, args });
-
-            projectManager.ProjectUpdated += async (sender, args) => callbackAction(ProjectManagerProjectUpdated, new[] { sender, args });
         }
     }
 }

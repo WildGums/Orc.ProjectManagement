@@ -93,7 +93,14 @@ namespace Orc.ProjectManagement
         public event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated
         {
             remove { }
-            add { throw new NotSupportedException("You're trying to subscribe to obsolete event 'ProjectUpdated'. Use ProjectActivated and ProjectRefreshed instead of it."); }
+            add
+            {
+#if DEBUG
+                throw new NotSupportedException("You're trying to subscribe to obsolete event 'ProjectUpdated'. Use ProjectActivated and ProjectRefreshed instead of it.");
+#else  
+                rojectActivated += async (sender, e) => value(sender, e);
+#endif
+            }
         }
 
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectRefreshing;
