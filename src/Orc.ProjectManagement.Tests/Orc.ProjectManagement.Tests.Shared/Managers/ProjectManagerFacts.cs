@@ -127,6 +127,94 @@ namespace Orc.ProjectManagement.Test.Managers
         }
 
         [TestFixture]
+        public class TheLoadInactiveMethod
+        {
+            [TestCase]
+            public async Task RaisesProjectLoadingEvent()
+            {
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
+
+                var eventRaised = false;
+                projectManager.ProjectLoading += async (sender, e) => eventRaised = true;
+
+                await projectManager.LoadInactive("dummyLocation");
+
+                Assert.IsTrue(eventRaised);
+            }
+
+            [TestCase]
+            public async Task RaisesProjectLoadingFailedEvent()
+            {
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
+
+                var eventRaised = false;
+                projectManager.ProjectLoadingFailed += async (sender, e) => eventRaised = true;
+
+                await projectManager.LoadInactive("cannotload");
+
+                Assert.IsTrue(eventRaised);
+            }
+
+            [TestCase]
+            public async Task RaisesProjectLoadingCanceledEvent()
+            {
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
+
+                var eventRaised = false;
+                projectManager.ProjectLoading += async (sender, e) => e.Cancel = true;
+                projectManager.ProjectLoadingCanceled += async (sender, e) => eventRaised = true;
+
+                await projectManager.LoadInactive("dummyLocation");
+
+                Assert.IsTrue(eventRaised);
+            }
+
+            [TestCase]
+            public async Task DoesntRaiseProjectLoadedEventIfCanceled()
+            {
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
+
+                var eventRaised = false;
+                projectManager.ProjectLoading += async (sender, e) => e.Cancel = true;
+                projectManager.ProjectLoaded += async (sender, e) => eventRaised = true;
+
+                await projectManager.LoadInactive("dummyLocation");
+
+                Assert.IsFalse(eventRaised);
+            }
+
+            [TestCase]
+            public async Task RaisesProjectLoadedEvent()
+            {
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
+
+                var eventRaised = false;
+                projectManager.ProjectLoaded += async (sender, e) => eventRaised = true;
+
+                await projectManager.LoadInactive("dummyLocation");
+
+                Assert.IsTrue(eventRaised);
+            }
+
+            [TestCase]
+            public async Task DoesntCallSetActiveMethodWithLoadedProjectInParameter()
+            {
+                var factory = Factory.Create().SetupDefault();
+                var mock = factory.MockProjectManager();
+                var projectManager = mock.Object;
+
+                await projectManager.LoadInactive("dummyLocation");
+
+                mock.Verify(x => x.SetActiveProject(It.IsAny<IProject>()), Times.Never);
+            }
+        }
+
+        [TestFixture]
         public class TheRefreshMethod
         {
             [TestCase]
