@@ -16,6 +16,14 @@ namespace Orc.ProjectManagement.Tests
 
     internal static class FactoryExtensions
     {
+        public static IProject CreateProject(this Factory factory, string location)
+        {
+            Argument.IsNotNull(() => factory);
+            Argument.IsNotNullOrEmpty(() => location);
+
+            return new Project(location);
+        }
+
         public static IProjectManager GetProjectManager(this Factory factory)
         {
             Argument.IsNotNull(() => factory);
@@ -80,6 +88,9 @@ namespace Orc.ProjectManagement.Tests
             factory.MockAndRegisterIfNotRegistered<IProjectInitializer, EmptyProjectInitializer>();
 
             factory.MockAndRegisterIfNotRegistered<IProjectManager, ProjectManager>();
+
+            var projectManager = factory.ServiceLocator.ResolveType<IProjectManager>() as ProjectManager;
+            factory.ServiceLocator.RegisterInstance<ProjectManager>(projectManager);
         }
 
         private static void MockAndRegisterIfNotRegistered<T>(this Factory factory)

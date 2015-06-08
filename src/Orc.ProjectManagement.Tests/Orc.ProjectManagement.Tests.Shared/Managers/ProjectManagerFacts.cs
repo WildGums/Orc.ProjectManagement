@@ -19,19 +19,6 @@ namespace Orc.ProjectManagement.Test.Managers
         [TestFixture]
         public class TheLoadMethod
         {
-            [TestCase("myLocation")]
-            public async Task UpdatesLocationAfterLoadingProject(string newLocation)
-            {
-                var factory = Factory.Create().SetupDefault();
-                var projectManager = factory.GetProjectManager();
-
-                Assert.AreEqual(null, projectManager.ActiveProject);
-
-                await projectManager.Load(newLocation);
-
-                Assert.AreEqual(newLocation, projectManager.ActiveProject.Location);
-            }
-
             [TestCase]
             public async Task RaisesProjectLoadingEvent()
             {
@@ -310,6 +297,80 @@ namespace Orc.ProjectManagement.Test.Managers
                 await projectManager.Close();
 
                 Assert.IsTrue(eventRaised);
+            }
+        }
+
+        [TestFixture]
+        public class TheSetActiveMethod
+        {
+            [TestCase("dummyLocation")]
+            public async Task UpdatesActiveProjectByValueFromParameter(string newLocation)
+            {
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
+
+                var initialActiveProject = projectManager.ActiveProject;
+                var newProject = factory.CreateProject(newLocation);
+
+                await projectManager.SetActiveProject(newProject);
+
+                var activeProject = projectManager.ActiveProject;
+
+                Assert.AreNotEqual(initialActiveProject, activeProject);
+                Assert.AreEqual(activeProject, newProject);
+            }
+
+            [TestCase("dummyLocation")]
+            public async Task RaiseProjectActivationEvent(string newLocation)
+            {
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
+
+                IProject projectFromEvent = null;
+
+                projectManager.ProjectActivation += async (sender, e) => projectFromEvent = e.NewProject;
+                var newProject = factory.CreateProject(newLocation);
+
+                await projectManager.SetActiveProject(newProject);
+
+                Assert.AreEqual(newProject, projectFromEvent);
+            }
+
+            [TestCase("dummyLocation")]
+            public async Task RaiseProjectActivatedEvent(string newLocation)
+            {
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
+
+                IProject projectFromEvent = null;
+
+                projectManager.ProjectActivated += async (sender, e) => projectFromEvent = e.NewProject;
+                var newProject = factory.CreateProject(newLocation);
+
+                await projectManager.SetActiveProject(newProject);
+
+                Assert.AreEqual(newProject, projectFromEvent);
+            }
+
+            [TestCase("dummyLocation")]
+            public async Task RaiseProjectActivatedEventAfterSettingActiveProject(string newLocation)
+            {
+                var factory = Factory.Create().SetupDefault();
+                var mock = factory.MockProjectManager();
+                var projectManager = mock.Object;
+
+                IList<string> actionNames = new List<string>();
+
+                Listener.ListenToProjectManager(factory, (name, args) => actionNames.Add(name));
+
+                var newProject = factory.CreateProject(newLocation);
+
+                await projectManager.SetActiveProject(newProject);
+
+                var projectActivatedIndex = actionNames.Single(x => string.Equals(x, Listener.ProjectManagerProjectActivated));
+                var setAciveIndex = actionNames.Single(x => string.Equals(x, Listener.ProjectManagerActiveProjectSet));
+
+                Assert.Less(setAciveIndex, projectActivatedIndex);
             }
         }
     }

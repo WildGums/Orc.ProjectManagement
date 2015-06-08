@@ -14,6 +14,7 @@ namespace Orc.ProjectManagement.Tests
     {
         public const string ProjectManagerLoad = "IProjectManager.Load";
         public const string ProjectManagerSetActiveProject = "IProjectManager.SetActiveProject";
+        public const string ProjectManagerActiveProjectSet = "IProjectManager.ActiveProject.Set";
         public const string ProjectManagerClose = "IProjectManager.Close";
         public const string ProjectManagerRefresh = "IProjectManager.Refresh";
         public const string ProjectManagerProjectLoading = "IProjectManager.ProjectLoading";
@@ -21,11 +22,10 @@ namespace Orc.ProjectManagement.Tests
         public const string ProjectManagerProjectActivated = "IProjectManager.ProjectActivated";
         public const string ProjectManagerProjectClosing = "IProjectManager.ProjectClosing";
         public const string ProjectManagerProjectClosed = "IProjectManager.ProjectClosed";
-        public const string ProjectManagerProjectUpdated = "IProjectManager.ProjectUpdated";
 
         public static void ListenToProjectManager(Factory factory, Action<string, object[]> callbackAction)
         {
-            var mockOfProjectManager = factory.ServiceLocator.ResolveMocked<IProjectManager>();
+            var mockOfProjectManager = factory.ServiceLocator.ResolveMocked<ProjectManager>();
 
             mockOfProjectManager.Setup(pm => pm.Load(It.IsAny<string>())).CallBase().
                 Callback<string>(location => callbackAction(ProjectManagerLoad, new object[] {location}));
@@ -38,6 +38,9 @@ namespace Orc.ProjectManagement.Tests
 
             mockOfProjectManager.Setup(pm => pm.Refresh(It.IsAny<IProject>())).CallBase().
                 Callback<IProject>(project => callbackAction(ProjectManagerRefresh, new object[] { project }));
+
+            mockOfProjectManager.SetupSet(pm => pm.ActiveProject = It.IsAny<IProject>()).
+                Callback<IProject>(project => callbackAction(ProjectManagerActiveProjectSet, new object[] { project }));
 
             var projectManager = mockOfProjectManager.Object;
 

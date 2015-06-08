@@ -73,7 +73,7 @@ namespace Orc.ProjectManagement
             get { return ActiveProject; }
         }
 
-        public virtual IProject ActiveProject { get; private set; }
+        public virtual IProject ActiveProject { get; set; }
         #endregion
 
         #region Events
