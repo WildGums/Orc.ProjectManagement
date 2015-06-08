@@ -301,7 +301,7 @@ namespace Orc.ProjectManagement.Test.Managers
         }
 
         [TestFixture]
-        public class TheSetActiveMethod
+        public class TheSetActiveProjectMethod
         {
             [TestCase("dummyLocation")]
             public async Task UpdatesActiveProjectByValueFromParameter(string newLocation)

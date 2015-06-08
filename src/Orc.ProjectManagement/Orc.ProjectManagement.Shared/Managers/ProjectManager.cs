@@ -98,7 +98,7 @@ namespace Orc.ProjectManagement
 #if DEBUG
                 throw new NotSupportedException("You're trying to subscribe to obsolete event 'ProjectUpdated'. Use ProjectActivated and ProjectRefreshed instead of it.");
 #else  
-                rojectActivated += async (sender, e) => value(sender, e);
+                ProjectActivated += async (sender, e) => value(sender, e);
 #endif
             }
         }
