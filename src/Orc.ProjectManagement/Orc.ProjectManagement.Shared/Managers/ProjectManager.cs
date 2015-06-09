@@ -13,6 +13,7 @@ namespace Orc.ProjectManagement
     using System.Linq;
     using System.Threading.Tasks;
     using Catel;
+    using Catel.Collections;
     using Catel.Data;
     using Catel.Logging;
     using Catel.Reflection;
@@ -28,7 +29,7 @@ namespace Orc.ProjectManagement
         private bool _isLoading;
         private int _savingCounter;
         private Stack<string> _activationHistory;
-        private IDictionary<string, IProject> _projects;
+        private ListDictionary<string, IProject> _projects;
         private IDictionary<string, IProjectRefresher> _projectRefreshers;
         #endregion
 
@@ -46,7 +47,7 @@ namespace Orc.ProjectManagement
             _projectSerializerSelector = projectSerializerSelector;
             _projectInitializer = projectInitializer;
 
-            _projects = new ConcurrentDictionary<string, IProject>();
+            _projects = new ListDictionary<string, IProject>();
             _projectRefreshers = new ConcurrentDictionary<string, IProjectRefresher>();
             _activationHistory = new Stack<string>();
         }
