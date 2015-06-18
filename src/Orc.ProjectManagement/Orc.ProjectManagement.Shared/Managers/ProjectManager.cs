@@ -511,6 +511,12 @@ namespace Orc.ProjectManagement
                     yield return location;
                 }
             }
+
+            // if history is not full
+            foreach (var location in Projects.Select(project => project.Location).Where(location => unuqueLocations.Add(location)))
+            {
+                yield return location;
+            }
         }
 
         private IProject GetLastActiveProject()
