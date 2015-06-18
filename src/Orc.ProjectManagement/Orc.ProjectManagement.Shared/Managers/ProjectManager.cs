@@ -502,11 +502,11 @@ namespace Orc.ProjectManagement
 
         public IEnumerable<string> GetActivationHistory()
         {
-            string lastReurned = string.Empty;
+            var unuqueLocations = new HashSet<string>();
 
             foreach (var location in _activationHistory)
             {
-                if (!string.Equals(lastReurned, location, StringComparison.OrdinalIgnoreCase))
+                if (unuqueLocations.Add(location))
                 {
                     yield return location;
                 }
