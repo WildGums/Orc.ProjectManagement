@@ -500,6 +500,19 @@ namespace Orc.ProjectManagement
             return true;
         }
 
+        public IEnumerable<string> GetActivationHistory()
+        {
+            string lastReurned = string.Empty;
+
+            foreach (var location in _activationHistory)
+            {
+                if (!string.Equals(lastReurned, location, StringComparison.OrdinalIgnoreCase))
+                {
+                    yield return location;
+                }
+            }
+        }
+
         private IProject GetLastActiveProject()
         {
             IProject projectToActivate = null;

@@ -65,6 +65,7 @@ namespace Orc.ProjectManagement
         Task<bool> Close();
         Task<bool> Close(IProject project);
         Task<bool> SetActiveProject(IProject project);
+        IEnumerable<string> GetActivationHistory();
         #endregion
     }
 }
