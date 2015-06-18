@@ -513,9 +513,13 @@ namespace Orc.ProjectManagement
             }
 
             // if history is not full
-            foreach (var location in Projects.Select(project => project.Location).Where(location => unuqueLocations.Add(location)))
+            foreach (var project in Projects)
             {
-                yield return location;
+                var location = project.Location;
+                if (unuqueLocations.Add(location))
+                {
+                    yield return location;
+                }
             }
         }
 
