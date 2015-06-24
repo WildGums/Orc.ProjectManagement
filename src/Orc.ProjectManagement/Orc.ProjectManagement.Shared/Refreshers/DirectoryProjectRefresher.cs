@@ -56,7 +56,7 @@ namespace Orc.ProjectManagement
 
                 RaiseUpdated(FullPathToLocation(e.FullPath));
 
-                _fileSystemWatcher.EnableRaisingEvents = true;
+                fileSystemWatcher.EnableRaisingEvents = true;
             }
         }
 
