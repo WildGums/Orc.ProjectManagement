@@ -9,6 +9,7 @@ namespace Orc.ProjectManagement
 {
     using System;
     using System.IO;
+    using Catel;
     using Catel.Logging;
 
     public class DirectoryProjectRefresher : ProjectRefresherBase
@@ -48,16 +49,13 @@ namespace Orc.ProjectManagement
 
         private void OnFileSystemWatcherChanged(object sender, FileSystemEventArgs e)
         {
-            try
+            var fileSystemWatcher = _fileSystemWatcher;
+            using (new DisposableToken(this, x => fileSystemWatcher.EnableRaisingEvents = false, x => fileSystemWatcher.EnableRaisingEvents = true))
             {
-                _fileSystemWatcher.EnableRaisingEvents = false;
-
                 Log.Debug("Detected change '{0}' for location '{1}'", e.ChangeType, e.FullPath);
 
                 RaiseUpdated(FullPathToLocation(e.FullPath));
-            }
-            finally
-            {
+
                 _fileSystemWatcher.EnableRaisingEvents = true;
             }
         }
