@@ -231,7 +231,12 @@ namespace Orc.ProjectManagement
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
-            IProject project = null;
+            var project = Projects.FirstOrDefault(x => string.Equals(location, x.Location));
+
+            if (project != null)
+            {
+                return project;
+            }
 
             using (new DisposableToken(null, token => _isLoading = true, token => _isLoading = false))
             {
