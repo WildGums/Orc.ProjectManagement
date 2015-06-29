@@ -81,19 +81,19 @@ namespace Orc.ProjectManagement.Example.ViewModels
         {
             await base.Initialize();
 
-            _projectManager.ProjectUpdated += OnProjectUpdated;
+            _projectManager.ProjectRefreshed += OnProjectRefreshed;
 
             ReloadProject();
         }
 
         protected override Task Close()
         {
-            _projectManager.ProjectUpdated -= OnProjectUpdated;
+            _projectManager.ProjectRefreshed -= OnProjectRefreshed;
 
             return base.Close();
         }
 
-        private void OnProjectUpdated(object sender, ProjectUpdatedEventArgs e)
+        private async Task OnProjectRefreshed(object sender, ProjectEventArgs e)
         {
             ReloadProject();
         }

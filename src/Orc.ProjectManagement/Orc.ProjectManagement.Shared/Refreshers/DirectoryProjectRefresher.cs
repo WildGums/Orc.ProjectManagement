@@ -49,6 +49,12 @@ namespace Orc.ProjectManagement
 
         private void OnFileSystemWatcherChanged(object sender, FileSystemEventArgs e)
         {
+            if (IsSuspended)
+            {
+                Log.Debug("Watching is suspended, ignoring file system watcher change");
+                return;
+            }
+
             var fileSystemWatcher = _fileSystemWatcher;
             using (new DisposableToken(this, x => fileSystemWatcher.EnableRaisingEvents = false, x => fileSystemWatcher.EnableRaisingEvents = true))
             {

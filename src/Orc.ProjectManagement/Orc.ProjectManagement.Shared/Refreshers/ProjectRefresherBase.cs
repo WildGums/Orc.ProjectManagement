@@ -8,12 +8,18 @@
 namespace Orc.ProjectManagement
 {
     using System;
+    using System.Threading.Tasks;
     using Catel;
+    using Catel.IoC;
     using Catel.Logging;
 
     public abstract class ProjectRefresherBase : IProjectRefresher
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+
+        // Note: dirty solution, but IProjectRefresherSelector is injected into ICommandManager, 
+        // so we cannot accept ICommandManager in there (circular reference)
+        private readonly Lazy<IProjectManager> _projectManager = new Lazy<IProjectManager>(() => ServiceLocator.Default.ResolveType<IProjectManager>());
 
         protected ProjectRefresherBase(string location)
         {
@@ -23,9 +29,13 @@ namespace Orc.ProjectManagement
         }
 
         #region Properties
+        protected IProjectManager ProjectManager { get { return _projectManager.Value; } }
+
         public string Location { get; private set; }
 
         public bool IsSubscribed { get; private set; }
+
+        public bool IsSuspended { get; private set; }
         #endregion
 
         #region Events
@@ -44,6 +54,11 @@ namespace Orc.ProjectManagement
                 Log.Warning("Already subscribed to '{0}', will not subscribe again", location);
                 return;
             }
+
+            ProjectManager.ProjectSaving += OnProjectManagerSaving;
+            ProjectManager.ProjectSaved += OnProjectManagerSaved;
+            ProjectManager.ProjectSavingCanceled += OnProjectManagerSavingCanceled;
+            ProjectManager.ProjectSavingFailed += OnProjectManagerSavingFailed;
 
             SubscribeToLocation(location);
 
@@ -64,6 +79,11 @@ namespace Orc.ProjectManagement
                 return;
             }
 
+            ProjectManager.ProjectSaving -= OnProjectManagerSaving;
+            ProjectManager.ProjectSaved -= OnProjectManagerSaved;
+            ProjectManager.ProjectSavingCanceled -= OnProjectManagerSavingCanceled;
+            ProjectManager.ProjectSavingFailed -= OnProjectManagerSavingFailed;
+
             UnsubscribeFromLocation(location);
 
             IsSubscribed = false;
@@ -74,6 +94,26 @@ namespace Orc.ProjectManagement
         protected void RaiseUpdated(string path)
         {
             Updated.SafeInvoke(this, new ProjectEventArgs(path));
+        }
+
+        private async Task OnProjectManagerSaving(object sender, ProjectCancelEventArgs e)
+        {
+            IsSuspended = true;
+        }
+
+        private async Task OnProjectManagerSaved(object sender, ProjectEventArgs e)
+        {
+            IsSuspended = false;
+        }
+
+        private async Task OnProjectManagerSavingCanceled(object sender, ProjectEventArgs e)
+        {
+            IsSuspended = false;
+        }
+
+        private async Task OnProjectManagerSavingFailed(object sender, ProjectErrorEventArgs e)
+        {
+            IsSuspended = false;
         }
         #endregion
     }

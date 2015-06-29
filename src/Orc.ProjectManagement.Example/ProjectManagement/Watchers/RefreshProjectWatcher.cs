@@ -7,6 +7,7 @@
 
 namespace Orc.ProjectManagement.Example.ProjectManagement
 {
+    using System.Threading.Tasks;
     using Catel;
     using Catel.Logging;
     using Catel.Services;
@@ -26,7 +27,7 @@ namespace Orc.ProjectManagement.Example.ProjectManagement
             _messageService = messageService;
         }
 
-        protected override async void OnRefreshRequired(IProject project)
+        protected override async Task OnRefreshRequired(IProject project)
         {
             if (_isAwaitingFeedback)
             {
@@ -36,7 +37,7 @@ namespace Orc.ProjectManagement.Example.ProjectManagement
 
             _isAwaitingFeedback = true;
 
-            base.OnRefreshRequired(project);
+            await base.OnRefreshRequired(project);
 
             if (await _messageService.Show("Detected a project change, do you want to refresh the project now?", "Refresh project?", MessageButton.YesNo) == MessageResult.Yes)
             {
