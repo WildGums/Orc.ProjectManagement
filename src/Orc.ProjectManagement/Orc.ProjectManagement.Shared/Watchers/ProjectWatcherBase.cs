@@ -40,7 +40,7 @@ namespace Orc.ProjectManagement
 
         private void Init()
         {
-            var type = this.GetType();
+            var type = GetType();
             var baseType = type.BaseType;
 
             if (baseType == null)
@@ -49,11 +49,11 @@ namespace Orc.ProjectManagement
             }
 
             var methodInfos = from method in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
-                where method.GetBaseDefinition().DeclaringType != method.DeclaringType
-                from subscriber in baseType.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
-                let subscriberName = "Subscribe" + method.Name
-                where string.Equals(subscriber.Name, subscriberName)
-                select subscriber;
+                              where method.GetBaseDefinition().DeclaringType != method.DeclaringType
+                              from subscriber in baseType.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
+                              let subscriberName = "Subscribe" + method.Name
+                              where string.Equals(subscriber.Name, subscriberName)
+                              select subscriber;
 
             foreach (var methodInfo in methodInfos)
             {
@@ -118,21 +118,20 @@ namespace Orc.ProjectManagement
 
         private void SubscribeOnRefreshRequired()
         {
-            _projectManager.ProjectRefreshRequired += OnProjectRefreshRequired;
+            _projectManager.ProjectRefreshRequired += async (sender, e) => await OnProjectRefreshRequired(e);
         }
 
-        private void OnProjectRefreshRequired(object sender, ProjectEventArgs e)
+        private async Task OnProjectRefreshRequired(ProjectEventArgs e)
         {
             foreach (var project in _projectManager.Projects.Where(project => string.Equals(project.Location, e.Location)))
             {
-                OnRefreshRequired(project);
+                await OnRefreshRequired(project);
             }
         }
 
         private void SubscribeOnActivated()
         {
             _projectManager.ProjectActivated += async (sender, e) => await OnActivated(e.OldProject, e.NewProject);
-            ;
         }
 
         private void SubscribeOnActivationFailed()
@@ -224,7 +223,7 @@ namespace Orc.ProjectManagement
         {
         }
 
-        protected virtual void OnRefreshRequired(IProject project)
+        protected virtual async Task OnRefreshRequired(IProject project)
         {
         }
 
