@@ -14,5 +14,4 @@ namespace Orc.ProjectManagement
             return ProjectManagementType.SingleDocument;
         }
     }
-
 }

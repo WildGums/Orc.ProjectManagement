@@ -12,9 +12,12 @@ namespace Orc.ProjectManagement.Tests
 
     internal static class IServiceLocatorExtensions
     {
-        public static Mock<T> ResolveMocked<T>(this IServiceLocator serviceLocator) where T : class
+        public static Mock<T> ResolveMocked<T>(this IServiceLocator serviceLocator) 
+            where T : class
         {
-            return Mock.Get(serviceLocator.ResolveType<T>());
+            var instance = serviceLocator.ResolveType<T>();
+
+            return Mock.Get(instance);
         }
     }
 }

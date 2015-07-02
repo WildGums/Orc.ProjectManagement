@@ -95,7 +95,7 @@ namespace Orc.ProjectManagement.Test.Managers
             [TestCase]
             public async Task RaisesProjectLoadedEventBeforeCallsSetActiveMethod()
             {
-                var factory = Factory.Create().SetupDefault();
+                var factory = Factory.Create().SetupDefault(ProjectManagementType.MultipleDocuments);
                 var mock = factory.MockProjectManager();
                 var projectManager = mock.Object;
 
@@ -111,20 +111,20 @@ namespace Orc.ProjectManagement.Test.Managers
                 Assert.Less(projectLoadedIndex, setAciveIndex);
             }
 
-            [TestCase]
-            public async Task CallsSetActiveMethodWithLoadedProjectInParameter()
-            {
-                var factory = Factory.Create().SetupDefault();
-                var mock = factory.MockProjectManager();
-                var projectManager = mock.Object;
+            //[TestCase]
+            //public async Task CallsSetActiveMethodWithLoadedProjectInParameter()
+            //{
+            //    var factory = Factory.Create().SetupDefault();
+            //    var mock = factory.MockProjectManager();
+            //    var projectManager = mock.Object;
 
-                IProject loadedProject = null;
-                projectManager.ProjectLoaded += async (sender, e) => loadedProject = e.Project;
+            //    IProject loadedProject = null;
+            //    projectManager.ProjectLoaded += async (sender, e) => loadedProject = e.Project;
 
-                await projectManager.Load("dummyLocation");
+            //    await projectManager.Load("dummyLocation");
 
-                mock.Verify(x => x.SetActiveProject(loadedProject), Times.Once);
-            }
+            //    mock.Verify(x => x.SetActiveProject(loadedProject), Times.Once);
+            //}
         }
 
         [TestFixture]
@@ -202,17 +202,17 @@ namespace Orc.ProjectManagement.Test.Managers
                 Assert.IsTrue(eventRaised);
             }
 
-            [TestCase]
-            public async Task DoesntCallSetActiveMethodWithLoadedProjectInParameter()
-            {
-                var factory = Factory.Create().SetupDefault();
-                var mock = factory.MockProjectManager();
-                var projectManager = mock.Object;
+            //[TestCase]
+            //public async Task DoesntCallSetActiveMethodWithLoadedProjectInParameter()
+            //{
+            //    var factory = Factory.Create().SetupDefault();
+            //    var mock = factory.MockProjectManager();
+            //    var projectManager = mock.Object;
 
-                await projectManager.LoadInactive("dummyLocation");
+            //    await projectManager.LoadInactive("dummyLocation");
 
-                mock.Verify(x => x.SetActiveProject(It.IsAny<IProject>()), Times.Never);
-            }
+            //    mock.Verify(x => x.SetActiveProject(It.IsAny<IProject>()), Times.Never);
+            //}
         }
 
         [TestFixture]
@@ -298,29 +298,29 @@ namespace Orc.ProjectManagement.Test.Managers
                 Assert.IsTrue(eventRaised);
             }
 
-            [TestCase(5)]
-            public async Task DoesntRaiseProjectRefreshRequiredInParallelSave(int threadsCount)
-            {
-                var factory = Factory.Create().SetupDefault();
+            //[TestCase(5)]
+            //public async Task DoesntRaiseProjectRefreshRequiredInParallelSave(int threadsCount)
+            //{
+            //    var factory = Factory.Create().SetupDefault(ProjectManagementType.MultipleDocuments);
 
-                var mockOfProjectManager = factory.Mock<ProjectManager>();
+            //    var mockOfProjectManager = factory.Mock<ProjectManager>();
 
-                var projectManager = mockOfProjectManager.Object;
+            //    var projectManager = mockOfProjectManager.Object;
 
-                for (var i = 0; i < threadsCount; i++)
-                {
-                    await projectManager.Load(string.Format("project{0}", i));
-                }
+            //    for (var i = 0; i < threadsCount; i++)
+            //    {
+            //        await projectManager.Load(string.Format("project{0}", i));
+            //    }
 
-                var raisedProjectRefreshRequired = false;
-                projectManager.ProjectRefreshRequired += (sender, args) => raisedProjectRefreshRequired = true;
+            //    var raisedProjectRefreshRequired = false;
+            //    projectManager.ProjectRefreshRequired += (sender, args) => raisedProjectRefreshRequired = true;
 
-                // Run test
-                var tasks = projectManager.Projects.Select(proj => Task.Factory.StartNew(async () => await projectManager.Save(proj))).Cast<Task>().ToArray();
-                Task.WaitAll(tasks);
+            //    // Run test
+            //    var tasks = projectManager.Projects.Select(proj => Task.Factory.StartNew(async () => await projectManager.Save(proj))).Cast<Task>().ToArray();
+            //    Task.WaitAll(tasks);
 
-                Assert.IsFalse(raisedProjectRefreshRequired);
-            }
+            //    Assert.IsFalse(raisedProjectRefreshRequired);
+            //}
         }
 
         [TestFixture]
@@ -464,26 +464,26 @@ namespace Orc.ProjectManagement.Test.Managers
                 Assert.AreEqual(newProject, projectFromEvent);
             }
 
-            [TestCase("dummyLocation")]
-            public async Task RaiseProjectActivatedEventAfterSettingActiveProject(string newLocation)
-            {
-                var factory = Factory.Create().SetupDefault();
-                var mock = factory.MockProjectManager();
-                var projectManager = mock.Object;
+            //[TestCase("dummyLocation")]
+            //public async Task RaiseProjectActivatedEventAfterSettingActiveProject(string newLocation)
+            //{
+            //    var factory = Factory.Create().SetupDefault();
+            //    var mock = factory.MockProjectManager();
+            //    var projectManager = mock.Object;
 
-                IList<string> actionNames = new List<string>();
+            //    IList<string> actionNames = new List<string>();
 
-                Listener.ListenToProjectManager(factory, (name, args) => actionNames.Add(name));
+            //    Listener.ListenToProjectManager(factory, (name, args) => actionNames.Add(name));
 
-                var newProject = factory.CreateProject(newLocation);
+            //    var newProject = factory.CreateProject(newLocation);
 
-                await projectManager.SetActiveProject(newProject);
+            //    await projectManager.SetActiveProject(newProject);
 
-                var projectActivatedIndex = actionNames.Single(x => string.Equals(x, Listener.ProjectManagerProjectActivated));
-                var setAciveIndex = actionNames.Single(x => string.Equals(x, Listener.ProjectManagerActiveProjectSet));
+            //    var projectActivatedIndex = actionNames.Single(x => string.Equals(x, Listener.ProjectManagerProjectActivated));
+            //    var setAciveIndex = actionNames.Single(x => string.Equals(x, Listener.ProjectManagerActiveProjectSet));
 
-                Assert.Less(setAciveIndex, projectActivatedIndex);
-            }
+            //    Assert.Less(setAciveIndex, projectActivatedIndex);
+            //}
         }
     }
 }

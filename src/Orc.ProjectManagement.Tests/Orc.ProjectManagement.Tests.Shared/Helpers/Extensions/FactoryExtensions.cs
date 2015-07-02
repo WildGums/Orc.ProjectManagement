@@ -7,6 +7,7 @@
 
 namespace Orc.ProjectManagement.Tests
 {
+    using System;
     using System.Threading;
     using Catel;
     using Catel.IoC;
@@ -28,8 +29,13 @@ namespace Orc.ProjectManagement.Tests
         {
             Argument.IsNotNull(() => factory);
 
-            var projectManager = factory.CreateInstance<ProjectManager>();
+            var serviceLocator = factory.ServiceLocator;
+            if (serviceLocator.IsTypeRegistered<IProjectManager>())
+            {
+                return serviceLocator.ResolveType<IProjectManager>();
+            }
 
+            var projectManager = factory.CreateInstance<ProjectManager>();
             return projectManager;
         }
 
@@ -38,16 +44,15 @@ namespace Orc.ProjectManagement.Tests
             Argument.IsNotNull(() => factory);
 
             var mock = factory.ServiceLocator.ResolveMocked<IProjectManager>();
-
             return mock;
         }
 
 
-        public static Factory SetupDefault(this Factory factory)
+        public static Factory SetupDefault(this Factory factory, ProjectManagementType projectManagementType = ProjectManagementType.SingleDocument)
         {
             Argument.IsNotNull(() => factory);
 
-            SetupRegistrations(factory);
+            SetupRegistrations(factory, projectManagementType);
 
             SetupBehavior(factory);
 
@@ -72,25 +77,42 @@ namespace Orc.ProjectManagement.Tests
                 Returns(projectRefresher);
         }
 
-        private static void SetupRegistrations(Factory factory)
+        private static void SetupRegistrations(Factory factory, ProjectManagementType projectManagementType)
         {
             Argument.IsNotNull(() => factory);
 
+            switch (projectManagementType)
+            {
+                case ProjectManagementType.SingleDocument:
+                    factory.ServiceLocator.RegisterType<IProjectManagementConfigurationService, SdiProjectManagementConfigurationService>();
+                    break;
+
+                case ProjectManagementType.MultipleDocuments:
+                    factory.ServiceLocator.RegisterType<IProjectManagementConfigurationService, MdiProjectManagementConfigurationService>();
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException("projectManagementType", projectManagementType, null);
+            }
+
+            // Why mock all these services??
             factory.MockAndRegisterIfNotRegistered<IProjectReader, MemoryProjectReader>();
             factory.MockAndRegisterIfNotRegistered<IProjectWriter, MemoryProjectWriter>();
 
             factory.MockAndRegisterIfNotRegistered<IProjectSerializerSelector, DefaultProjectSerializerSelector>(factory.ServiceLocator);
 
-            factory.MockAndRegisterIfNotRegistered<IProjectValidator, EmptyProjectValidator>();
+            factory.ServiceLocator.RegisterType<IProjectValidator, EmptyProjectValidator>();
             factory.MockAndRegisterIfNotRegistered<IProjectRefresher>();
             factory.MockAndRegisterIfNotRegistered<IProjectRefresherSelector>();
 
-            factory.MockAndRegisterIfNotRegistered<IProjectInitializer, EmptyProjectInitializer>();
+            factory.ServiceLocator.RegisterType<IProjectManagementInitializationService, ProjectManagementInitializationService>();
 
-            factory.MockAndRegisterIfNotRegistered<IProjectManager, ProjectManager>();
+            factory.ServiceLocator.RegisterType<IProjectInitializer, EmptyProjectInitializer>();
 
-            var projectManager = factory.ServiceLocator.ResolveType<IProjectManager>() as ProjectManager;
-            factory.ServiceLocator.RegisterInstance<ProjectManager>(projectManager);
+            factory.ServiceLocator.RegisterType<IProjectManager, ProjectManager>();
+
+            //var projectManager = factory.ServiceLocator.ResolveType<IProjectManager>() as ProjectManager;
+            //factory.ServiceLocator.RegisterInstance<ProjectManager>(projectManager);
         }
 
         private static void MockAndRegisterIfNotRegistered<T>(this Factory factory)
@@ -99,7 +121,6 @@ namespace Orc.ProjectManagement.Tests
             Argument.IsNotNull(() => factory);
 
             var serviceLocator = factory.ServiceLocator;
-
             if (serviceLocator.IsTypeRegistered<T>())
             {
                 return;
@@ -117,7 +138,6 @@ namespace Orc.ProjectManagement.Tests
             Argument.IsNotNull(() => factory);
 
             var serviceLocator = factory.ServiceLocator;
-
             if (serviceLocator.IsTypeRegistered<TService>())
             {
                 return;
@@ -125,8 +145,7 @@ namespace Orc.ProjectManagement.Tests
 
             var mock = factory.Mock<TServiceImplementation>(args);
             var instance = mock.Object;
-
-            serviceLocator.RegisterInstance(typeof (TService), instance);
+            serviceLocator.RegisterInstance(typeof(TService), instance);
         }
     }
 }

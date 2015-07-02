@@ -29,8 +29,10 @@ namespace Orc.ProjectManagement
 
         protected IServiceLocator ServiceLocator { get; private set; }
 
-        public virtual void Initialize()
+        public virtual void Initialize(IProjectManager projectManager)
         {
+            Argument.IsNotNull(() => projectManager);
+
             var projectManagementType = _projectManagementConfigurationService.GetProjectManagementType();
 
             Log.Debug("Initializing project management for '{0}'", projectManagementType);

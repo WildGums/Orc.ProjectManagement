@@ -16,18 +16,20 @@ namespace Orc.ProjectManagement
     using Catel;
     using Catel.Collections;
     using Catel.Data;
+    using Catel.IoC;
     using Catel.Logging;
     using Catel.Reflection;
 
-    internal class ProjectManager : IProjectManager
+    internal class ProjectManager : IProjectManager, INeedCustomInitialization
     {
         #region Fields
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
+        private readonly IProjectValidator _projectValidator;
         private readonly IProjectRefresherSelector _projectRefresherSelector;
         private readonly IProjectSerializerSelector _projectSerializerSelector;
         private readonly IProjectInitializer _projectInitializer;
-        private readonly IProjectValidator _projectValidator;
+        private readonly IProjectManagementInitializationService _projectManagementInitializationService;
 
         private bool _isLoading;
         private int _savingCounter;
@@ -52,13 +54,18 @@ namespace Orc.ProjectManagement
             _projectRefresherSelector = projectRefresherSelector;
             _projectSerializerSelector = projectSerializerSelector;
             _projectInitializer = projectInitializer;
+            _projectManagementInitializationService = projectManagementInitializationService;
 
             _projects = new ListDictionary<string, IProject>();
             _projectRefreshers = new ConcurrentDictionary<string, IProjectRefresher>();
             _activationHistory = new List<string>();
 
             ProjectManagementType = projectManagementConfigurationService.GetProjectManagementType();
-            projectManagementInitializationService.Initialize();
+        }
+        
+        void INeedCustomInitialization.Initialize()
+        {
+            _projectManagementInitializationService.Initialize(this);
         }
         #endregion
 
