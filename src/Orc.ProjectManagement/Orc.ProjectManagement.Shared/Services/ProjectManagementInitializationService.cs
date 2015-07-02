@@ -37,17 +37,19 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Initializing project management for '{0}'", projectManagementType);
 
-            Initialize(projectManagementType);
+            Initialize(projectManager, projectManagementType);
         }
 
-        protected virtual void Initialize(ProjectManagementType projectManagementType)
+        protected virtual void Initialize(IProjectManager projectManager, ProjectManagementType projectManagementType)
         {
             var serviceLocator = ServiceLocator;
 
             switch (projectManagementType)
             {
                 case ProjectManagementType.SingleDocument:
-                    serviceLocator.RegisterTypeAndInstantiate<CloseBeforeLoadProjectWatcher>();
+                    // Note: don't register and instantiate because IProjectManager is not yet registered here
+                    var closeBeforeLoadProjectWatcher = new CloseBeforeLoadProjectWatcher(projectManager);
+                    serviceLocator.RegisterInstance(closeBeforeLoadProjectWatcher);
                     break;
 
                 case ProjectManagementType.MultipleDocuments:
