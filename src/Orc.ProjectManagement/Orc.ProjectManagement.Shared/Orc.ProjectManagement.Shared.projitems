@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)..\..\SolutionAssemblyInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Constants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectErrorEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectCancelEventArgs.cs" />
@@ -18,6 +19,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectUpdatedEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Exceptions\InvalidProjectException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Exceptions\ProjectException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Exceptions\SdiProjectManagementException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\IProjectManagerExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Initializers\DirectoryProjectInitializer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Initializers\EmptyProjectInitializer.cs" />
@@ -44,12 +46,19 @@
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectReaderBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectWriterBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\ICommandLineService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\IProjectManagementConfigurationService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\IProjectManagementInitializationService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\MdiProjectManagementConfigurationService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\ProjectManagementInitializationService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\SdiProjectManagementConfigurationService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\ProjectManagementConfigurationService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\DirectoryExistsProjectValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\EmptyProjectValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\Extensions\IProjectValidatorExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\FileExistsProjectValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\Interfaces\IProjectValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\ProjectValidatorBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Watchers\CloseBeforeLoadProjectWatcher.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Watchers\ProjectWatcherBase.cs" />
   </ItemGroup>
 </Project>

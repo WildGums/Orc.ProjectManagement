@@ -41,8 +41,8 @@ namespace Orc.ProjectManagement
         private void Init()
         {
             var type = GetType();
-            var baseType = type.BaseType;
 
+            var baseType = type.BaseType;
             if (baseType == null)
             {
                 return;
@@ -137,19 +137,16 @@ namespace Orc.ProjectManagement
         private void SubscribeOnActivationFailed()
         {
             _projectManager.ProjectActivationFailed += async (sender, e) => await OnActivationFailed(e.Project, e.Exception);
-            ;
         }
 
         private void SubscribeOnActivationCanceled()
         {
             _projectManager.ProjectActivationCanceled += async (sender, e) => await OnActivationCanceled(e.Project);
-            ;
         }
 
         private void SubscribeOnActivation()
         {
             _projectManager.ProjectActivation += async (sender, e) => await OnActivation(e);
-            ;
         }
 
         private void SubscribeOnRefreshed()
@@ -160,13 +157,11 @@ namespace Orc.ProjectManagement
         private void SubscribeOnRefreshingFailed()
         {
             _projectManager.ProjectRefreshingFailed += async (sender, e) => await OnRefreshingFailed(e.Project, e.Exception, e.ValidationContext);
-            ;
         }
 
         private void SubscribeOnRefreshingCanceled()
         {
             _projectManager.ProjectRefreshingCanceled += async (sender, e) => await OnRefreshingCanceled(e.Project);
-            ;
         }
 
         private void SubscribeOnRefreshing()
@@ -218,17 +213,7 @@ namespace Orc.ProjectManagement
         {
         }
 
-        [ObsoleteEx(Message = "Use OnProjectActivated and OnRefreshed instead of it.", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        protected virtual void OnUpdated(IProject oldProject, IProject newProject, bool isRefresh)
-        {
-        }
-
         protected virtual async Task OnRefreshRequired(IProject project)
-        {
-        }
-
-        [ObsoleteEx(ReplacementTypeOrMember = "OnRefreshRequired", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        protected virtual void OnProjectRefreshRequired(IProject project)
         {
         }
 

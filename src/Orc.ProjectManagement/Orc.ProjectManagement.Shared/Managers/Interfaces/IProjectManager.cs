@@ -15,15 +15,10 @@ namespace Orc.ProjectManagement
     public interface IProjectManager
     {
         #region Properties
-        [ObsoleteEx(ReplacementTypeOrMember = "ActiveProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        IProject Project { get; }
-
         IEnumerable<IProject> Projects { get; }
 
-        [ObsoleteEx(ReplacementTypeOrMember = "ActiveProject.Location", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        string Location { get; }
-
         IProject ActiveProject { get; }
+        ProjectManagementType ProjectManagementType { get; }
         #endregion
 
         #region Methods
@@ -36,9 +31,6 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
         event AsyncEventHandler<ProjectEventArgs> ProjectSavingCanceled;
         event AsyncEventHandler<ProjectEventArgs> ProjectSaved;
-
-        [ObsoleteEx(Message = "Use ProjectActivated and ProjectRefreshed instead of it.", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated;
 
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectRefreshing;
         event AsyncEventHandler<ProjectEventArgs> ProjectRefreshed;

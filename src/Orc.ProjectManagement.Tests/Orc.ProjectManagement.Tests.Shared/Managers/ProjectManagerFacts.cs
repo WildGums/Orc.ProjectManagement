@@ -9,6 +9,7 @@ namespace Orc.ProjectManagement.Test.Managers
 {
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net.Sockets;
     using System.Threading.Tasks;
     using Moq;
     using NUnit.Framework;
@@ -385,6 +386,29 @@ namespace Orc.ProjectManagement.Test.Managers
                 await projectManager.Close();
 
                 Assert.IsTrue(eventRaised);
+            }
+
+            [TestCase(Reason = "ORCOMP-147")]
+            public async Task DoesNotReloadClosedProjectAgain()
+            {
+                var factory = Factory.Create().SetupDefault();
+                var projectManager = factory.GetProjectManager();
+
+                await projectManager.Load("dummyLocation");
+
+                var eventCount = 0;
+                var projects = new List<IProject>();
+                projectManager.ProjectActivated += async (sender, e) =>
+                {
+                    eventCount++;
+                    projects.Add(e.NewProject);
+                };
+
+                await projectManager.Close();
+
+                Assert.AreEqual(1, eventCount);
+                Assert.AreEqual(1, projects.Count);
+                Assert.IsNull(projects[0]);
             }
         }
 

@@ -1,7 +1,6 @@
 ﻿using Catel.IoC;
 using Orc.ProjectManagement;
 using Orc.ProjectManagement.Serialization;
-using Orc.ProjectManagement.Services;
 
 /// <summary>
 /// Used by the ModuleInit. All code inside the Initialize method is ran as soon as the assembly is loaded.
@@ -19,6 +18,9 @@ public static class ModuleInitializer
         serviceLocator.RegisterType<IProjectInitializer, EmptyProjectInitializer>();
         serviceLocator.RegisterType<IProjectValidator, EmptyProjectValidator>();
         serviceLocator.RegisterType<IProjectRefresherSelector, DefaultProjectRefresherSelector>();
-        serviceLocator.RegisterType<IProjectSerializerSelector, DefaultProjectSerializerSelector>(registerIfAlreadyRegistered:false);
+
+        serviceLocator.RegisterTypeIfNotYetRegistered<IProjectSerializerSelector, DefaultProjectSerializerSelector>();
+        serviceLocator.RegisterTypeIfNotYetRegistered<IProjectManagementConfigurationService, SdiProjectManagementConfigurationService>();
+        serviceLocator.RegisterTypeIfNotYetRegistered<IProjectManagementInitializationService, ProjectManagementInitializationService>();
     }
 }

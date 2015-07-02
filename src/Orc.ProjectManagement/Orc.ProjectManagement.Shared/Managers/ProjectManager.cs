@@ -10,6 +10,7 @@ namespace Orc.ProjectManagement
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using System.Threading.Tasks;
     using Catel;
@@ -22,25 +23,30 @@ namespace Orc.ProjectManagement
     {
         #region Fields
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+
         private readonly IProjectRefresherSelector _projectRefresherSelector;
         private readonly IProjectSerializerSelector _projectSerializerSelector;
         private readonly IProjectInitializer _projectInitializer;
         private readonly IProjectValidator _projectValidator;
+
         private bool _isLoading;
         private int _savingCounter;
-        private Stack<string> _activationHistory;
-        private ListDictionary<string, IProject> _projects;
-        private IDictionary<string, IProjectRefresher> _projectRefreshers;
+        private readonly List<string> _activationHistory;
+        private readonly ListDictionary<string, IProject> _projects;
+        private readonly IDictionary<string, IProjectRefresher> _projectRefreshers;
         #endregion
 
         #region Constructors
         public ProjectManager(IProjectValidator projectValidator, IProjectRefresherSelector projectRefresherSelector, IProjectSerializerSelector projectSerializerSelector,
-            IProjectInitializer projectInitializer)
+            IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService, 
+            IProjectManagementInitializationService projectManagementInitializationService)
         {
             Argument.IsNotNull(() => projectValidator);
             Argument.IsNotNull(() => projectRefresherSelector);
             Argument.IsNotNull(() => projectSerializerSelector);
             Argument.IsNotNull(() => projectInitializer);
+            Argument.IsNotNull(() => projectManagementConfigurationService);
+            Argument.IsNotNull(() => projectManagementInitializationService);
 
             _projectValidator = projectValidator;
             _projectRefresherSelector = projectRefresherSelector;
@@ -49,29 +55,19 @@ namespace Orc.ProjectManagement
 
             _projects = new ListDictionary<string, IProject>();
             _projectRefreshers = new ConcurrentDictionary<string, IProjectRefresher>();
-            _activationHistory = new Stack<string>();
+            _activationHistory = new List<string>();
+
+            ProjectManagementType = projectManagementConfigurationService.GetProjectManagementType();
+            projectManagementInitializationService.Initialize();
         }
         #endregion
 
         #region Properties
+        public ProjectManagementType ProjectManagementType { get; private set; }
+
         public virtual IEnumerable<IProject> Projects
         {
             get { return _projects.Values; }
-        }
-
-        [ObsoleteEx(Message = "Use ActiveProject.Location instead", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        public string Location {
-            get
-            {
-                var activeProject = ActiveProject;
-                return activeProject == null ? string.Empty : activeProject.Location;
-            }
-        }
-
-        [ObsoleteEx(ReplacementTypeOrMember = "ActiveProject", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        public IProject Project
-        {
-            get { return ActiveProject; }
         }
 
         public virtual IProject ActiveProject { get; set; }
@@ -89,20 +85,6 @@ namespace Orc.ProjectManagement
         public event AsyncEventHandler<ProjectErrorEventArgs> ProjectSavingFailed;
         public event AsyncEventHandler<ProjectEventArgs> ProjectSavingCanceled;
         public event AsyncEventHandler<ProjectEventArgs> ProjectSaved;
-
-        [ObsoleteEx(Message = "Use ProjectActivated and ProjectRefreshed instead of it.", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        public event EventHandler<ProjectUpdatedEventArgs> ProjectUpdated
-        {
-            remove { }
-            add
-            {
-#if DEBUG
-                throw new NotSupportedException("You're trying to subscribe to obsolete event 'ProjectUpdated'. Use ProjectActivated and ProjectRefreshed instead of it.");
-#else  
-                ProjectActivated += async (sender, e) => value(sender, e);
-#endif
-            }
-        }
 
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectRefreshing;
         public event AsyncEventHandler<ProjectEventArgs> ProjectRefreshed;
@@ -125,6 +107,7 @@ namespace Orc.ProjectManagement
             foreach (var location in _projectInitializer.GetInitialLocations().Where(x => !string.IsNullOrWhiteSpace(x)))
             {
                 Log.Debug("Loading initial project from location '{0}'", location);
+
                 await Load(location);
             }
         }
@@ -132,7 +115,6 @@ namespace Orc.ProjectManagement
         public async Task<bool> Refresh()
         {
             var project = ActiveProject;
-
             if (project == null)
             {
                 return false;
@@ -166,7 +148,7 @@ namespace Orc.ProjectManagement
                     return false;
                 }
 
-                await Uninstall(project);
+                await CloseAndRemoveProject(project);
 
                 var isRefreshingActiveProject = string.Equals(activeProjectLocation, projectLocation);
 
@@ -178,7 +160,7 @@ namespace Orc.ProjectManagement
                     Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", projectLocation));
                 }
 
-                InstallProject(loadedProject);
+                ActivateAndAddProject(loadedProject);
 
                 await ProjectRefreshed.SafeInvoke(this, new ProjectEventArgs(loadedProject));
 
@@ -199,8 +181,8 @@ namespace Orc.ProjectManagement
                 return true;
             }
 
-            var eventArgs = new ProjectErrorEventArgs(project, 
-                new ProjectException(project, string.Format("Failed to load project from location '{0}' while refreshing.", projectLocation), error), 
+            var eventArgs = new ProjectErrorEventArgs(project,
+                new ProjectException(project, string.Format("Failed to load project from location '{0}' while refreshing.", projectLocation), error),
                 validationContext);
             await ProjectRefreshingFailed.SafeInvoke(this, eventArgs);
 
@@ -231,11 +213,15 @@ namespace Orc.ProjectManagement
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
-            var project = Projects.FirstOrDefault(x => string.Equals(location, x.Location));
-
+            var project = Projects.FirstOrDefault(x => string.Equals(location, x.Location, StringComparison.OrdinalIgnoreCase));
             if (project != null)
             {
                 return project;
+            }
+
+            if (_projects.Count > 0)
+            {
+                Log.ErrorAndThrowException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
             }
 
             using (new DisposableToken(null, token => _isLoading = true, token => _isLoading = false))
@@ -255,7 +241,7 @@ namespace Orc.ProjectManagement
                 }
 
                 Exception error = null;
-                
+
                 IValidationContext validationContext = null;
 
                 try
@@ -268,7 +254,7 @@ namespace Orc.ProjectManagement
                         Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
                     }
 
-                    InstallProject(project);
+                    ActivateAndAddProject(project);
                 }
                 catch (Exception ex)
                 {
@@ -290,7 +276,7 @@ namespace Orc.ProjectManagement
             return project;
         }
 
-        private void InstallProject(IProject project)
+        private void ActivateAndAddProject(IProject project)
         {
             var projectLocation = project.Location;
             _projects[projectLocation] = project;
@@ -300,8 +286,6 @@ namespace Orc.ProjectManagement
 
         private async Task<IProject> QuietlyLoadProject(string location)
         {
-            IProject project;
-
             Log.Debug("Validating to see if we can load the project from '{0}'", location);
 
             if (!await _projectValidator.CanStartLoadingProjectAsync(location))
@@ -317,7 +301,7 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
 
-            project = await projectReader.Read(location);
+            var project = await projectReader.Read(location);
             if (project == null)
             {
                 Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
@@ -428,11 +412,13 @@ namespace Orc.ProjectManagement
                 return false;
             }
 
-            await Uninstall(project);
+            await CloseAndRemoveProject(project);
 
-            var lastAcive = GetLastActiveProject();
-
-            await SetActiveProject(lastAcive);
+            var lastActiveProject = GetLastActiveProject();
+            if (lastActiveProject != null)
+            {
+                await SetActiveProject(lastActiveProject);
+            }
 
             await ProjectClosed.SafeInvoke(this, new ProjectEventArgs(project));
 
@@ -441,15 +427,19 @@ namespace Orc.ProjectManagement
             return true;
         }
 
-        private async Task Uninstall(IProject project)
+        private async Task CloseAndRemoveProject(IProject project)
         {
             await SetActiveProject(null);
 
             var location = project.Location;
-
             if (_projects.ContainsKey(location))
             {
                 _projects.Remove(location);
+
+                while (_activationHistory.Contains(location))
+                {
+                    _activationHistory.Remove(location);
+                }
             }
 
             ReleaseProjectRefresher(project);
@@ -483,12 +473,12 @@ namespace Orc.ProjectManagement
             {
                 if (!string.IsNullOrWhiteSpace(newProjectLocation))
                 {
-                    _activationHistory.Push(newProjectLocation);
+                    _activationHistory.Add(newProjectLocation);
                 }
 
                 ActiveProject = project;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 exception = ex;
             }
@@ -531,9 +521,10 @@ namespace Orc.ProjectManagement
         private IProject GetLastActiveProject()
         {
             IProject projectToActivate = null;
+
             while (_activationHistory.Any() && projectToActivate == null)
             {
-                var projectId = _activationHistory.Pop();
+                var projectId = _activationHistory.Last();
                 _projects.TryGetValue(projectId, out projectToActivate);
             }
 
