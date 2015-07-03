@@ -226,7 +226,7 @@ namespace Orc.ProjectManagement
                 return project;
             }
 
-            if (_projects.Count > 0)
+            if (_projects.Count > 0 && ProjectManagementType == ProjectManagementType.SingleDocument)
             {
                 Log.ErrorAndThrowException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
             }
