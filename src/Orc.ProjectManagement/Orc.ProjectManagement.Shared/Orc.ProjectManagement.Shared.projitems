@@ -45,6 +45,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\Interfaces\IProjectWriter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectReaderBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectWriterBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\ProjectActivationHistoryService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\IProjectActivationHistoryService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\ICommandLineService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\IProjectManagementConfigurationService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\IProjectManagementInitializationService.cs" />
@@ -58,6 +60,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Validators\FileExistsProjectValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\Interfaces\IProjectValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\ProjectValidatorBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Watchers\ActivationHistoryProjectWatcher.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Watchers\CloseBeforeLoadProjectWatcher.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Watchers\ProjectWatcherBase.cs" />
   </ItemGroup>

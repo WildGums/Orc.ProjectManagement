@@ -18,6 +18,7 @@ public static class ModuleInitializer
         serviceLocator.RegisterType<IProjectInitializer, EmptyProjectInitializer>();
         serviceLocator.RegisterType<IProjectValidator, EmptyProjectValidator>();
         serviceLocator.RegisterType<IProjectRefresherSelector, DefaultProjectRefresherSelector>();
+        serviceLocator.RegisterType<IProjectActivationHistoryService, ProjectActivationHistoryService>();
 
         serviceLocator.RegisterTypeIfNotYetRegistered<IProjectSerializerSelector, DefaultProjectSerializerSelector>();
         serviceLocator.RegisterTypeIfNotYetRegistered<IProjectManagementConfigurationService, SdiProjectManagementConfigurationService>();

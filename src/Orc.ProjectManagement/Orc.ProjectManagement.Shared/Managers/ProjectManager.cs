@@ -33,7 +33,6 @@ namespace Orc.ProjectManagement
 
         private bool _isLoading;
         private int _savingCounter;
-        private readonly List<string> _activationHistory;
         private readonly ListDictionary<string, IProject> _projects;
         private readonly IDictionary<string, IProjectRefresher> _projectRefreshers;
         #endregion
@@ -58,7 +57,6 @@ namespace Orc.ProjectManagement
 
             _projects = new ListDictionary<string, IProject>();
             _projectRefreshers = new ConcurrentDictionary<string, IProjectRefresher>();
-            _activationHistory = new List<string>();
 
             ProjectManagementType = projectManagementConfigurationService.GetProjectManagementType();
         }
@@ -421,12 +419,6 @@ namespace Orc.ProjectManagement
 
             await CloseAndRemoveProject(project);
 
-            var lastActiveProject = GetLastActiveProject();
-            if (lastActiveProject != null)
-            {
-                await SetActiveProject(lastActiveProject);
-            }
-
             await ProjectClosed.SafeInvoke(this, new ProjectEventArgs(project));
 
             Log.Info("Closed project '{0}'", project);
@@ -442,11 +434,6 @@ namespace Orc.ProjectManagement
             if (_projects.ContainsKey(location))
             {
                 _projects.Remove(location);
-
-                while (_activationHistory.Contains(location))
-                {
-                    _activationHistory.Remove(location);
-                }
             }
 
             ReleaseProjectRefresher(project);
@@ -478,11 +465,6 @@ namespace Orc.ProjectManagement
 
             try
             {
-                if (!string.IsNullOrWhiteSpace(newProjectLocation))
-                {
-                    _activationHistory.Add(newProjectLocation);
-                }
-
                 ActiveProject = project;
             }
             catch (Exception ex)
@@ -502,40 +484,10 @@ namespace Orc.ProjectManagement
             return true;
         }
 
+        [ObsoleteEx(ReplacementTypeOrMember = "IProjectActivationHistoryService", TreatAsErrorFromVersion = "1.0.0", RemoveInVersion = "1.1.0")]
         public IEnumerable<string> GetActivationHistory()
         {
-            var unuqueLocations = new HashSet<string>();
-
-            foreach (var location in _activationHistory)
-            {
-                if (unuqueLocations.Add(location))
-                {
-                    yield return location;
-                }
-            }
-
-            // if history is not full
-            foreach (var project in Projects)
-            {
-                var location = project.Location;
-                if (unuqueLocations.Add(location))
-                {
-                    yield return location;
-                }
-            }
-        }
-
-        private IProject GetLastActiveProject()
-        {
-            IProject projectToActivate = null;
-
-            while (_activationHistory.Any() && projectToActivate == null)
-            {
-                var projectId = _activationHistory.Last();
-                _projects.TryGetValue(projectId, out projectToActivate);
-            }
-
-            return projectToActivate;
+            throw new NotSupportedException();
         }
 
         private void InitializeProjectRefresher(string projectLocation)

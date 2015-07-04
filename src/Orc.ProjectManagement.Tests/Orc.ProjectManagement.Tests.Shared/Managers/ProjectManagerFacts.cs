@@ -298,29 +298,29 @@ namespace Orc.ProjectManagement.Test.Managers
                 Assert.IsTrue(eventRaised);
             }
 
-            //[TestCase(5)]
-            //public async Task DoesntRaiseProjectRefreshRequiredInParallelSave(int threadsCount)
-            //{
-            //    var factory = Factory.Create().SetupDefault(ProjectManagementType.MultipleDocuments);
+            [TestCase(5)]
+            public async Task DoesntRaiseProjectRefreshRequiredInParallelSave(int threadsCount)
+            {
+                var factory = Factory.Create().SetupDefault(ProjectManagementType.MultipleDocuments);
 
-            //    var mockOfProjectManager = factory.Mock<ProjectManager>();
+                var mockOfProjectManager = factory.Mock<ProjectManager>();
 
-            //    var projectManager = mockOfProjectManager.Object;
+                var projectManager = mockOfProjectManager.Object;
 
-            //    for (var i = 0; i < threadsCount; i++)
-            //    {
-            //        await projectManager.Load(string.Format("project{0}", i));
-            //    }
+                for (var i = 0; i < threadsCount; i++)
+                {
+                    await projectManager.Load(string.Format("project{0}", i));
+                }
 
-            //    var raisedProjectRefreshRequired = false;
-            //    projectManager.ProjectRefreshRequired += (sender, args) => raisedProjectRefreshRequired = true;
+                var raisedProjectRefreshRequired = false;
+                projectManager.ProjectRefreshRequired += (sender, args) => raisedProjectRefreshRequired = true;
 
-            //    // Run test
-            //    var tasks = projectManager.Projects.Select(proj => Task.Factory.StartNew(async () => await projectManager.Save(proj))).Cast<Task>().ToArray();
-            //    Task.WaitAll(tasks);
+                // Run test
+                var tasks = projectManager.Projects.Select(proj => Task.Factory.StartNew(async () => await projectManager.Save(proj))).Cast<Task>().ToArray();
+                Task.WaitAll(tasks);
 
-            //    Assert.IsFalse(raisedProjectRefreshRequired);
-            //}
+                Assert.IsFalse(raisedProjectRefreshRequired);
+            }
         }
 
         [TestFixture]

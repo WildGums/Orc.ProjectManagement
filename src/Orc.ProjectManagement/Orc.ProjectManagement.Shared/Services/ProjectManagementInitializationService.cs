@@ -53,6 +53,12 @@ namespace Orc.ProjectManagement
                     break;
 
                 case ProjectManagementType.MultipleDocuments:
+                    // Note: don't register and instantiate because IProjectManager is not yet registered here
+                    var projectActivationHistoryService = new ProjectActivationHistoryService(projectManager);
+                    serviceLocator.RegisterInstance(typeof(IProjectActivationHistoryService), projectActivationHistoryService);
+
+                    var activationHistoryProjectWatcher = new ActivationHistoryProjectWatcher(projectManager, projectActivationHistoryService);
+                    serviceLocator.RegisterInstance(activationHistoryProjectWatcher);
                     break;
 
                 default:
