@@ -17,14 +17,18 @@ namespace Orc.ProjectManagement
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
         private readonly IProjectManagementConfigurationService _projectManagementConfigurationService;
+        private readonly ITypeFactory _typeFactory;
 
-        public ProjectManagementInitializationService(IServiceLocator serviceLocator, IProjectManagementConfigurationService projectManagementConfigurationService)
+        public ProjectManagementInitializationService(IServiceLocator serviceLocator, IProjectManagementConfigurationService projectManagementConfigurationService,
+            ITypeFactory typeFactory)
         {
             Argument.IsNotNull(() => serviceLocator);
             Argument.IsNotNull(() => projectManagementConfigurationService);
+            Argument.IsNotNull(() => typeFactory);
 
             ServiceLocator = serviceLocator;
             _projectManagementConfigurationService = projectManagementConfigurationService;
+            _typeFactory = typeFactory;
         }
 
         protected IServiceLocator ServiceLocator { get; private set; }
@@ -54,10 +58,7 @@ namespace Orc.ProjectManagement
 
                 case ProjectManagementType.MultipleDocuments:
                     // Note: don't register and instantiate because IProjectManager is not yet registered here
-                    var projectActivationHistoryService = new ProjectActivationHistoryService(projectManager);
-                    serviceLocator.RegisterInstance(typeof(IProjectActivationHistoryService), projectActivationHistoryService);
-
-                    var activationHistoryProjectWatcher = new ActivationHistoryProjectWatcher(projectManager, projectActivationHistoryService);
+                    var activationHistoryProjectWatcher = _typeFactory.CreateInstanceWithParametersAndAutoCompletion<ActivationHistoryProjectWatcher>(projectManager);
                     serviceLocator.RegisterInstance(activationHistoryProjectWatcher);
                     break;
 

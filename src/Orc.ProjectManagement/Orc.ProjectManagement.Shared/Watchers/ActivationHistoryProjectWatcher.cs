@@ -23,6 +23,8 @@ namespace Orc.ProjectManagement
             Argument.IsNotNull(() => projectActivationHistoryService);
 
             _projectActivationHistoryService = projectActivationHistoryService;
+
+            _projectActivationHistoryService.SetProjectsSource(ProjectManager.Projects);
         }
         #endregion
 

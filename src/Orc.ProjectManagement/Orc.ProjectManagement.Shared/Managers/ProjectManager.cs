@@ -72,7 +72,7 @@ namespace Orc.ProjectManagement
 
         public virtual IEnumerable<IProject> Projects
         {
-            get { return _projects.Values; }
+            get { return _projects.Select(x => x.Value); }
         }
 
         public virtual IProject ActiveProject { get; set; }

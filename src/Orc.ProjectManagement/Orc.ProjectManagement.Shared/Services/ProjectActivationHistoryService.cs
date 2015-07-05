@@ -15,17 +15,8 @@ namespace Orc.ProjectManagement
     {
         #region Fields
         private readonly IList<IProject> _activationHistory = new List<IProject>();
-        private readonly IProjectManager _projectManager;
+        private IEnumerable<IProject> _projectsSoutce = Enumerable.Empty<IProject>();
         private readonly HashSet<string> _uniqueLocations = new HashSet<string>();
-        #endregion
-
-        #region Constructors
-        public ProjectActivationHistoryService(IProjectManager projectManager)
-        {
-            _projectManager = projectManager;
-
-            AppendHistory();
-        }
         #endregion
 
         #region Methods
@@ -67,6 +58,15 @@ namespace Orc.ProjectManagement
 
             return _activationHistory;
         }
+
+        public void SetProjectsSource(IEnumerable<IProject> projects)
+        {
+            Argument.IsNotNull(() => projects);
+
+            _projectsSoutce = projects;
+
+            AppendHistory();
+        }
         #endregion
 
         private void RemoveFromHistory(IProject project)
@@ -82,7 +82,7 @@ namespace Orc.ProjectManagement
 
         private void AppendHistory()
         {
-            foreach (var project in _projectManager.Projects)
+            foreach (var project in _projectsSoutce)
             {
                 if (_uniqueLocations.Add(project.Location))
                 {
