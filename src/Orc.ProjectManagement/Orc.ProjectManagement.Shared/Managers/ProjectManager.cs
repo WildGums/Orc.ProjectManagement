@@ -153,9 +153,14 @@ namespace Orc.ProjectManagement
                     return false;
                 }
 
+                var isRefreshingActiveProject = string.Equals(activeProjectLocation, projectLocation);
+
                 await CloseAndRemoveProject(project);
 
-                var isRefreshingActiveProject = string.Equals(activeProjectLocation, projectLocation);
+                if (isRefreshingActiveProject)
+                {
+                    await SetActiveProject(null);
+                }
 
                 var loadedProject = await QuietlyLoadProject(projectLocation);
 
@@ -417,6 +422,8 @@ namespace Orc.ProjectManagement
                 return false;
             }
 
+            await SetActiveProject(null);
+
             await CloseAndRemoveProject(project);
 
             await ProjectClosed.SafeInvoke(this, new ProjectEventArgs(project));
@@ -428,8 +435,6 @@ namespace Orc.ProjectManagement
 
         private async Task CloseAndRemoveProject(IProject project)
         {
-            await SetActiveProject(null);
-
             var location = project.Location;
             if (_projects.ContainsKey(location))
             {
