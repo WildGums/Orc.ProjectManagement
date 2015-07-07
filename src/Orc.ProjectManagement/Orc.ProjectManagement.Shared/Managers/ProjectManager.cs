@@ -229,11 +229,6 @@ namespace Orc.ProjectManagement
                 return project;
             }
 
-            if (_projects.Count > 0 && ProjectManagementType == ProjectManagementType.SingleDocument)
-            {
-                Log.ErrorAndThrowException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
-            }
-
             using (new DisposableToken(null, token => _isLoading = true, token => _isLoading = false))
             {
                 Log.Debug("Loading project from '{0}'", location);
@@ -256,6 +251,11 @@ namespace Orc.ProjectManagement
 
                 try
                 {
+                    if (_projects.Count > 0 && ProjectManagementType == ProjectManagementType.SingleDocument)
+                    {
+                        Log.ErrorAndThrowException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
+                    }
+
                     project = await QuietlyLoadProject(location);
 
                     validationContext = await _projectValidator.ValidateProjectAsync(project);
