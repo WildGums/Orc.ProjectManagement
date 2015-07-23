@@ -123,7 +123,9 @@ namespace Orc.ProjectManagement
 
         private async Task OnProjectRefreshRequired(ProjectEventArgs e)
         {
-            foreach (var project in _projectManager.Projects.Where(project => string.Equals(project.Location, e.Location)))
+            var projects = _projectManager.Projects.Where(project => string.Equals(project.Location, e.Location)).ToList();
+
+            foreach (var project in projects)
             {
                 await OnRefreshRequired(project);
             }
