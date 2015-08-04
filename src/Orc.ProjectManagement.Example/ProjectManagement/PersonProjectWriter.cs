@@ -13,7 +13,7 @@ namespace Orc.ProjectManagement.Example.Services
 
     public class PersonProjectWriter : ProjectWriterBase<PersonProject>
     {
-        protected override async Task WriteToLocation(PersonProject project, string location)
+        protected override async Task WriteToLocationAsync(PersonProject project, string location)
         {
             using (var fileStream = new FileStream(location, FileMode.Create, FileAccess.Write))
             {

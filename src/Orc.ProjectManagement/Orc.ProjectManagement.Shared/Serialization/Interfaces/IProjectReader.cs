@@ -11,6 +11,6 @@ namespace Orc.ProjectManagement
 
     public interface IProjectReader
     {
-        Task<IProject> Read(string location);
+        Task<IProject> ReadAsync(string location);
     }
 }

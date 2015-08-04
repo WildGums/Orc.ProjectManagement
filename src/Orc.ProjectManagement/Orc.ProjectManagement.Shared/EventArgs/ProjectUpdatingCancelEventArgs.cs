@@ -48,7 +48,6 @@ namespace Orc.ProjectManagement
             get
             {
                 var oldProjectLocation = OldProjectLocation;
-
                 var newProjectLocation = NewProjectLocation;
 
                 if (string.IsNullOrWhiteSpace(oldProjectLocation) || string.IsNullOrWhiteSpace(newProjectLocation))

@@ -16,14 +16,14 @@ namespace Orc.ProjectManagement
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-        public async Task Write(IProject project, string location)
+        public async Task WriteAsync(IProject project, string location)
         {
             Argument.IsNotNull(() => project);
             Argument.IsNotNullOrWhitespace(() => location);
 
             Log.Debug("Writing all data to '{0}'", location);
 
-            await WriteToLocation((TProject)project, location);
+            await WriteToLocationAsync((TProject)project, location);
 
             project.Location = location;
             project.ClearIsDirty();
@@ -31,6 +31,6 @@ namespace Orc.ProjectManagement
             Log.Info("Wrote all data to '{0}'", location);
         }
 
-        protected abstract Task WriteToLocation(TProject project, string location);
+        protected abstract Task WriteToLocationAsync(TProject project, string location);
     }
 }

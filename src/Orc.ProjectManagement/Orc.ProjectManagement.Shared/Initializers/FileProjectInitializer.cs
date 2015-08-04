@@ -8,10 +8,8 @@
 namespace Orc.ProjectManagement
 {
     using System.Collections.Generic;
-    using System.Linq;
     using Catel;
     using Catel.Services;
-    using Services;
 
     public class FileProjectInitializer : IProjectInitializer
     {
@@ -22,12 +20,6 @@ namespace Orc.ProjectManagement
             Argument.IsNotNull(() => startUpInfoProvider);
 
             _startUpInfoProvider = startUpInfoProvider;
-        }
-
-        [ObsoleteEx(ReplacementTypeOrMember = "GetInitialLocations", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        public virtual string GetInitialLocation()
-        {
-            return GetInitialLocations().FirstOrDefault();
         }
 
         public virtual IEnumerable<string> GetInitialLocations()

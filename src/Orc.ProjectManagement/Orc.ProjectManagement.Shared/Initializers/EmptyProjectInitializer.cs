@@ -12,12 +12,6 @@ namespace Orc.ProjectManagement
 
     public class EmptyProjectInitializer : IProjectInitializer
     {
-        [ObsoleteEx(ReplacementTypeOrMember = "GetInitialLocations", RemoveInVersion = "1.1.0", TreatAsErrorFromVersion = "1.0.0")]
-        public virtual string GetInitialLocation()
-        {
-            return GetInitialLocations().FirstOrDefault();
-        }
-
         public virtual IEnumerable<string> GetInitialLocations()
         {
             return Enumerable.Empty<string>();

@@ -15,13 +15,13 @@ namespace Orc.ProjectManagement
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-        public async Task<IProject> Read(string location)
+        public async Task<IProject> ReadAsync(string location)
         {
             Argument.IsNotNullOrWhitespace(() => location);
 
             Log.Debug("Reading data from '{0}'", location);
 
-            var project = await ReadFromLocation(location);
+            var project = await ReadFromLocationAsync(location);
 
             project.ClearIsDirty();
 
@@ -30,6 +30,6 @@ namespace Orc.ProjectManagement
             return project;
         }
 
-        protected abstract Task<IProject> ReadFromLocation(string location);
+        protected abstract Task<IProject> ReadFromLocationAsync(string location);
     }
 }

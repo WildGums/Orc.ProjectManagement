@@ -163,7 +163,7 @@ namespace Orc.ProjectManagement
 
                 var loadedProject = await QuietlyLoadProject(projectLocation);
 
-                validationContext = await _projectValidator.ValidateProjectAsync(loadedProject);
+                validationContext = _projectValidator.ValidateProject(loadedProject);
                 if (validationContext.HasErrors)
                 {
                     Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", projectLocation));
@@ -257,7 +257,7 @@ namespace Orc.ProjectManagement
 
                     project = await QuietlyLoadProject(location);
 
-                    validationContext = await _projectValidator.ValidateProjectAsync(project);
+                    validationContext = _projectValidator.ValidateProject(project);
                     if (validationContext.HasErrors)
                     {
                         Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
@@ -297,7 +297,7 @@ namespace Orc.ProjectManagement
         {
             Log.Debug("Validating to see if we can load the project from '{0}'", location);
 
-            if (!await _projectValidator.CanStartLoadingProjectAsync(location))
+            if (!_projectValidator.CanStartLoadingProject(location))
             {
                 throw new ProjectException(location, String.Format("Cannot load project from '{0}'", location));
             }
@@ -310,7 +310,7 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
 
-            var project = await projectReader.Read(location);
+            var project = await projectReader.ReadAsync(location);
             if (project == null)
             {
                 Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
@@ -370,7 +370,7 @@ namespace Orc.ProjectManagement
                 Exception error = null;
                 try
                 {
-                    await projectWriter.Write(project, location);
+                    await projectWriter.WriteAsync(project, location);
                 }
                 catch (Exception ex)
                 {

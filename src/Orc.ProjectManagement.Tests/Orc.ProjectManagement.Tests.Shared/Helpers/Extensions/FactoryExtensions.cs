@@ -68,7 +68,7 @@ namespace Orc.ProjectManagement.Tests
 
             var mockOfProjectWriter = factory.ServiceLocator.ResolveMocked<IProjectWriter>();
 
-            mockOfProjectWriter.Setup(x => x.Write(It.IsAny<IProject>(), It.IsAny<string>())).Callback(() => Thread.Sleep(100)).CallBase().
+            mockOfProjectWriter.Setup(x => x.WriteAsync(It.IsAny<IProject>(), It.IsAny<string>())).Callback(() => Thread.Sleep(100)).CallBase().
                 Callback<IProject, string>((project, location) => mockOfProjectRefresher.Raise(refresher => refresher.Updated += null, new ProjectEventArgs(project)));
 
             var mockOfProjectRefresherSelector = factory.ServiceLocator.ResolveMocked<IProjectRefresherSelector>();

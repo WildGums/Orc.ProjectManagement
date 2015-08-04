@@ -14,7 +14,6 @@ namespace Orc.ProjectManagement
         public SdiProjectManagementException()
             : this("Cannot load project, only one loaded project is allowed at the same time. Close the project or use a different IProjectConfigurationService.")
         {
-            
         }
 
         public SdiProjectManagementException(string messageFormat, params object[] args)

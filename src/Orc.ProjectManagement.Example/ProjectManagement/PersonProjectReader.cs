@@ -13,7 +13,7 @@ namespace Orc.ProjectManagement.Example.Services
 
     public class PersonProjectReader : ProjectReaderBase
     {
-        protected override async Task<IProject> ReadFromLocation(string location)
+        protected override async Task<IProject> ReadFromLocationAsync(string location)
         {
             var project = new PersonProject(location);
 

@@ -11,6 +11,6 @@ namespace Orc.ProjectManagement
 
     public interface IProjectWriter
     {
-        Task Write(IProject project, string location);
+        Task WriteAsync(IProject project, string location);
     }
 }

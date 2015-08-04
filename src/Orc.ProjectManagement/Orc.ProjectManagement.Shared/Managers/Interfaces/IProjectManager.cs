@@ -47,6 +47,7 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectUpdatedEventArgs> ProjectActivated;
         event AsyncEventHandler<ProjectEventArgs> ProjectActivationCanceled;
         event AsyncEventHandler<ProjectErrorEventArgs> ProjectActivationFailed;
+
         Task Initialize();
         Task<bool> Refresh();
         Task<bool> Refresh(IProject project);
