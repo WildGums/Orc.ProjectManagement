@@ -15,14 +15,14 @@ namespace Orc.ProjectManagement
     {
         #region Fields
         private readonly IList<IProject> _activationHistory = new List<IProject>();
-        private IEnumerable<IProject> _projectsSoutce = Enumerable.Empty<IProject>();
+        private IEnumerable<IProject> _projectsSource = Enumerable.Empty<IProject>();
         private readonly HashSet<string> _uniqueLocations = new HashSet<string>();
         #endregion
 
         #region Methods
         public void Remember(IProject project)
         {
-            if (project == null)
+            if (project == null || _isHistoryUsageSuspended)
             {
                 return;
             }
@@ -32,7 +32,7 @@ namespace Orc.ProjectManagement
             _activationHistory.Insert(0, project);
             _uniqueLocations.Add(project.Location);
 
-            AppendHistory();
+            RenewHistory();
         }
 
         public void Forget(IProject project)
@@ -44,17 +44,22 @@ namespace Orc.ProjectManagement
 
             RemoveFromHistory(project);
 
-            AppendHistory();
+            RenewHistory();
         }
 
         public IProject GetLastActiveProject()
         {
+            if (_isHistoryUsageSuspended)
+            {
+                return null;
+            }
+
             return _activationHistory.FirstOrDefault();
         }
 
         public IEnumerable<IProject> GetActivationHistory()
         {
-            AppendHistory();
+            RenewHistory();
 
             return _activationHistory;
         }
@@ -63,9 +68,23 @@ namespace Orc.ProjectManagement
         {
             Argument.IsNotNull(() => projects);
 
-            _projectsSoutce = projects;
+            _projectsSource = projects;
 
-            AppendHistory();
+            RenewHistory();
+        }
+
+        private bool _isHistoryUsageSuspended;
+
+        public void SuspendUsingHistory()
+        {
+            _isHistoryUsageSuspended = true;
+        }
+
+        public void ContinueUsingHistory()
+        {
+            RenewHistory();
+
+            _isHistoryUsageSuspended = false;
         }
         #endregion
 
@@ -80,9 +99,20 @@ namespace Orc.ProjectManagement
             _uniqueLocations.Remove(project.Location);
         }
 
-        private void AppendHistory()
+        private void RenewHistory()
         {
-            foreach (var project in _projectsSoutce)
+            var source = _projectsSource.ToArray();
+            var history = _activationHistory.ToArray();
+            var toRemove = (from project in history
+                            where !source.Contains(project)
+                            select project).ToArray();
+
+            foreach (var project in toRemove)
+            {
+                RemoveFromHistory(project);
+            }
+            
+            foreach (var project in _projectsSource)
             {
                 if (_uniqueLocations.Add(project.Location))
                 {

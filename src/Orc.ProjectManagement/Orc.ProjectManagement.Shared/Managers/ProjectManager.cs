@@ -457,11 +457,11 @@ namespace Orc.ProjectManagement
 
             if (project != null)
             {
-                Log.Debug("Activating project '{0}'", project.Location);
+                Log.Info("Activating project '{0}'", project.Location);
             }
             else
             {
-                Log.Debug("Deactivating currently active project");
+                Log.Info("Deactivating currently active project");
             }
 
             var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
@@ -470,6 +470,7 @@ namespace Orc.ProjectManagement
 
             if (eventArgs.Cancel)
             {
+                Log.Info("Activating project '{0}'", project.Location);
                 await ProjectActivationCanceled.SafeInvoke(this, new ProjectEventArgs(project));
                 return false;
             }
@@ -503,11 +504,11 @@ namespace Orc.ProjectManagement
 
             if (project != null)
             {
-                Log.Info("Activated project '{0}'", project.Location);
+                Log.Debug("Activated project '{0}'", project.Location);
             }
             else
             {
-                Log.Info("Deactivated currently active project");
+                Log.Debug("Deactivated currently active project");
             }
 
             return true;

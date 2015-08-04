@@ -50,10 +50,6 @@ namespace Orc.ProjectManagement
             _projectActivationHistoryService.Forget(project);
 
             var lastActiveProject = _projectActivationHistoryService.GetLastActiveProject();
-            if (lastActiveProject == null)
-            {
-                return;
-            }
 
             await ProjectManager.SetActiveProject(lastActiveProject);
 

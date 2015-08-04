@@ -16,5 +16,7 @@ namespace Orc.ProjectManagement
         IEnumerable<IProject> GetActivationHistory();
         IProject GetLastActiveProject();
         void SetProjectsSource(IEnumerable<IProject> projects);
+        void SuspendUsingHistory();
+        void ContinueUsingHistory();
     }
 }
