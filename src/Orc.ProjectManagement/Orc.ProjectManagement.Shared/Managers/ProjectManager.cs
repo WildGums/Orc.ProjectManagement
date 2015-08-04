@@ -507,7 +507,7 @@ namespace Orc.ProjectManagement
             }
             else
             {
-                Log.Info("Deactivated currently active project", project.Location);
+                Log.Info("Deactivated currently active project");
             }
 
             return true;
