@@ -10,7 +10,6 @@ namespace Orc.ProjectManagement
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Linq;
     using System.Threading.Tasks;
     using Catel;
@@ -24,22 +23,20 @@ namespace Orc.ProjectManagement
     {
         #region Fields
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
-
-        private readonly IProjectValidator _projectValidator;
-        private readonly IProjectRefresherSelector _projectRefresherSelector;
-        private readonly IProjectSerializerSelector _projectSerializerSelector;
         private readonly IProjectInitializer _projectInitializer;
         private readonly IProjectManagementInitializationService _projectManagementInitializationService;
-
+        private readonly IDictionary<string, IProjectRefresher> _projectRefreshers;
+        private readonly IProjectRefresherSelector _projectRefresherSelector;
+        private readonly ListDictionary<string, IProject> _projects;
+        private readonly IProjectSerializerSelector _projectSerializerSelector;
+        private readonly IProjectValidator _projectValidator;
         private bool _isLoading;
         private int _savingCounter;
-        private readonly ListDictionary<string, IProject> _projects;
-        private readonly IDictionary<string, IProjectRefresher> _projectRefreshers;
         #endregion
 
         #region Constructors
         public ProjectManager(IProjectValidator projectValidator, IProjectRefresherSelector projectRefresherSelector, IProjectSerializerSelector projectSerializerSelector,
-            IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService, 
+            IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService,
             IProjectManagementInitializationService projectManagementInitializationService)
         {
             Argument.IsNotNull(() => projectValidator);
@@ -60,11 +57,6 @@ namespace Orc.ProjectManagement
 
             ProjectManagementType = projectManagementConfigurationService.GetProjectManagementType();
         }
-        
-        void INeedCustomInitialization.Initialize()
-        {
-            _projectManagementInitializationService.Initialize(this);
-        }
         #endregion
 
         #region Properties
@@ -76,6 +68,13 @@ namespace Orc.ProjectManagement
         }
 
         public virtual IProject ActiveProject { get; set; }
+        #endregion
+
+        #region Methods
+        void INeedCustomInitialization.Initialize()
+        {
+            _projectManagementInitializationService.Initialize(this);
+        }
         #endregion
 
         #region Events
@@ -465,7 +464,6 @@ namespace Orc.ProjectManagement
                 Log.Debug("Deactivating currently active project");
             }
 
-
             var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
 
             await ProjectActivation.SafeInvoke(this, eventArgs);
@@ -500,7 +498,6 @@ namespace Orc.ProjectManagement
                 await ProjectActivationFailed.SafeInvoke(this, new ProjectErrorEventArgs(project, exception));
                 return false;
             }
-
 
             await ProjectActivated.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, project));
 
