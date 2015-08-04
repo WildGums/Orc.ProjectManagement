@@ -155,7 +155,7 @@ namespace Orc.ProjectManagement
 
                 var isRefreshingActiveProject = string.Equals(activeProjectLocation, projectLocation);
 
-                await CloseAndRemoveProject(project);
+                await UnregisterProject(project);
 
                 if (isRefreshingActiveProject)
                 {
@@ -170,7 +170,7 @@ namespace Orc.ProjectManagement
                     Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", projectLocation));
                 }
 
-                ActivateAndAddProject(loadedProject);
+                RegisterProject(loadedProject);
 
                 await ProjectRefreshed.SafeInvoke(this, new ProjectEventArgs(loadedProject));
 
@@ -264,7 +264,7 @@ namespace Orc.ProjectManagement
                         Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
                     }
 
-                    ActivateAndAddProject(project);
+                    RegisterProject(project);
                 }
                 catch (Exception ex)
                 {
@@ -286,7 +286,7 @@ namespace Orc.ProjectManagement
             return project;
         }
 
-        private void ActivateAndAddProject(IProject project)
+        private void RegisterProject(IProject project)
         {
             var projectLocation = project.Location;
             _projects[projectLocation] = project;
@@ -424,7 +424,7 @@ namespace Orc.ProjectManagement
 
             await SetActiveProject(null);
 
-            await CloseAndRemoveProject(project);
+            await UnregisterProject(project);
 
             await ProjectClosed.SafeInvoke(this, new ProjectEventArgs(project));
 
@@ -433,7 +433,7 @@ namespace Orc.ProjectManagement
             return true;
         }
 
-        private async Task CloseAndRemoveProject(IProject project)
+        private async Task UnregisterProject(IProject project)
         {
             var location = project.Location;
             if (_projects.ContainsKey(location))
@@ -456,6 +456,16 @@ namespace Orc.ProjectManagement
                 return false;
             }
 
+            if (project != null)
+            {
+                Log.Debug("Activating project '{0}'", project.Location);
+            }
+            else
+            {
+                Log.Debug("Deactivating currently active project");
+            }
+
+
             var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
 
             await ProjectActivation.SafeInvoke(this, eventArgs);
@@ -475,6 +485,14 @@ namespace Orc.ProjectManagement
             catch (Exception ex)
             {
                 exception = ex;
+                if (project != null)
+                {
+                    Log.Error(ex, "Failed to activate project '{0}'", project.Location);
+                }
+                else
+                {
+                    Log.Error(ex, "Failed to deactivate currently active project");
+                }
             }
 
             if (exception != null)
@@ -485,6 +503,15 @@ namespace Orc.ProjectManagement
 
 
             await ProjectActivated.SafeInvoke(this, new ProjectUpdatedEventArgs(activeProject, project));
+
+            if (project != null)
+            {
+                Log.Info("Activated project '{0}'", project.Location);
+            }
+            else
+            {
+                Log.Info("Deactivated currently active project", project.Location);
+            }
 
             return true;
         }
