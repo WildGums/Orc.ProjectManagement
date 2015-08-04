@@ -277,6 +277,7 @@ namespace Orc.ProjectManagement
 
                     return null;
                 }
+
                 await ProjectLoaded.SafeInvoke(this, new ProjectEventArgs(project));
 
                 Log.Info("Loaded project from '{0}'", location);

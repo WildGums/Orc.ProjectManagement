@@ -24,7 +24,9 @@ namespace Orc.ProjectManagement.Example.ViewModels
     {
         #region Fields
         private const string TextFilter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
+
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+
         private readonly IMessageService _messageService;
         private readonly IOpenFileService _openFileService;
         private readonly IProcessService _processService;
@@ -50,10 +52,10 @@ namespace Orc.ProjectManagement.Example.ViewModels
             _processService = processService;
             _messageService = messageService;
 
-            LoadProject = new TaskCommand(OnLoadProjectExecute);
-            RefreshProject = new TaskCommand(OnRefreshProjectExecute, OnRefreshProjectCanExecute);
-            SaveProject = new TaskCommand(OnSaveProjectExecute, OnSaveProjectCanExecute);
-            SaveProjectAs = new TaskCommand(OnSaveProjectAsExecute, OnSaveProjectAsCanExecute);
+            LoadProject = new TaskCommand(OnLoadProjectExecuteAsync);
+            RefreshProject = new TaskCommand(OnRefreshProjectExecuteAsync, OnRefreshProjectCanExecute);
+            SaveProject = new TaskCommand(OnSaveProjectExecuteAsync, OnSaveProjectCanExecute);
+            SaveProjectAs = new TaskCommand(OnSaveProjectAsExecuteAsync, OnSaveProjectAsCanExecute);
             CloseProject = new Command(OnCloseProjectExecute, OnCloseProjectCanExecute);
             OpenFile = new Command(OnOpenFileExecute, OnOpenFileCanExecute);
         }
@@ -77,23 +79,23 @@ namespace Orc.ProjectManagement.Example.ViewModels
         #endregion
 
         #region Methods
-        protected override async Task Initialize()
+        protected override async Task InitializeAsync()
         {
-            await base.Initialize();
+            await base.InitializeAsync();
 
-            _projectManager.ProjectRefreshed += OnProjectRefreshed;
+            _projectManager.ProjectActivated += OnProjectActivatedAsync;
 
             ReloadProject();
         }
 
-        protected override Task Close()
+        protected override Task CloseAsync()
         {
-            _projectManager.ProjectRefreshed -= OnProjectRefreshed;
+            _projectManager.ProjectActivated -= OnProjectActivatedAsync;
 
-            return base.Close();
+            return base.CloseAsync();
         }
 
-        private async Task OnProjectRefreshed(object sender, ProjectEventArgs e)
+        private async Task OnProjectActivatedAsync(object sender, ProjectUpdatedEventArgs e)
         {
             ReloadProject();
         }
@@ -107,10 +109,11 @@ namespace Orc.ProjectManagement.Example.ViewModels
         #region Commands
         public TaskCommand LoadProject { get; private set; }
 
-        private async Task OnLoadProjectExecute()
+        private async Task OnLoadProjectExecuteAsync()
         {
             _openFileService.InitialDirectory = Path.Combine(Environment.CurrentDirectory, "Data");
             _openFileService.Filter = TextFilter;
+
             if (_openFileService.DetermineFile())
             {
                 await _projectManager.Load(_openFileService.FileName);
@@ -124,7 +127,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
             return _projectManager.ActiveProject != null;
         }
 
-        private async Task OnRefreshProjectExecute()
+        private async Task OnRefreshProjectExecuteAsync()
         {
             await _projectManager.Refresh();
         }
@@ -136,7 +139,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
             return _projectManager.ActiveProject != null;
         }
 
-        private async Task OnSaveProjectExecute()
+        private async Task OnSaveProjectExecuteAsync()
         {
             await _projectManager.Save();
         }
@@ -148,7 +151,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
             return _projectManager.ActiveProject != null;
         }
 
-        private async Task OnSaveProjectAsExecute()
+        private async Task OnSaveProjectAsExecuteAsync()
         {
             _saveFileService.Filter = TextFilter;
             if (_saveFileService.DetermineFile())
