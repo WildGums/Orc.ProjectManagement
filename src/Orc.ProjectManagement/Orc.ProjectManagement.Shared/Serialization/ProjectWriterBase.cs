@@ -7,7 +7,6 @@
 
 namespace Orc.ProjectManagement
 {
-    using System.Threading.Tasks;
     using Catel;
     using Catel.Logging;
 
@@ -16,21 +15,27 @@ namespace Orc.ProjectManagement
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-        public async Task WriteAsync(IProject project, string location)
+        public bool Write(IProject project, string location)
         {
             Argument.IsNotNull(() => project);
             Argument.IsNotNullOrWhitespace(() => location);
 
             Log.Debug("Writing all data to '{0}'", location);
 
-            await WriteToLocationAsync((TProject)project, location);
+            if (!WriteToLocation((TProject) project, location))
+            {
+                Log.Warning("Failed to write all data to '{0}'", location);
+                return false;
+            }
 
             project.Location = location;
             project.ClearIsDirty();
 
             Log.Info("Wrote all data to '{0}'", location);
+
+            return true;
         }
 
-        protected abstract Task WriteToLocationAsync(TProject project, string location);
+        protected abstract bool WriteToLocation(TProject project, string location);
     }
 }

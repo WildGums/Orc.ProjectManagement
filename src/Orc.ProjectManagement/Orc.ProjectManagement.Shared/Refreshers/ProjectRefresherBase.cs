@@ -55,10 +55,10 @@ namespace Orc.ProjectManagement
                 return;
             }
 
-            ProjectManager.ProjectSaving += OnProjectManagerSaving;
-            ProjectManager.ProjectSaved += OnProjectManagerSaved;
-            ProjectManager.ProjectSavingCanceled += OnProjectManagerSavingCanceled;
-            ProjectManager.ProjectSavingFailed += OnProjectManagerSavingFailed;
+            ProjectManager.ProjectSavingAsync += OnProjectManagerSaving;
+            ProjectManager.ProjectSavedAsync += OnProjectManagerSaved;
+            ProjectManager.ProjectSavingCanceledAsync += OnProjectManagerSavingCanceled;
+            ProjectManager.ProjectSavingFailedAsync += OnProjectManagerSavingFailed;
 
             SubscribeToLocation(location);
 
@@ -79,10 +79,10 @@ namespace Orc.ProjectManagement
                 return;
             }
 
-            ProjectManager.ProjectSaving -= OnProjectManagerSaving;
-            ProjectManager.ProjectSaved -= OnProjectManagerSaved;
-            ProjectManager.ProjectSavingCanceled -= OnProjectManagerSavingCanceled;
-            ProjectManager.ProjectSavingFailed -= OnProjectManagerSavingFailed;
+            ProjectManager.ProjectSavingAsync -= OnProjectManagerSaving;
+            ProjectManager.ProjectSavedAsync -= OnProjectManagerSaved;
+            ProjectManager.ProjectSavingCanceledAsync -= OnProjectManagerSavingCanceled;
+            ProjectManager.ProjectSavingFailedAsync -= OnProjectManagerSavingFailed;
 
             UnsubscribeFromLocation(location);
 

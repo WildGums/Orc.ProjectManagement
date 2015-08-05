@@ -8,11 +8,10 @@
 namespace Orc.ProjectManagement.Test.Mocks
 {
     using System;
-    using System.Threading.Tasks;
 
     public class MemoryProjectReader : ProjectReaderBase
     {
-        protected override async Task<IProject> ReadFromLocationAsync(string location)
+        protected override IProject ReadFromLocation(string location)
         {
             if (string.Equals(location, "cannotload"))
             {

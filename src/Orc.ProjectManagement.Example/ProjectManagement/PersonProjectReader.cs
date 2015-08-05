@@ -8,12 +8,11 @@
 namespace Orc.ProjectManagement.Example.Services
 {
     using System.IO;
-    using System.Threading.Tasks;
     using Models;
 
     public class PersonProjectReader : ProjectReaderBase
     {
-        protected override async Task<IProject> ReadFromLocationAsync(string location)
+        protected override  IProject ReadFromLocation(string location)
         {
             var project = new PersonProject(location);
 

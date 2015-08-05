@@ -27,16 +27,16 @@ namespace Orc.ProjectManagement.Tests
         {
             var mockOfProjectManager = factory.ServiceLocator.ResolveMocked<ProjectManager>();
 
-            mockOfProjectManager.Setup(pm => pm.Load(It.IsAny<string>())).CallBase().
+            mockOfProjectManager.Setup(pm => pm.LoadAsync(It.IsAny<string>())).CallBase().
                 Callback<string>(location => callbackAction(ProjectManagerLoad, new object[] {location}));
 
-            mockOfProjectManager.Setup(pm => pm.SetActiveProject(It.IsAny<IProject>())).CallBase().
+            mockOfProjectManager.Setup(pm => pm.SetActiveProjectAsync(It.IsAny<IProject>())).CallBase().
                 Callback<IProject>(project => callbackAction(ProjectManagerSetActiveProject, new object[] {project}));
 
-            mockOfProjectManager.Setup(pm => pm.Close(It.IsAny<IProject>())).CallBase().
+            mockOfProjectManager.Setup(pm => pm.CloseAsync(It.IsAny<IProject>())).CallBase().
                 Callback<IProject>(project => callbackAction(ProjectManagerClose, new object[] { project }));
 
-            mockOfProjectManager.Setup(pm => pm.Refresh(It.IsAny<IProject>())).CallBase().
+            mockOfProjectManager.Setup(pm => pm.RefreshAsync(It.IsAny<IProject>())).CallBase().
                 Callback<IProject>(project => callbackAction(ProjectManagerRefresh, new object[] { project }));
 
             mockOfProjectManager.SetupSet(pm => pm.ActiveProject = It.IsAny<IProject>()).
@@ -44,15 +44,15 @@ namespace Orc.ProjectManagement.Tests
 
             var projectManager = mockOfProjectManager.Object;
 
-            projectManager.ProjectLoading += async (sender, args) => callbackAction(ProjectManagerProjectLoading, new[] { sender, args });
+            projectManager.ProjectLoadingAsync += async (sender, args) => callbackAction(ProjectManagerProjectLoading, new[] { sender, args });
 
-            projectManager.ProjectLoaded += async (sender, args) => callbackAction(ProjectManagerProjectLoaded, new[] { sender, args });
+            projectManager.ProjectLoadedAsync += async (sender, args) => callbackAction(ProjectManagerProjectLoaded, new[] { sender, args });
 
-            projectManager.ProjectActivated += async (sender, args) => callbackAction(ProjectManagerProjectActivated, new[] { sender, args });
+            projectManager.ProjectActivatedAsync += async (sender, args) => callbackAction(ProjectManagerProjectActivated, new[] { sender, args });
 
-            projectManager.ProjectClosing += async (sender, args) => callbackAction(ProjectManagerProjectClosing, new[] { sender, args });
+            projectManager.ProjectClosingAsync += async (sender, args) => callbackAction(ProjectManagerProjectClosing, new[] { sender, args });
 
-            projectManager.ProjectClosed += async (sender, args) => callbackAction(ProjectManagerProjectClosed, new[] { sender, args });
+            projectManager.ProjectClosedAsync += async (sender, args) => callbackAction(ProjectManagerProjectClosed, new[] { sender, args });
         }
     }
 }

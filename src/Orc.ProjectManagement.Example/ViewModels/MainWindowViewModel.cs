@@ -81,16 +81,16 @@ namespace Orc.ProjectManagement.Example.ViewModels
         #region Methods
         protected override async Task InitializeAsync()
         {
-            await base.InitializeAsync();
+            await base.InitializeAsync().ConfigureAwait(false);
 
-            _projectManager.ProjectActivated += OnProjectActivatedAsync;
+            _projectManager.ProjectActivatedAsync += OnProjectActivatedAsync;
 
             ReloadProject();
         }
 
         protected override Task CloseAsync()
         {
-            _projectManager.ProjectActivated -= OnProjectActivatedAsync;
+            _projectManager.ProjectActivatedAsync -= OnProjectActivatedAsync;
 
             return base.CloseAsync();
         }
@@ -116,7 +116,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
             if (_openFileService.DetermineFile())
             {
-                await _projectManager.Load(_openFileService.FileName);
+                await _projectManager.LoadAsync(_openFileService.FileName);
             }
         }
 
@@ -129,7 +129,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
         private async Task OnRefreshProjectExecuteAsync()
         {
-            await _projectManager.Refresh();
+            await _projectManager.RefreshAsync();
         }
 
         public TaskCommand SaveProject { get; private set; }
@@ -141,7 +141,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
         private async Task OnSaveProjectExecuteAsync()
         {
-            await _projectManager.Save();
+            await _projectManager.SaveAsync();
         }
 
         public TaskCommand SaveProjectAs { get; private set; }
@@ -156,7 +156,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
             _saveFileService.Filter = TextFilter;
             if (_saveFileService.DetermineFile())
             {
-                await _projectManager.Save(_openFileService.FileName);
+                await _projectManager.SaveAsync(_openFileService.FileName);
             }
         }
 
@@ -169,7 +169,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
         private void OnCloseProjectExecute()
         {
-            _projectManager.Close();
+            _projectManager.CloseAsync();
         }
 
         public Command OpenFile { get; private set; }

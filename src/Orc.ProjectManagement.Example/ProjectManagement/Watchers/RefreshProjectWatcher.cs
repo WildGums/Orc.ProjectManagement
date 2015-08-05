@@ -27,7 +27,7 @@ namespace Orc.ProjectManagement.Example.ProjectManagement
             _messageService = messageService;
         }
 
-        protected override async Task OnRefreshRequired(IProject project)
+        protected override async Task OnRefreshRequiredAsync(IProject project)
         {
             if (_isAwaitingFeedback)
             {
@@ -37,11 +37,11 @@ namespace Orc.ProjectManagement.Example.ProjectManagement
 
             _isAwaitingFeedback = true;
 
-            await base.OnRefreshRequired(project);
+            await base.OnRefreshRequiredAsync(project);
 
-            if (await _messageService.Show("Detected a project change, do you want to refresh the project now?", "Refresh project?", MessageButton.YesNo) == MessageResult.Yes)
+            if (await _messageService.ShowAsync("Detected a project change, do you want to refresh the project now?", "Refresh project?", MessageButton.YesNo) == MessageResult.Yes)
             {
-                await ProjectManager.Refresh();
+                await ProjectManager.RefreshAsync();
             }
 
             _isAwaitingFeedback = false;

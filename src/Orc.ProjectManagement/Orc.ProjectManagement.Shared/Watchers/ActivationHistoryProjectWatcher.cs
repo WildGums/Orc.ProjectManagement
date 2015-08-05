@@ -28,7 +28,7 @@ namespace Orc.ProjectManagement
         }
         #endregion
 
-        protected override async Task OnActivated(IProject oldProject, IProject newProject)
+        protected override async Task OnActivatedAsync(IProject oldProject, IProject newProject)
         {
             if (newProject == null)
             {
@@ -37,10 +37,10 @@ namespace Orc.ProjectManagement
 
             _projectActivationHistoryService.Remember(newProject);
 
-            await base.OnActivated(oldProject, newProject);
+            await base.OnActivatedAsync(oldProject, newProject);
         }
 
-        protected override async Task OnClosed(IProject project)
+        protected override async Task OnClosedAsync(IProject project)
         {
             if (project == null)
             {
@@ -51,9 +51,9 @@ namespace Orc.ProjectManagement
 
             var lastActiveProject = _projectActivationHistoryService.GetLastActiveProject();
 
-            await ProjectManager.SetActiveProject(lastActiveProject);
+            await ProjectManager.SetActiveProjectAsync(lastActiveProject);
 
-            await base.OnClosed(project);
+            await base.OnClosedAsync(project);
         }
     }
 }

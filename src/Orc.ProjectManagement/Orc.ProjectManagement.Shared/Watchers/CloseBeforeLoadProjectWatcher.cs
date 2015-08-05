@@ -23,17 +23,17 @@ namespace Orc.ProjectManagement
         }
         #endregion
 
-        protected override async Task OnLoading(ProjectCancelEventArgs e)
+        protected override async Task OnLoadingAsync(ProjectCancelEventArgs e)
         {
             if (e.Cancel || _projectManager.ActiveProject == null)
             {
-                await base.OnLoading(e);
+                await base.OnLoadingAsync(e);
                 return;
             }
 
-            e.Cancel = !await _projectManager.Close();
+            e.Cancel = !await _projectManager.CloseAsync();
 
-            await base.OnLoading(e);
+            await base.OnLoadingAsync(e);
         }
     }
 }

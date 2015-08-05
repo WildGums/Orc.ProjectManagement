@@ -7,13 +7,12 @@
 
 namespace Orc.ProjectManagement.Test.Mocks
 {
-    using System.Threading.Tasks;
-
     public class MemoryProjectWriter : ProjectWriterBase<Project>
     {
-        protected override async Task WriteToLocationAsync(Project project, string location)
+        protected override bool WriteToLocation(Project project, string location)
         {
             // no implementation required
+            return true;
         }
     }
 }

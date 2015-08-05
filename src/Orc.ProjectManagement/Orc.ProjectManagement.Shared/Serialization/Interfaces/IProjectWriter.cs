@@ -7,10 +7,8 @@
 
 namespace Orc.ProjectManagement
 {
-    using System.Threading.Tasks;
-
     public interface IProjectWriter
     {
-        Task WriteAsync(IProject project, string location);
+        bool Write(IProject project, string location);
     }
 }
