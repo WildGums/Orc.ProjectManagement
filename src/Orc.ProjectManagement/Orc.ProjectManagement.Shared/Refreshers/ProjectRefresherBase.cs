@@ -12,6 +12,7 @@ namespace Orc.ProjectManagement
     using Catel;
     using Catel.IoC;
     using Catel.Logging;
+    using Catel.Threading;
 
     public abstract class ProjectRefresherBase : IProjectRefresher
     {
@@ -55,10 +56,10 @@ namespace Orc.ProjectManagement
                 return;
             }
 
-            ProjectManager.ProjectSavingAsync += OnProjectManagerSaving;
-            ProjectManager.ProjectSavedAsync += OnProjectManagerSaved;
-            ProjectManager.ProjectSavingCanceledAsync += OnProjectManagerSavingCanceled;
-            ProjectManager.ProjectSavingFailedAsync += OnProjectManagerSavingFailed;
+            ProjectManager.ProjectSavingAsync += OnProjectManagerSavingAsync;
+            ProjectManager.ProjectSavedAsync += OnProjectManagerSavedAsync;
+            ProjectManager.ProjectSavingCanceledAsync += OnProjectManagerSavingCanceledAsync;
+            ProjectManager.ProjectSavingFailedAsync += OnProjectManagerSavingFailedAsync;
 
             SubscribeToLocation(location);
 
@@ -79,10 +80,10 @@ namespace Orc.ProjectManagement
                 return;
             }
 
-            ProjectManager.ProjectSavingAsync -= OnProjectManagerSaving;
-            ProjectManager.ProjectSavedAsync -= OnProjectManagerSaved;
-            ProjectManager.ProjectSavingCanceledAsync -= OnProjectManagerSavingCanceled;
-            ProjectManager.ProjectSavingFailedAsync -= OnProjectManagerSavingFailed;
+            ProjectManager.ProjectSavingAsync -= OnProjectManagerSavingAsync;
+            ProjectManager.ProjectSavedAsync -= OnProjectManagerSavedAsync;
+            ProjectManager.ProjectSavingCanceledAsync -= OnProjectManagerSavingCanceledAsync;
+            ProjectManager.ProjectSavingFailedAsync -= OnProjectManagerSavingFailedAsync;
 
             UnsubscribeFromLocation(location);
 
@@ -96,24 +97,32 @@ namespace Orc.ProjectManagement
             Updated.SafeInvoke(this, new ProjectEventArgs(path));
         }
 
-        private async Task OnProjectManagerSaving(object sender, ProjectCancelEventArgs e)
+        private Task OnProjectManagerSavingAsync(object sender, ProjectCancelEventArgs e)
         {
             IsSuspended = true;
+
+            return TaskHelper.Completed;
         }
 
-        private async Task OnProjectManagerSaved(object sender, ProjectEventArgs e)
+        private Task OnProjectManagerSavedAsync(object sender, ProjectEventArgs e)
         {
             IsSuspended = false;
+
+            return TaskHelper.Completed;
         }
 
-        private async Task OnProjectManagerSavingCanceled(object sender, ProjectEventArgs e)
+        private Task OnProjectManagerSavingCanceledAsync(object sender, ProjectEventArgs e)
         {
             IsSuspended = false;
+
+            return TaskHelper.Completed;
         }
 
-        private async Task OnProjectManagerSavingFailed(object sender, ProjectErrorEventArgs e)
+        private Task OnProjectManagerSavingFailedAsync(object sender, ProjectErrorEventArgs e)
         {
             IsSuspended = false;
+
+            return TaskHelper.Completed;
         }
         #endregion
     }

@@ -9,11 +9,12 @@ namespace Orc.ProjectManagement.Example.Services
 {
     using System.IO;
     using System.Threading.Tasks;
+    using Catel.Threading;
     using Models;
 
     public class PersonProjectWriter : ProjectWriterBase<PersonProject>
     {
-        protected override async Task<bool> WriteToLocationAsync(PersonProject project, string location)
+        protected override Task<bool> WriteToLocationAsync(PersonProject project, string location)
         {
             using (var fileStream = new FileStream(location, FileMode.Create, FileAccess.Write))
             {
@@ -24,7 +25,7 @@ namespace Orc.ProjectManagement.Example.Services
                 }
             }
 
-            return true;
+            return TaskHelper<bool>.FromResult(true);
         }
     }
 }

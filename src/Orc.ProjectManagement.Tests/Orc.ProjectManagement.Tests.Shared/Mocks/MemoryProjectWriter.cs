@@ -8,13 +8,14 @@
 namespace Orc.ProjectManagement.Test.Mocks
 {
     using System.Threading.Tasks;
+    using Catel.Threading;
 
     public class MemoryProjectWriter : ProjectWriterBase<Project>
     {
-        protected override async Task<bool> WriteToLocationAsync(Project project, string location)
+        protected override Task<bool> WriteToLocationAsync(Project project, string location)
         {
             // no implementation required
-            return true;
+            return TaskHelper<bool>.FromResult(true);
         }
     }
 }

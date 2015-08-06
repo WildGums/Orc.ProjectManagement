@@ -16,6 +16,7 @@ namespace Orc.ProjectManagement
     using System.Threading.Tasks;
     using Catel;
     using Catel.Data;
+    using Catel.Threading;
 
     public abstract class ProjectWatcherBase
     {
@@ -179,84 +180,104 @@ namespace Orc.ProjectManagement
             _projectManager.ProjectRefreshingAsync += async (sender, e) => await OnRefreshingAsync(e).ConfigureAwait(false);
         }
 
-        protected virtual async Task OnLoadingAsync(ProjectCancelEventArgs e)
+        protected virtual Task OnLoadingAsync(ProjectCancelEventArgs e)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnLoadingFailedAsync(string location, Exception exception, IValidationContext validationContext)
+        protected virtual Task OnLoadingFailedAsync(string location, Exception exception, IValidationContext validationContext)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnLoadingCanceledAsync(string location)
+        protected virtual Task OnLoadingCanceledAsync(string location)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnLoadedAsync(IProject project)
+        protected virtual Task OnLoadedAsync(IProject project)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnSavingAsync(ProjectCancelEventArgs e)
+        protected virtual Task OnSavingAsync(ProjectCancelEventArgs e)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnSavingCanceledAsync(IProject project)
+        protected virtual Task OnSavingCanceledAsync(IProject project)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnSavingFailedAsync(IProject project, Exception exception)
+        protected virtual Task OnSavingFailedAsync(IProject project, Exception exception)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnSavedAsync(IProject project)
+        protected virtual Task OnSavedAsync(IProject project)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnClosingAsync(ProjectCancelEventArgs e)
+        protected virtual Task OnClosingAsync(ProjectCancelEventArgs e)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnClosedAsync(IProject project)
+        protected virtual Task OnClosedAsync(IProject project)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnClosingCanceledAsync(IProject project)
+        protected virtual Task OnClosingCanceledAsync(IProject project)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnRefreshRequiredAsync(IProject project)
+        protected virtual Task OnRefreshRequiredAsync(IProject project)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnActivatedAsync(IProject oldProject, IProject newProject)
+        protected virtual Task OnActivatedAsync(IProject oldProject, IProject newProject)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnActivationFailedAsync(IProject project, Exception exception)
+        protected virtual Task OnActivationFailedAsync(IProject project, Exception exception)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnActivationCanceledAsync(IProject project)
+        protected virtual Task OnActivationCanceledAsync(IProject project)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnActivationAsync(ProjectUpdatingCancelEventArgs e)
+        protected virtual Task OnActivationAsync(ProjectUpdatingCancelEventArgs e)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnRefreshedAsync(IProject project)
+        protected virtual Task OnRefreshedAsync(IProject project)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnRefreshingFailedAsync(IProject project, Exception exception, IValidationContext validationContext)
+        protected virtual Task OnRefreshingFailedAsync(IProject project, Exception exception, IValidationContext validationContext)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnRefreshingCanceledAsync(IProject project)
+        protected virtual Task OnRefreshingCanceledAsync(IProject project)
         {
+            return TaskHelper.Completed;
         }
 
-        protected virtual async Task OnRefreshingAsync(ProjectCancelEventArgs e)
+        protected virtual Task OnRefreshingAsync(ProjectCancelEventArgs e)
         {
+            return TaskHelper.Completed;
         }
     }
 }

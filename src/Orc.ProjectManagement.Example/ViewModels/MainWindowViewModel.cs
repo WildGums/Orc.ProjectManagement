@@ -116,7 +116,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
             if (_openFileService.DetermineFile())
             {
-                await _projectManager.LoadAsync(_openFileService.FileName);
+                await _projectManager.LoadAsync(_openFileService.FileName).ConfigureAwait(false);
             }
         }
 
@@ -129,7 +129,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
         private async Task OnRefreshProjectExecuteAsync()
         {
-            await _projectManager.RefreshAsync();
+            await _projectManager.RefreshAsync().ConfigureAwait(false);
         }
 
         public TaskCommand SaveProject { get; private set; }
@@ -141,7 +141,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
         private async Task OnSaveProjectExecuteAsync()
         {
-            await _projectManager.SaveAsync();
+            await _projectManager.SaveAsync().ConfigureAwait(false);
         }
 
         public TaskCommand SaveProjectAs { get; private set; }
@@ -156,7 +156,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
             _saveFileService.Filter = TextFilter;
             if (_saveFileService.DetermineFile())
             {
-                await _projectManager.SaveAsync(_openFileService.FileName);
+                await _projectManager.SaveAsync(_openFileService.FileName).ConfigureAwait(false);
             }
         }
 

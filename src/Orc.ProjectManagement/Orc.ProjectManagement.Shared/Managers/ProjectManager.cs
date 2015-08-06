@@ -168,7 +168,7 @@ namespace Orc.ProjectManagement
                     await SetActiveProjectAsync(null).ConfigureAwait(false);
                 }
 
-                var loadedProject = await QuietlyLoadProject(projectLocation).ConfigureAwait(false);
+                var loadedProject = await QuietlyLoadProjectAsync(projectLocation).ConfigureAwait(false);
 
                 validationContext = _projectValidator.ValidateProject(loadedProject);
                 if (validationContext.HasErrors)
@@ -263,7 +263,7 @@ namespace Orc.ProjectManagement
                         Log.ErrorAndThrowException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
                     }
 
-                    project = await QuietlyLoadProject(location).ConfigureAwait(false);
+                    project = await QuietlyLoadProjectAsync(location).ConfigureAwait(false);
 
                     validationContext = _projectValidator.ValidateProject(project);
                     if (validationContext.HasErrors)
@@ -302,7 +302,7 @@ namespace Orc.ProjectManagement
             InitializeProjectRefresher(projectLocation);
         }
 
-        private async Task<IProject> QuietlyLoadProject(string location)
+        private async Task<IProject> QuietlyLoadProjectAsync(string location)
         {
             Log.Debug("Validating to see if we can load the project from '{0}'", location);
 
@@ -319,7 +319,7 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
 
-            var project = await projectReader.ReadAsync(location);
+            var project = await projectReader.ReadAsync(location).ConfigureAwait(false);
             if (project == null)
             {
                 Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));

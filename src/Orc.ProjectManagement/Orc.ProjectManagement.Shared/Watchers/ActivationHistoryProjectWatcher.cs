@@ -37,7 +37,7 @@ namespace Orc.ProjectManagement
 
             _projectActivationHistoryService.Remember(newProject);
 
-            await base.OnActivatedAsync(oldProject, newProject);
+            await base.OnActivatedAsync(oldProject, newProject).ConfigureAwait(false);
         }
 
         protected override async Task OnClosedAsync(IProject project)
@@ -51,9 +51,9 @@ namespace Orc.ProjectManagement
 
             var lastActiveProject = _projectActivationHistoryService.GetLastActiveProject();
 
-            await ProjectManager.SetActiveProjectAsync(lastActiveProject);
+            await ProjectManager.SetActiveProjectAsync(lastActiveProject).ConfigureAwait(false);
 
-            await base.OnClosedAsync(project);
+            await base.OnClosedAsync(project).ConfigureAwait(false);
         }
     }
 }

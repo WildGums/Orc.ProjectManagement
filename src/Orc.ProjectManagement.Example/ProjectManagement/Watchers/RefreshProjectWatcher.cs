@@ -37,11 +37,11 @@ namespace Orc.ProjectManagement.Example.ProjectManagement
 
             _isAwaitingFeedback = true;
 
-            await base.OnRefreshRequiredAsync(project);
+            await base.OnRefreshRequiredAsync(project).ConfigureAwait(false);
 
-            if (await _messageService.ShowAsync("Detected a project change, do you want to refresh the project now?", "Refresh project?", MessageButton.YesNo) == MessageResult.Yes)
+            if (await _messageService.ShowAsync("Detected a project change, do you want to refresh the project now?", "Refresh project?", MessageButton.YesNo).ConfigureAwait(false) == MessageResult.Yes)
             {
-                await ProjectManager.RefreshAsync();
+                await ProjectManager.RefreshAsync().ConfigureAwait(false);
             }
 
             _isAwaitingFeedback = false;

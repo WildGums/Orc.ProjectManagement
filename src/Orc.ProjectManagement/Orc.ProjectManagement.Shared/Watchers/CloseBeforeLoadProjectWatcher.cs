@@ -27,13 +27,13 @@ namespace Orc.ProjectManagement
         {
             if (e.Cancel || _projectManager.ActiveProject == null)
             {
-                await base.OnLoadingAsync(e);
+                await base.OnLoadingAsync(e).ConfigureAwait(false);
                 return;
             }
 
-            e.Cancel = !await _projectManager.CloseAsync();
+            e.Cancel = !await _projectManager.CloseAsync().ConfigureAwait(false);
 
-            await base.OnLoadingAsync(e);
+            await base.OnLoadingAsync(e).ConfigureAwait(false);
         }
     }
 }
