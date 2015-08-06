@@ -7,8 +7,10 @@
 
 namespace Orc.ProjectManagement
 {
+    using System.Threading.Tasks;
+
     public interface IProjectReader
     {
-        IProject Read(string location);
+        Task<IProject> ReadAsync(string location);
     }
 }

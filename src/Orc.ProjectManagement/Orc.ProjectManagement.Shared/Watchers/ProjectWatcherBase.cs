@@ -4,6 +4,9 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+#if NET40 || SL5
+#define USE_TASKEX
+#endif
 
 namespace Orc.ProjectManagement
 {
@@ -51,8 +54,10 @@ namespace Orc.ProjectManagement
             var methodInfos = from method in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
                               where method.GetBaseDefinition().DeclaringType != method.DeclaringType
                               from subscriber in baseType.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
-                              let subscriberName = "Subscribe" + method.Name
-                              where string.Equals(subscriber.Name, subscriberName)
+                              let methodName = "Subscribe" + method.Name
+                              let subscriberName = subscriber.Name
+                              let subscriberNameAsync = subscriberName + "Async"
+                              where string.Equals(subscriberName, methodName) || string.Equals(subscriberNameAsync, methodName)
                               select subscriber;
 
             foreach (var methodInfo in methodInfos)
@@ -127,7 +132,11 @@ namespace Orc.ProjectManagement
 
             var tasks = projects.Select(OnRefreshRequiredAsync);
 
+#if USE_TASKEX
             await TaskEx.WhenAll(tasks).ConfigureAwait(false);
+#else
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+#endif
         }
 
         private void SubscribeOnActivated()

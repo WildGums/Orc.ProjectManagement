@@ -4,6 +4,9 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+#if NET40 || SL5
+#define USE_TASKEX
+#endif
 
 namespace Orc.ProjectManagement
 {
@@ -113,8 +116,11 @@ namespace Orc.ProjectManagement
                 Log.Debug("Loading initial project from location '{0}'", location);
                 return LoadAsync(location);
             });
-
+#if USE_TASKEX
             await TaskEx.WhenAll(tasks).ConfigureAwait(false);
+#else
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+#endif
         }
 
         public async Task<bool> RefreshAsync()
@@ -162,7 +168,7 @@ namespace Orc.ProjectManagement
                     await SetActiveProjectAsync(null).ConfigureAwait(false);
                 }
 
-                var loadedProject = QuietlyLoadProject(projectLocation);
+                var loadedProject = await QuietlyLoadProject(projectLocation).ConfigureAwait(false);
 
                 validationContext = _projectValidator.ValidateProject(loadedProject);
                 if (validationContext.HasErrors)
@@ -257,7 +263,7 @@ namespace Orc.ProjectManagement
                         Log.ErrorAndThrowException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
                     }
 
-                    project = QuietlyLoadProject(location);
+                    project = await QuietlyLoadProject(location).ConfigureAwait(false);
 
                     validationContext = _projectValidator.ValidateProject(project);
                     if (validationContext.HasErrors)
@@ -296,7 +302,7 @@ namespace Orc.ProjectManagement
             InitializeProjectRefresher(projectLocation);
         }
 
-        private IProject QuietlyLoadProject(string location)
+        private async Task<IProject> QuietlyLoadProject(string location)
         {
             Log.Debug("Validating to see if we can load the project from '{0}'", location);
 
@@ -313,7 +319,7 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
 
-            var project = projectReader.Read(location);
+            var project = await projectReader.ReadAsync(location);
             if (project == null)
             {
                 Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
@@ -371,20 +377,27 @@ namespace Orc.ProjectManagement
                 Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);
 
                 Exception error = null;
+                bool success = true;
                 try
                 {
-                    projectWriter.Write(project, location);
+                    success = await projectWriter.WriteAsync(project, location).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
                     error = ex;
-                    Log.Error(ex, "Failed to save project '{0}' to '{1}'", project, location);
                 }
 
                 if (error != null)
                 {
+                    Log.Error(error, "Failed to save project '{0}' to '{1}'", project, location);
                     await ProjectSavingFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(project, error)).ConfigureAwait(false);
 
+                    return false;
+                }
+
+                if (!success)
+                {
+                    Log.Error("Failed to save project '{0}' to '{1}'", project, location);
                     return false;
                 }
 

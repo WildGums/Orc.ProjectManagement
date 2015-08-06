@@ -8,11 +8,12 @@
 namespace Orc.ProjectManagement.Example.Services
 {
     using System.IO;
+    using System.Threading.Tasks;
     using Models;
 
     public class PersonProjectWriter : ProjectWriterBase<PersonProject>
     {
-        protected override bool WriteToLocation(PersonProject project, string location)
+        protected override async Task<bool> WriteToLocationAsync(PersonProject project, string location)
         {
             using (var fileStream = new FileStream(location, FileMode.Create, FileAccess.Write))
             {

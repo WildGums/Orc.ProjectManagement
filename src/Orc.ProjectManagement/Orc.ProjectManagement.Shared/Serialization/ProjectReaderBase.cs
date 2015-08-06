@@ -7,6 +7,7 @@
 
 namespace Orc.ProjectManagement
 {
+    using System.Threading.Tasks;
     using Catel;
     using Catel.Logging;
 
@@ -14,13 +15,13 @@ namespace Orc.ProjectManagement
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-        public IProject Read(string location)
+        public async Task<IProject> ReadAsync(string location)
         {
             Argument.IsNotNullOrWhitespace(() => location);
 
             Log.Debug("Reading data from '{0}'", location);
 
-            var project = ReadFromLocation(location);
+            var project = await ReadFromLocationAsync(location).ConfigureAwait(false);
 
             project.ClearIsDirty();
 
@@ -29,6 +30,6 @@ namespace Orc.ProjectManagement
             return project;
         }
 
-        protected abstract IProject ReadFromLocation(string location);
+        protected abstract Task<IProject> ReadFromLocationAsync(string location);
     }
 }
