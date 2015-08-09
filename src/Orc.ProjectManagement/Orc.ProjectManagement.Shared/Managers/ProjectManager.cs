@@ -456,6 +456,11 @@ namespace Orc.ProjectManagement
         {
             var activeProject = ActiveProject;
 
+            if(project != null && !Projects.Contains(project))
+            {
+                project = null;
+            }
+
             var activeProjectLocation = activeProject == null ? null : activeProject.Location;
             var newProjectLocation = project == null ? null : project.Location;
 
