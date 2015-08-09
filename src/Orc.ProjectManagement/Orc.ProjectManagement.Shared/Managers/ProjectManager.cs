@@ -4,10 +4,6 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-#if NET40 || SL5
-#define USE_TASKEX
-#endif
-
 namespace Orc.ProjectManagement
 {
     using System;
@@ -111,16 +107,13 @@ namespace Orc.ProjectManagement
         #region IProjectManager Members
         public async Task InitializeAsync()
         {
-            var tasks = _projectInitializer.GetInitialLocations().Where(x => !string.IsNullOrWhiteSpace(x)).Select(location =>
+            var locations = _projectInitializer.GetInitialLocations().Where(x => !string.IsNullOrWhiteSpace(x));
+
+            foreach (var location in locations)
             {
                 Log.Debug("Loading initial project from location '{0}'", location);
-                return LoadAsync(location);
-            });
-#if USE_TASKEX
-            await TaskEx.WhenAll(tasks).ConfigureAwait(false);
-#else
-            await Task.WhenAll(tasks).ConfigureAwait(false);
-#endif
+                await LoadAsync(location).ConfigureAwait(false);
+            }
         }
 
         public async Task<bool> RefreshAsync()

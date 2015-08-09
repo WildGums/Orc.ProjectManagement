@@ -4,10 +4,6 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
-#if NET40 || SL5
-#define USE_TASKEX
-#endif
-
 namespace Orc.ProjectManagement
 {
     using System;
@@ -129,15 +125,12 @@ namespace Orc.ProjectManagement
 
         private async Task OnProjectRefreshRequiredAsync(ProjectEventArgs e)
         {
-            var projects = _projectManager.Projects.Where(project => string.Equals(project.Location, e.Location)).ToList();
+            var projects = _projectManager.Projects.Where(project => string.Equals(project.Location, e.Location));
 
-            var tasks = projects.Select(OnRefreshRequiredAsync);
-
-#if USE_TASKEX
-            await TaskEx.WhenAll(tasks).ConfigureAwait(false);
-#else
-            await Task.WhenAll(tasks).ConfigureAwait(false);
-#endif
+            foreach (var project in projects)
+            {
+                await OnRefreshRequiredAsync(project).ConfigureAwait(false);
+            }
         }
 
         private void SubscribeOnActivated()
