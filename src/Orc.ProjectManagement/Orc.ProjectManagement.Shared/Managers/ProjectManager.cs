@@ -458,7 +458,7 @@ namespace Orc.ProjectManagement
 
             if(project != null && !Projects.Contains(project))
             {
-                project = null;
+                return false;
             }
 
             var activeProjectLocation = activeProject == null ? null : activeProject.Location;
