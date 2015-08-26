@@ -34,23 +34,35 @@ namespace Orc.ProjectManagement
 
         public virtual IEnumerable<string> GetInitialLocations()
         {
+			var silence = true;
             var dataDirectory = _configurationService.GetValue<string>("DataLocation");
             if (string.IsNullOrWhiteSpace(dataDirectory))
             {
                 dataDirectory = Path.Combine(Catel.IO.Path.GetApplicationDataDirectory(), "data");
 
-                Log.Info("DataLocation is empty in configuration, determining the data directory automatically to '{0}'", dataDirectory);
+                Log.Debug("DataLocation is empty in configuration, determining the data directory automatically to '{0}'", dataDirectory);
             }
 
             if (_startUpInfoProvider.Arguments.Length > 0)
             {
                 dataDirectory = _startUpInfoProvider.Arguments[0];
+				silence = false;
             }
 
             var fullPath = Path.GetFullPath(dataDirectory);
             if (!Directory.Exists(fullPath))
             {
-                Log.Warning("Cannot use the data directory '{0}', it does not exist", fullPath);
+				var message = string.Format("Cannot use the data directory '{0}', it does not exist", fullPath);
+				
+				if (!silence)
+				{
+					Log.Warning(message);
+				}
+				else
+				{
+					Log.Debug(message);
+				}
+				
                 yield break;
             }
 
