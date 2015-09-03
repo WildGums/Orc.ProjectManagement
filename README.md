@@ -1,5 +1,12 @@
 # Orc.ProjectManagement
 
+[![Join the chat at https://gitter.im/WildGums/Orc.ProjectManagement](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/WildGums/Orc.ProjectManagement?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+![License](https://img.shields.io/github/license/wildgums/orc.projectmanagement.svg)
+![NuGet downloads](https://img.shields.io/nuget/dt/orc.projectmanagement.svg)
+![Version](https://img.shields.io/nuget/v/orc.projectmanagement.svg)
+![Pre-release version](https://img.shields.io/nuget/vpre/orc.projectmanagement.svg)
+
 Manage projects the easy way using this library.
 
 # Quick introduction
@@ -49,6 +56,25 @@ Next it can be registered in the ServiceLocator (so it will automatically be inj
 
 **Make sure to register the service before instantiating the *IProjectManager* because it will be injected**
 
+# Creating a project validator
+
+Sometimes it is possible to check on forehand if it's even possible to load a project. This is implemented via the *IProjectValidator* interface. By default there is no validation, but this can be implemented. For example when a project represents a folder on disk, the validator can check if the directory exists:
+
+
+    public class DirectoryExistsProjectValidator : IProjectValidator
+    {
+        #region IProjectValidator Members
+        public async Task<bool> CanStartLoadingProject(string location)
+        {
+            return Directory.Exists(location);
+        }
+        #endregion
+    }
+
+Next it can be registered in the ServiceLocator (so it will automatically be injected into the *ProjectManager*):
+
+	ServiceLocator.Default.RegisterType<IProjectValidator, DirectoryExistsProjectValidator>();
+
 # Creating a project reader service
 
 Projects must be read via the *IProjectReaderService*. The project manager automatically knows when to read a project. First, one must create a project reader as shown in the example below:
@@ -94,3 +120,59 @@ Because the project manager is using async, the initialization is a separate met
 The library contains extension methods for the *IProjectManager* to retrieve a typed instance:
 
 	var myProject = projectManager.GetProject<MyProject>();
+
+# Detecting project refreshes in the source
+
+The library can automatically detect whether the source has changed and the project requires a refresh. It does this using the *IProjectRefresher* interface.
+
+## Creating a project refresher selector
+
+	public class ProjectRefresherSelector : IProjectSelector
+	{
+	    public IProjectRefresher GetProjectRefresher(string location)
+		{
+			// TODO: Determine what refresher to use, in this case a file refresher
+			return new FileProjectRefresher(location);
+		}
+	} 
+
+Next it can be registered in the ServiceLocator (so it will automatically be injected into the *ProjectManager*):
+
+	ServiceLocator.Default.RegisterType<IProjectWriterService, MyProjectWriterService>();
+
+**Note that you can also use the DefaultProjectRefresherSelector, which will return the IProjectRefresher that is registered in the ServiceLocator**
+
+## Creating a project refresher
+
+The library providers a few default implementations:
+
+* DirectoryProjectRefresher
+* FileProjectRefresher
+
+If your projects are a file or a directory of files, it should be sufficient to register it in the service locator:
+
+	ServiceLocator.Default.RegisterType<IProjectRefresher, FileProjectRefresher>();
+
+If a custom refresher is required, simply implement it as show in the example below:
+
+    public class DirectoryProjectRefresher : ProjectRefresherBase
+    {
+        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+
+        public DirectoryProjectRefresher(string location) 
+            : base(location)
+        {
+        }
+
+        protected override void SubscribeToLocation(string location)
+        {
+            // TODO: subscribe to changes here
+        }
+
+        protected override void UnsubscribeFromLocation(string location)
+        {
+            // TODO: unsubscribe from changes here
+        }
+    }
+
+Then register it in the ServiceLocator or return it in the custom *ProjectRefresherSelector*.

@@ -1,0 +1,30 @@
+﻿<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>Orc.ProjectManagement</id>
+    <version>[VERSION]</version>
+    <title>Orc.ProjectManagement</title>
+    <authors>OrchestraDevs</authors>
+    <owners>OrchestraDevs</owners>
+
+	<description>
+	  This library makes managing projects very easy.
+	</description>
+	<summary>
+	</summary>
+
+	<tags>orc project management</tags>
+
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>Copyright Wild Gums 2010 - 2015</copyright>
+
+	<language>en-US</language>
+	<projectUrl>https://github.com/WildGums/Orc.ProjectManagement</projectUrl>
+	<!--<licenseUrl>http://catel.codeplex.com/license</licenseUrl>-->
+	<!--<iconUrl>http://www.catenalogic.com/catel.png</iconUrl>-->
+    
+    <dependencies>
+      <dependency id="Catel.Core" version="[replaced]" />
+    </dependencies>
+  </metadata>
+</package>
