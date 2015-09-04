@@ -517,12 +517,6 @@ namespace Orc.ProjectManagement
             return true;
         }
 
-        [ObsoleteEx(ReplacementTypeOrMember = "IProjectActivationHistoryService", TreatAsErrorFromVersion = "1.0.0", RemoveInVersion = "1.1.0")]
-        public IEnumerable<string> GetActivationHistory()
-        {
-            throw new NotSupportedException();
-        }
-
         private void InitializeProjectRefresher(string projectLocation)
         {
             IProjectRefresher projectRefresher;

@@ -58,7 +58,6 @@ namespace Orc.ProjectManagement
         Task<bool> CloseAsync();
         Task<bool> CloseAsync(IProject project);
         Task<bool> SetActiveProjectAsync(IProject project);
-        IEnumerable<string> GetActivationHistory();
         #endregion
     }
 }
