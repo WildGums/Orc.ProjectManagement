@@ -139,7 +139,7 @@ namespace Orc.ProjectManagement
 
             var cancelEventArgs = new ProjectCancelEventArgs(projectLocation);
 
-            await ProjectRefreshingAsync.SafeInvokeAsync(this, cancelEventArgs).ConfigureAwait(false);
+            await ProjectRefreshingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
 
             Exception error = null;
             IValidationContext validationContext = null;
@@ -235,7 +235,7 @@ namespace Orc.ProjectManagement
 
                 var cancelEventArgs = new ProjectCancelEventArgs(location);
 
-                await ProjectLoadingAsync.SafeInvokeAsync(this, cancelEventArgs).ConfigureAwait(false);
+                await ProjectLoadingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
 
                 if (cancelEventArgs.Cancel)
                 {
@@ -352,7 +352,7 @@ namespace Orc.ProjectManagement
                 Log.Debug("Saving project '{0}' to '{1}'", project, location);
 
                 var cancelEventArgs = new ProjectCancelEventArgs(project);
-                await ProjectSavingAsync.SafeInvokeAsync(this, cancelEventArgs).ConfigureAwait(false);
+                await ProjectSavingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
 
                 if (cancelEventArgs.Cancel)
                 {
@@ -421,7 +421,7 @@ namespace Orc.ProjectManagement
             Log.Debug("Closing project '{0}'", project);
 
             var cancelEventArgs = new ProjectCancelEventArgs(project);
-            await ProjectClosingAsync.SafeInvokeAsync(this, cancelEventArgs).ConfigureAwait(false);
+            await ProjectClosingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
 
             if (cancelEventArgs.Cancel)
             {
@@ -475,7 +475,7 @@ namespace Orc.ProjectManagement
 
             var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
 
-            await ProjectActivationAsync.SafeInvokeAsync(this, eventArgs).ConfigureAwait(false);
+            await ProjectActivationAsync.SafeInvokeAsync(this, eventArgs, false).ConfigureAwait(false);
 
             if (eventArgs.Cancel)
             {
