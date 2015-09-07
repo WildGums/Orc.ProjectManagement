@@ -127,7 +127,7 @@ namespace Orc.ProjectManagement
         {
             var projects = _projectManager.Projects.Where(project => string.Equals(project.Location, e.Location));
 
-            foreach (var project in projects.ToArray())
+            foreach (var project in projects.ToList())
             {
                 await OnRefreshRequiredAsync(project).ConfigureAwait(false);
             }

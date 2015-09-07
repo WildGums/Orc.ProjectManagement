@@ -97,11 +97,11 @@ namespace Orc.ProjectManagement.Tests
         {
             Argument.IsNotNull(() => type);
 
-            var constructors = (from construcror in type.GetConstructors()
-                let parameters = construcror.GetParameters()
-                where !parameters.Any() || parameters.Length >= args.Length
-                orderby parameters.Length
-                select construcror).ToArray();
+            var constructors = (from constructor in type.GetConstructors()
+                                let parameters = constructor.GetParameters()
+                                where !parameters.Any() || parameters.Length >= args.Length
+                                orderby parameters.Length
+                                select constructor).ToArray();
 
             return constructors;
         }
