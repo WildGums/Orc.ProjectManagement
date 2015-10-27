@@ -166,7 +166,7 @@ namespace Orc.ProjectManagement
                 validationContext = _projectValidator.ValidateProject(loadedProject);
                 if (validationContext.HasErrors)
                 {
-                    Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", projectLocation));
+                    throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", projectLocation));
                 }
 
                 RegisterProject(loadedProject);
@@ -253,7 +253,7 @@ namespace Orc.ProjectManagement
                 {
                     if (_projects.Count > 0 && ProjectManagementType == ProjectManagementType.SingleDocument)
                     {
-                        Log.ErrorAndThrowException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
+                        throw Log.ErrorAndCreateException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
                     }
 
                     project = await QuietlyLoadProjectAsync(location).ConfigureAwait(false);
@@ -261,7 +261,7 @@ namespace Orc.ProjectManagement
                     validationContext = _projectValidator.ValidateProject(project);
                     if (validationContext.HasErrors)
                     {
-                        Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
+                        throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
                     }
 
                     RegisterProject(project);
@@ -307,7 +307,7 @@ namespace Orc.ProjectManagement
             var projectReader = _projectSerializerSelector.GetReader(location);
             if (projectReader == null)
             {
-                Log.ErrorAndThrowException<InvalidOperationException>(string.Format("No project reader is found for location '{0}'", location));
+                throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("No project reader is found for location '{0}'", location));
             }
 
             Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
@@ -315,7 +315,7 @@ namespace Orc.ProjectManagement
             var project = await projectReader.ReadAsync(location).ConfigureAwait(false);
             if (project == null)
             {
-                Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
+                throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
             }
 
             return project;
@@ -364,7 +364,7 @@ namespace Orc.ProjectManagement
                 var projectWriter = _projectSerializerSelector.GetWriter(location);
                 if (projectWriter == null)
                 {
-                    Log.ErrorAndThrowException<NotSupportedException>(string.Format("No project writer is found for location '{0}'", location));
+                    throw Log.ErrorAndCreateException<NotSupportedException>(string.Format("No project writer is found for location '{0}'", location));
                 }
 
                 Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);

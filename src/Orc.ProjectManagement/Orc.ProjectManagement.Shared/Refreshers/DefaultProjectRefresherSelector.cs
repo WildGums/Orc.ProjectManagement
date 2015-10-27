@@ -38,7 +38,7 @@ namespace Orc.ProjectManagement
 
             if (registrationInfo.RegistrationType != RegistrationType.Transient)
             {
-                Log.ErrorAndThrowException<InvalidOperationException>("IProjectRefresher needs to be registered as transient because it needs to be created for every project location");
+                throw Log.ErrorAndCreateException<InvalidOperationException>("IProjectRefresher needs to be registered as transient because it needs to be created for every project location");               
             }
 
             var projectRefresher = (IProjectRefresher)_typeFactory.CreateInstanceWithParametersAndAutoCompletion(registrationInfo.ImplementingType, location);
