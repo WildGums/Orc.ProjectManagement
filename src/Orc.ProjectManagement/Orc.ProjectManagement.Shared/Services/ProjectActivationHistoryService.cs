@@ -90,7 +90,10 @@ namespace Orc.ProjectManagement
 
         private void RemoveFromHistory(IProject project)
         {
-            Argument.IsNotNull(() => project);
+            if (project == null)
+            {
+                return;
+            }
 
             while (_activationHistory.Remove(project))
             {
