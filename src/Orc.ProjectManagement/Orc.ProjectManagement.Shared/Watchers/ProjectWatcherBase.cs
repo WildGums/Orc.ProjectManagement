@@ -38,7 +38,7 @@ namespace Orc.ProjectManagement
         }
         #endregion
 
-        protected void InitSubscriptions()
+        private void InitSubscriptions()
         {
             var type = GetType();
 
