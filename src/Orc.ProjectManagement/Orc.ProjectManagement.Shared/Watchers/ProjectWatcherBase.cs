@@ -27,7 +27,7 @@ namespace Orc.ProjectManagement
 
             _projectManager = projectManager;
 
-            Init();
+            InitSubscriptions();
         }
         #endregion
 
@@ -38,15 +38,11 @@ namespace Orc.ProjectManagement
         }
         #endregion
 
-        private void Init()
+        protected void InitSubscriptions()
         {
             var type = GetType();
 
-            var baseType = type.BaseType;
-            if (baseType == null)
-            {
-                return;
-            }
+            var baseType = typeof (ProjectWatcherBase);
 
             var methodInfos = from method in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
                               where method.GetBaseDefinition().DeclaringType != method.DeclaringType
