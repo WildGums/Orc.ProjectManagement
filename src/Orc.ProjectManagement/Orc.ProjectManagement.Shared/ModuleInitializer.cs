@@ -1,4 +1,6 @@
 ﻿using Catel.IoC;
+using Catel.Services;
+using Catel.Services.Models;
 using Orc.ProjectManagement;
 using Orc.ProjectManagement.Serialization;
 
@@ -23,5 +25,8 @@ public static class ModuleInitializer
         serviceLocator.RegisterTypeIfNotYetRegistered<IProjectSerializerSelector, DefaultProjectSerializerSelector>();
         serviceLocator.RegisterTypeIfNotYetRegistered<IProjectManagementConfigurationService, SdiProjectManagementConfigurationService>();
         serviceLocator.RegisterTypeIfNotYetRegistered<IProjectManagementInitializationService, ProjectManagementInitializationService>();
+
+        var languageService = serviceLocator.ResolveType<ILanguageService>();
+        languageService.RegisterLanguageSource(new LanguageResourceSource("Orc.ProjectManagement", "Orc.ProjectManagement.Properties", "Resources"));
     }
 }
