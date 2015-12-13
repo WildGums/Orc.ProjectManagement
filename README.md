@@ -64,7 +64,7 @@ Sometimes it is possible to check on forehand if it's even possible to load a pr
     public class DirectoryExistsProjectValidator : IProjectValidator
     {
         #region IProjectValidator Members
-        public async Task<bool> CanStartLoadingProject(string location)
+        public async bool CanStartLoadingProject(string location)
         {
             return Directory.Exists(location);
         }
@@ -79,12 +79,16 @@ Next it can be registered in the ServiceLocator (so it will automatically be inj
 
 Projects must be read via the *IProjectReaderService*. The project manager automatically knows when to read a project. First, one must create a project reader as shown in the example below:
 
-	public class ProjectWriter : ProjectWriterBase<MyProject>
+	public class ProjectReader : ProjectReaderBase
 	{
-	    protected override async Task WriteToLocation(MyProject project, string location)
-	    {
-	        // TODO: Write to a file / directory / database / anything
-	    }
+		protected override async Task<IProject> ReadAsync(string location)
+		{
+			var project = new MyProject(location);
+
+			// TODO: Read from a file / directory / database / anything
+
+			return project;
+		}
 	}
 
 Next it can be registered in the ServiceLocator (so it will automatically be injected into the *ProjectManager*):
@@ -93,15 +97,11 @@ Next it can be registered in the ServiceLocator (so it will automatically be inj
 
 # Creating a project writer service
 
-	public class ProjectReader : ProjectReaderBase
+	public class ProjectWriter : ProjectWriterBase<MyProject>
 	{
-	    protected override async Task<IProject> ReadFromLocation(string location)
+	    protected override async Task WriteAsync(MyProject project, string location)
 	    {
-	        var project = new MyProject(location);
-	
-	        // TODO: Read from a file / directory / database / anything
-
-			return project;
+	        // TODO: Write to a file / directory / database / anything
 	    }
 	}
 

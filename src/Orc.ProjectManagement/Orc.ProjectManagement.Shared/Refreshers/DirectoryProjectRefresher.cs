@@ -34,7 +34,14 @@ namespace Orc.ProjectManagement
 
         protected override void SubscribeToLocation(string location)
         {
-            _fileSystemWatcher = new FileSystemWatcher(location, FileFilter);
+            if (string.IsNullOrEmpty(FileFilter))
+            {
+                _fileSystemWatcher = new FileSystemWatcher(location);
+            }
+            else
+            {
+                _fileSystemWatcher = new FileSystemWatcher(location, FileFilter);
+            }
             _fileSystemWatcher.NotifyFilter = NotifyFilters.LastWrite;
             _fileSystemWatcher.Changed += OnFileSystemWatcherChanged;
             _fileSystemWatcher.EnableRaisingEvents = true;

@@ -27,7 +27,7 @@ namespace Orc.ProjectManagement
 
             _projectManager = projectManager;
 
-            Init();
+            InitSubscriptions();
         }
         #endregion
 
@@ -38,15 +38,11 @@ namespace Orc.ProjectManagement
         }
         #endregion
 
-        private void Init()
+        private void InitSubscriptions()
         {
             var type = GetType();
 
-            var baseType = type.BaseType;
-            if (baseType == null)
-            {
-                return;
-            }
+            var baseType = typeof (ProjectWatcherBase);
 
             var methodInfos = from method in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
                               where method.GetBaseDefinition().DeclaringType != method.DeclaringType
@@ -127,7 +123,7 @@ namespace Orc.ProjectManagement
         {
             var projects = _projectManager.Projects.Where(project => string.Equals(project.Location, e.Location));
 
-            foreach (var project in projects.ToArray())
+            foreach (var project in projects.ToList())
             {
                 await OnRefreshRequiredAsync(project).ConfigureAwait(false);
             }

@@ -7,6 +7,7 @@
 
 namespace Orc.ProjectManagement
 {
+    using System.Linq;
     using System.Threading.Tasks;
 
     public class CloseBeforeLoadProjectWatcher : ProjectWatcherBase
@@ -25,13 +26,16 @@ namespace Orc.ProjectManagement
 
         protected override async Task OnLoadingAsync(ProjectCancelEventArgs e)
         {
-            if (e.Cancel || _projectManager.ActiveProject == null)
+            if (e.Cancel)
             {
                 await base.OnLoadingAsync(e).ConfigureAwait(false);
                 return;
             }
 
-            e.Cancel = !await _projectManager.CloseAsync().ConfigureAwait(false);
+            foreach (var project in _projectManager.Projects.ToList())
+            {
+                e.Cancel = e.Cancel || !await _projectManager.CloseAsync(project).ConfigureAwait(false);
+            }
 
             await base.OnLoadingAsync(e).ConfigureAwait(false);
         }

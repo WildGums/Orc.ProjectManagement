@@ -23,6 +23,11 @@ namespace Orc.ProjectManagement
             Id = UniqueIdentifierHelper.GetUniqueIdentifier(GetType());
         }
 
+        protected override bool ShouldPropertyChangeUpdateIsDirty(string propertyName)
+        {
+            return false;
+        }
+
         public int Id { get; private set; }
 
         public virtual string Location { get; set; }

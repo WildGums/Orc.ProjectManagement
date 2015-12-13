@@ -17,6 +17,7 @@ namespace Orc.ProjectManagement
     using Catel.IoC;
     using Catel.Logging;
     using Catel.Reflection;
+    using Catel.Threading;
 
     internal class ProjectManager : IProjectManager, INeedCustomInitialization
     {
@@ -31,6 +32,7 @@ namespace Orc.ProjectManagement
         private readonly IProjectValidator _projectValidator;
         private bool _isLoading;
         private int _savingCounter;
+        private readonly AsyncLock _asyncLock = new AsyncLock();
         #endregion
 
         #region Constructors
@@ -139,7 +141,7 @@ namespace Orc.ProjectManagement
 
             var cancelEventArgs = new ProjectCancelEventArgs(projectLocation);
 
-            await ProjectRefreshingAsync.SafeInvokeAsync(this, cancelEventArgs).ConfigureAwait(false);
+            await ProjectRefreshingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
 
             Exception error = null;
             IValidationContext validationContext = null;
@@ -166,7 +168,7 @@ namespace Orc.ProjectManagement
                 validationContext = _projectValidator.ValidateProject(loadedProject);
                 if (validationContext.HasErrors)
                 {
-                    Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", projectLocation));
+                    throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", projectLocation));
                 }
 
                 RegisterProject(loadedProject);
@@ -223,67 +225,70 @@ namespace Orc.ProjectManagement
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
-            var project = Projects.FirstOrDefault(x => string.Equals(location, x.Location, StringComparison.OrdinalIgnoreCase));
-            if (project != null)
+            IProject project;
+            using (await _asyncLock.LockAsync())
             {
-                return project;
-            }
-
-            using (new DisposableToken(null, token => _isLoading = true, token => _isLoading = false))
-            {
-                Log.Debug("Loading project from '{0}'", location);
-
-                var cancelEventArgs = new ProjectCancelEventArgs(location);
-
-                await ProjectLoadingAsync.SafeInvokeAsync(this, cancelEventArgs).ConfigureAwait(false);
-
-                if (cancelEventArgs.Cancel)
+                project = Projects.FirstOrDefault(x => string.Equals(location, x.Location, StringComparison.OrdinalIgnoreCase));
+                if (project != null)
                 {
-                    Log.Debug("Canceled loading of project from '{0}'", location);
-                    await ProjectLoadingCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(location)).ConfigureAwait(false);
-
-                    return null;
+                    return project;
                 }
 
-                Exception error = null;
-
-                IValidationContext validationContext = null;
-
-                try
+                using (new DisposableToken(null, token => _isLoading = true, token => _isLoading = false))
                 {
-                    if (_projects.Count > 0 && ProjectManagementType == ProjectManagementType.SingleDocument)
+                    Log.Debug("Loading project from '{0}'", location);
+
+                    var cancelEventArgs = new ProjectCancelEventArgs(location);
+
+                    await ProjectLoadingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
+
+                    if (cancelEventArgs.Cancel)
                     {
-                        Log.ErrorAndThrowException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
+                        Log.Debug("Canceled loading of project from '{0}'", location);
+                        await ProjectLoadingCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(location)).ConfigureAwait(false);
+
+                        return null;
                     }
 
-                    project = await QuietlyLoadProjectAsync(location).ConfigureAwait(false);
+                    Exception error = null;
 
-                    validationContext = _projectValidator.ValidateProject(project);
-                    if (validationContext.HasErrors)
+                    IValidationContext validationContext = null;
+
+                    try
                     {
-                        Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
+                        if (_projects.Count > 0 && ProjectManagementType == ProjectManagementType.SingleDocument)
+                        {
+                            throw Log.ErrorAndCreateException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
+                        }
+
+                        project = await QuietlyLoadProjectAsync(location).ConfigureAwait(false);
+
+                        validationContext = _projectValidator.ValidateProject(project);
+                        if (validationContext.HasErrors)
+                        {
+                            throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
+                        }
+
+                        RegisterProject(project);
+                    }
+                    catch (Exception ex)
+                    {
+                        error = ex;
+                        Log.Error(ex, "Failed to load project from '{0}'", location);
                     }
 
-                    RegisterProject(project);
+                    if (error != null)
+                    {
+                        await ProjectLoadingFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(location, error, validationContext)).ConfigureAwait(false);
+
+                        return null;
+                    }
+
+                    await ProjectLoadedAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
+
+                    Log.Info("Loaded project from '{0}'", location);
                 }
-                catch (Exception ex)
-                {
-                    error = ex;
-                    Log.Error(ex, "Failed to load project from '{0}'", location);
-                }
-
-                if (error != null)
-                {
-                    await ProjectLoadingFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(location, error, validationContext)).ConfigureAwait(false);
-
-                    return null;
-                }
-
-                await ProjectLoadedAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
-
-                Log.Info("Loaded project from '{0}'", location);
             }
-
             return project;
         }
 
@@ -307,7 +312,7 @@ namespace Orc.ProjectManagement
             var projectReader = _projectSerializerSelector.GetReader(location);
             if (projectReader == null)
             {
-                Log.ErrorAndThrowException<InvalidOperationException>(string.Format("No project reader is found for location '{0}'", location));
+                throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("No project reader is found for location '{0}'", location));
             }
 
             Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
@@ -315,7 +320,7 @@ namespace Orc.ProjectManagement
             var project = await projectReader.ReadAsync(location).ConfigureAwait(false);
             if (project == null)
             {
-                Log.ErrorAndThrowException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
+                throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
             }
 
             return project;
@@ -352,7 +357,7 @@ namespace Orc.ProjectManagement
                 Log.Debug("Saving project '{0}' to '{1}'", project, location);
 
                 var cancelEventArgs = new ProjectCancelEventArgs(project);
-                await ProjectSavingAsync.SafeInvokeAsync(this, cancelEventArgs).ConfigureAwait(false);
+                await ProjectSavingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
 
                 if (cancelEventArgs.Cancel)
                 {
@@ -364,7 +369,7 @@ namespace Orc.ProjectManagement
                 var projectWriter = _projectSerializerSelector.GetWriter(location);
                 if (projectWriter == null)
                 {
-                    Log.ErrorAndThrowException<NotSupportedException>(string.Format("No project writer is found for location '{0}'", location));
+                    throw Log.ErrorAndCreateException<NotSupportedException>(string.Format("No project writer is found for location '{0}'", location));
                 }
 
                 Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);
@@ -421,7 +426,7 @@ namespace Orc.ProjectManagement
             Log.Debug("Closing project '{0}'", project);
 
             var cancelEventArgs = new ProjectCancelEventArgs(project);
-            await ProjectClosingAsync.SafeInvokeAsync(this, cancelEventArgs).ConfigureAwait(false);
+            await ProjectClosingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
 
             if (cancelEventArgs.Cancel)
             {
@@ -454,73 +459,70 @@ namespace Orc.ProjectManagement
 
         public virtual async Task<bool> SetActiveProjectAsync(IProject project)
         {
-            var activeProject = ActiveProject;
-
-            if(project != null && !Projects.Contains(project))
+            using (await _asyncLock.LockAsync())
             {
-                return false;
-            }
+                var activeProject = ActiveProject;
 
-            var activeProjectLocation = activeProject == null ? null : activeProject.Location;
-            var newProjectLocation = project == null ? null : project.Location;
+                if (project != null && !Projects.Contains(project))
+                {
+                    return false;
+                }
 
-            if (string.Equals(activeProjectLocation, newProjectLocation))
-            {
-                return false;
-            }
+                var activeProjectLocation = activeProject == null ? null : activeProject.Location;
+                var newProjectLocation = project == null ? null : project.Location;
 
-            Log.Info(project != null
-                ? string.Format("Activating project '{0}'", project.Location)
-                : "Deactivating currently active project");
+                if (string.Equals(activeProjectLocation, newProjectLocation))
+                {
+                    return false;
+                }
 
-            var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
-
-            await ProjectActivationAsync.SafeInvokeAsync(this, eventArgs).ConfigureAwait(false);
-
-            if (eventArgs.Cancel)
-            {
                 Log.Info(project != null
-                    ? string.Format("Activating project '{0}' was canceled", project.Location)
+                    ? string.Format("Activating project '{0}'", project.Location)
                     : "Deactivating currently active project");
 
-                await ProjectActivationCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
-                return false;
-            }
+                var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
 
-            Exception exception = null;
+                await ProjectActivationAsync.SafeInvokeAsync(this, eventArgs, false).ConfigureAwait(false);
 
-            try
-            {
-                ActiveProject = project;
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
+                if (eventArgs.Cancel)
+                {
+                    Log.Info(project != null
+                        ? string.Format("Activating project '{0}' was canceled", project.Location)
+                        : "Deactivating currently active project");
 
-            if (exception != null)
-            {
-                Log.Error(exception, project != null
-                    ? string.Format("Failed to activate project '{0}'", project.Location)
-                    : "Failed to deactivate currently active project");
+                    await ProjectActivationCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
+                    return false;
+                }
 
-                await ProjectActivationFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(project, exception)).ConfigureAwait(false);
-                return false;
-            }
+                Exception exception = null;
 
-            await ProjectActivatedAsync.SafeInvokeAsync(this, new ProjectUpdatedEventArgs(activeProject, project)).ConfigureAwait(false);
+                try
+                {
+                    ActiveProject = project;
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
 
-            Log.Debug(project != null
+                if (exception != null)
+                {
+                    Log.Error(exception, project != null
+                        ? string.Format("Failed to activate project '{0}'", project.Location)
+                        : "Failed to deactivate currently active project");
+
+                    await ProjectActivationFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(project, exception)).ConfigureAwait(false);
+                    return false;
+                }
+
+                await ProjectActivatedAsync.SafeInvokeAsync(this, new ProjectUpdatedEventArgs(activeProject, project)).ConfigureAwait(false);
+
+                Log.Debug(project != null
                     ? string.Format("Activating project '{0}' was canceled", project.Location)
                     : "Deactivating currently active project");
+            }
 
             return true;
-        }
-
-        [ObsoleteEx(ReplacementTypeOrMember = "IProjectActivationHistoryService", TreatAsErrorFromVersion = "1.0.0", RemoveInVersion = "1.1.0")]
-        public IEnumerable<string> GetActivationHistory()
-        {
-            throw new NotSupportedException();
         }
 
         private void InitializeProjectRefresher(string projectLocation)

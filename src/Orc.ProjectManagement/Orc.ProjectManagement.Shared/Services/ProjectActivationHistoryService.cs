@@ -90,7 +90,10 @@ namespace Orc.ProjectManagement
 
         private void RemoveFromHistory(IProject project)
         {
-            Argument.IsNotNull(() => project);
+            if (project == null)
+            {
+                return;
+            }
 
             while (_activationHistory.Remove(project))
             {
@@ -101,11 +104,11 @@ namespace Orc.ProjectManagement
 
         private void RenewHistory()
         {
-            var source = _projectsSource.ToArray();
-            var history = _activationHistory.ToArray();
+            var source = _projectsSource.ToList();
+            var history = _activationHistory.ToList();
             var toRemove = (from project in history
                             where !source.Contains(project)
-                            select project).ToArray();
+                            select project).ToList();
 
             foreach (var project in toRemove)
             {
