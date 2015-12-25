@@ -32,7 +32,8 @@ namespace Orc.ProjectManagement
         private readonly IProjectValidator _projectValidator;
         private bool _isLoading;
         private int _savingCounter;
-        private readonly AsyncLock _asyncLock = new AsyncLock();
+        private readonly AsyncLock _asyncLoadLock = new AsyncLock();
+        private readonly AsyncLock _asyncActivateLock = new AsyncLock();
         #endregion
 
         #region Constructors
@@ -226,7 +227,7 @@ namespace Orc.ProjectManagement
             Argument.IsNotNullOrWhitespace("location", location);
 
             IProject project;
-            using (await _asyncLock.LockAsync())
+            using (await _asyncLoadLock.LockAsync())
             {
                 project = Projects.FirstOrDefault(x => string.Equals(location, x.Location, StringComparison.OrdinalIgnoreCase));
                 if (project != null)
@@ -459,7 +460,7 @@ namespace Orc.ProjectManagement
 
         public virtual async Task<bool> SetActiveProjectAsync(IProject project)
         {
-            using (await _asyncLock.LockAsync())
+            using (await _asyncActivateLock.LockAsync())
             {
                 var activeProject = ActiveProject;
 
