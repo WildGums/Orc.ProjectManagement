@@ -9,6 +9,7 @@ namespace Orc.ProjectManagement
 {
     using System;
     using System.Collections.Generic;
+    using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using Catel;
 
@@ -19,6 +20,8 @@ namespace Orc.ProjectManagement
 
         IProject ActiveProject { get; }
         ProjectManagementType ProjectManagementType { get; }
+
+        bool IsLoading { get; }
         #endregion
 
         #region Methods

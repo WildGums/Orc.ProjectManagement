@@ -30,7 +30,6 @@ namespace Orc.ProjectManagement
         private readonly ListDictionary<string, IProject> _projects;
         private readonly IProjectSerializerSelector _projectSerializerSelector;
         private readonly IProjectValidator _projectValidator;
-        private bool _isLoading;
         private int _savingCounter;
         private readonly AsyncLock _asyncLoadLock = new AsyncLock();
         private readonly AsyncLock _asyncActivateLock = new AsyncLock();
@@ -70,6 +69,8 @@ namespace Orc.ProjectManagement
         }
 
         public virtual IProject ActiveProject { get; set; }
+
+        public bool IsLoading { get; private set; }
         #endregion
 
         #region Methods
@@ -235,7 +236,7 @@ namespace Orc.ProjectManagement
                     return project;
                 }
 
-                using (new DisposableToken(null, token => _isLoading = true, token => _isLoading = false))
+                using (new DisposableToken(null, token => IsLoading = true, token => IsLoading = false))
                 {
                     Log.Debug("Loading project from '{0}'", location);
 
@@ -584,7 +585,7 @@ namespace Orc.ProjectManagement
         private void OnProjectRefresherUpdated(object sender, ProjectEventArgs e)
         {
             // TODO: use dictionary for detecting if e.Project is currently loading or saving
-            if (_isLoading || _savingCounter > 0)
+            if (IsLoading || _savingCounter > 0)
             {
                 return;
             }
