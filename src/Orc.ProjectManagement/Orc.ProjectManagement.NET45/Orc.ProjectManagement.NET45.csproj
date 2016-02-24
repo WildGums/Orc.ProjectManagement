@@ -114,6 +114,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="ModuleInitializer.cs" />
   </ItemGroup>
   <Import Project="..\Orc.ProjectManagement.Shared\Orc.ProjectManagement.Shared.projitems" Label="Shared" Condition="Exists('..\Orc.ProjectManagement.Shared\Orc.ProjectManagement.Shared.projitems')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

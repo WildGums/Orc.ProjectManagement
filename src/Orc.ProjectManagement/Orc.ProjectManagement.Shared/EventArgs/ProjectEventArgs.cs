@@ -14,8 +14,6 @@ namespace Orc.ProjectManagement
         {
             Project = project;
 
-            Project = project;
-
             if (project != null)
             {
                 Location = project.Location;
