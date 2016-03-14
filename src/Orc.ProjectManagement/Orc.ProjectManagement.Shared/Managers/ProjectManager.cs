@@ -141,7 +141,7 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Refreshing project from '{0}'", projectLocation);
 
-            var cancelEventArgs = new ProjectCancelEventArgs(projectLocation);
+            var cancelEventArgs = new ProjectCancelEventArgs(project);
 
             await ProjectRefreshingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
 
