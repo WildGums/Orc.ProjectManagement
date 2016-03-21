@@ -167,7 +167,7 @@ namespace Orc.ProjectManagement
 
                 var loadedProject = await QuietlyLoadProjectAsync(projectLocation).ConfigureAwait(false);
 
-                validationContext = _projectValidator.ValidateProject(loadedProject);
+                validationContext = await _projectValidator.ValidateProjectAsync(loadedProject);
                 if (validationContext.HasErrors)
                 {
                     throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", projectLocation));
@@ -265,7 +265,7 @@ namespace Orc.ProjectManagement
 
                         project = await QuietlyLoadProjectAsync(location).ConfigureAwait(false);
 
-                        validationContext = _projectValidator.ValidateProject(project);
+                        validationContext = await _projectValidator.ValidateProjectAsync(project);
                         if (validationContext.HasErrors)
                         {
                             throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
@@ -306,9 +306,9 @@ namespace Orc.ProjectManagement
         {
             Log.Debug("Validating to see if we can load the project from '{0}'", location);
 
-            if (!_projectValidator.CanStartLoadingProject(location))
+            if (!await _projectValidator.CanStartLoadingProjectAsync(location))
             {
-                throw new ProjectException(location, String.Format("Cannot load project from '{0}'", location));
+                throw new ProjectException(location, string.Format("Cannot load project from '{0}'", location));
             }
 
             var projectReader = _projectSerializerSelector.GetReader(location);

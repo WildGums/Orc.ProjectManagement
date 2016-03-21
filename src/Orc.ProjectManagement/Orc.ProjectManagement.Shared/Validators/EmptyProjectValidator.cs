@@ -7,11 +7,14 @@
 
 namespace Orc.ProjectManagement
 {
+    using System.Threading.Tasks;
+    using Catel.Threading;
+
     public class EmptyProjectValidator : ProjectValidatorBase
     {
-        public override bool CanStartLoadingProject(string location)
+        public override Task<bool> CanStartLoadingProjectAsync(string location)
         {
-            return true;
+            return TaskHelper<bool>.FromResult(true);
         }
     }
 }

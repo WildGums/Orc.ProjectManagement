@@ -8,13 +8,16 @@
 namespace Orc.ProjectManagement
 {
     using System.IO;
+    using System.Threading.Tasks;
+    using Catel.Threading;
 
     public class FileExistsProjectValidator : ProjectValidatorBase
     {
         #region IProjectValidator Members
-        public override bool CanStartLoadingProject(string location)
+        public override Task<bool> CanStartLoadingProjectAsync(string location)
         {
-            return File.Exists(location);
+            var canStart = File.Exists(location);
+            return TaskHelper<bool>.FromResult(canStart);
         }
         #endregion
     }
