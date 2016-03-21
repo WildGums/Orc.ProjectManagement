@@ -8,17 +8,18 @@
 namespace Orc.ProjectManagement.Test.Mocks
 {
     using System;
+    using System.Threading.Tasks;
     using Catel.Data;
 
     public class ProjectValidator : ProjectValidatorBase
     {
         #region IProjectValidator Members
-        public override bool CanStartLoadingProject(string location)
+        public override async Task<bool> CanStartLoadingProjectAsync(string location)
         {
             return string.Equals(location, "cannotload", StringComparison.InvariantCultureIgnoreCase);
         }
 
-        public override IValidationContext ValidateProject(IProject project)
+        public override async Task<IValidationContext> ValidateProjectAsync(IProject project)
         {
             var validationContext = base.ValidateProject(project);
 
