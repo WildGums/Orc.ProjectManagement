@@ -21,7 +21,7 @@ namespace Orc.ProjectManagement.Test.Mocks
 
         public override async Task<IValidationContext> ValidateProjectAsync(IProject project)
         {
-            var validationContext = base.ValidateProject(project);
+            var validationContext = await base.ValidateProjectAsync(project);
 
             if (string.Equals(project.Location, "cannotload"))
             {
