@@ -99,11 +99,9 @@ namespace Orc.ProjectManagement
 
         protected abstract void UnsubscribeFromLocation(string location);
 
-        protected void RaiseUpdated(string location)
+        protected void RaiseUpdated(string fileName)
         {
-            // Note: for a bug fix, we needed to remove the usage of the location. Best solution is
-            // to introduce a new event args clas if the location is really required
-            Updated.SafeInvoke(this, new ProjectEventArgs(ProjectLocation));
+            Updated.SafeInvoke(this, new ProjectFileSystemEventArgs(ProjectLocation, fileName));
         }
 
         private Task OnProjectManagerSavingAsync(object sender, ProjectCancelEventArgs e)

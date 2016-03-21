@@ -121,11 +121,23 @@ namespace Orc.ProjectManagement
 
         private async Task OnProjectRefreshRequiredAsync(ProjectEventArgs e)
         {
-            var projects = _projectManager.Projects.Where(project => string.Equals(project.Location, e.Location));
+            var projects = _projectManager.Projects.Where(project => string.Equals(project.Location, e.Location)).ToList();
+            var projectFileSystemEventArgs = e as ProjectFileSystemEventArgs;
 
-            foreach (var project in projects.ToList())
+            foreach (var project in projects)
             {
                 await OnRefreshRequiredAsync(project).ConfigureAwait(false);
+            }
+
+            if (projectFileSystemEventArgs == null)
+            {
+                return;
+            }
+
+            var fileNames = projectFileSystemEventArgs.FileNames;
+            foreach (var project in projects)
+            {
+                await OnRefreshRequiredAsync(project, fileNames).ConfigureAwait(false);
             }
         }
 
@@ -224,7 +236,13 @@ namespace Orc.ProjectManagement
             return TaskHelper.Completed;
         }
 
+        [ObsoleteEx(ReplacementTypeOrMember = "OnRefreshRequiredAsync(IProject, params string[])", TreatAsErrorFromVersion = "1.2", RemoveInVersion = "2.0")]
         protected virtual Task OnRefreshRequiredAsync(IProject project)
+        {
+            return TaskHelper.Completed;
+        }
+
+        protected virtual Task OnRefreshRequiredAsync(IProject project, params string[] fileNames)
         {
             return TaskHelper.Completed;
         }
