@@ -32,6 +32,12 @@ namespace Orc.ProjectManagement
             return validationContext;
         }
 
+        public virtual Task<IValidationContext> ValidateProjectBeforeLoadingAsync(string location)
+        {
+            var validationContext = new ValidationContext();
+            return TaskHelper<IValidationContext>.FromResult(validationContext);
+        }
+
         public virtual Task<IValidationContext> ValidateProjectAsync(IProject project)
         {
             var validationContext = ValidateProject(project);
