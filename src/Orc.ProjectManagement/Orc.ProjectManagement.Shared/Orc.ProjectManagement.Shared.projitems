@@ -53,6 +53,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Services\ProjectManagementInitializationService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\SdiProjectManagementConfigurationService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\ProjectManagementConfigurationService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Upgraders\EmptyProjectUpgrader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Upgraders\Interfaces\IProjectUpgrader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\DirectoryExistsProjectValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\EmptyProjectValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\Extensions\IProjectValidatorExtensions.cs" />

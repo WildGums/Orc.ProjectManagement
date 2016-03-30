@@ -30,17 +30,21 @@ namespace Orc.ProjectManagement
         private readonly ListDictionary<string, IProject> _projects;
         private readonly IProjectSerializerSelector _projectSerializerSelector;
         private readonly IProjectValidator _projectValidator;
-        private int _savingCounter;
+        private readonly IProjectUpgrader _projectUpgrader;
+        
         private readonly AsyncLock _asyncLoadLock = new AsyncLock();
         private readonly AsyncLock _asyncActivateLock = new AsyncLock();
+
+        private int _savingCounter;
         #endregion
 
         #region Constructors
-        public ProjectManager(IProjectValidator projectValidator, IProjectRefresherSelector projectRefresherSelector, IProjectSerializerSelector projectSerializerSelector,
-            IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService,
+        public ProjectManager(IProjectValidator projectValidator, IProjectUpgrader projectUpgrader, IProjectRefresherSelector projectRefresherSelector, 
+            IProjectSerializerSelector projectSerializerSelector, IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService,
             IProjectManagementInitializationService projectManagementInitializationService)
         {
             Argument.IsNotNull(() => projectValidator);
+            Argument.IsNotNull(() => projectUpgrader);
             Argument.IsNotNull(() => projectRefresherSelector);
             Argument.IsNotNull(() => projectSerializerSelector);
             Argument.IsNotNull(() => projectInitializer);
@@ -48,6 +52,7 @@ namespace Orc.ProjectManagement
             Argument.IsNotNull(() => projectManagementInitializationService);
 
             _projectValidator = projectValidator;
+            _projectUpgrader = projectUpgrader;
             _projectRefresherSelector = projectRefresherSelector;
             _projectSerializerSelector = projectSerializerSelector;
             _projectInitializer = projectInitializer;
@@ -238,7 +243,18 @@ namespace Orc.ProjectManagement
 
                 using (new DisposableToken(null, token => IsLoading = true, token => IsLoading = false))
                 {
-                    Log.Debug("Loading project from '{0}'", location);
+                    Log.Debug($"Going to load project from '{location}', checking if an upgrade is required");
+
+                    if (await _projectUpgrader.RequiresUpgradeAsync(location))
+                    {
+                        Log.Debug($"Upgrade is required for '{location}', upgrading...");
+
+                        location = await _projectUpgrader.UpgradeAsync(location);
+
+                        Log.Debug($"Upgraded project, final location is '{location}'");
+                    }
+
+                    Log.Debug($"Loading project from '{location}'");
 
                     var cancelEventArgs = new ProjectCancelEventArgs(location);
 
