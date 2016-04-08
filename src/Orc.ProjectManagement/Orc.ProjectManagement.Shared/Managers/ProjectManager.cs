@@ -573,7 +573,7 @@ namespace Orc.ProjectManagement
 
                     if (projectRefresher != null)
                     {
-                        Log.Debug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
+                        Log.Debug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName(false));
 
                         projectRefresher.Updated += OnProjectRefresherUpdated;
                         projectRefresher.Subscribe();
@@ -601,7 +601,7 @@ namespace Orc.ProjectManagement
             {
                 try
                 {
-                    Log.Debug("Unsubscribing from project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
+                    Log.Debug("Unsubscribing from project refresher '{0}'", projectRefresher.GetType().GetSafeFullName(false));
 
                     projectRefresher.Unsubscribe();
                 }

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orc.ProjectManagement.NET40", "Orc.ProjectManagement\Orc.ProjectManagement.NET40\Orc.ProjectManagement.NET40.csproj", "{4258FC75-DD23-4877-A56D-3A077AB57F2D}"
 EndProject
@@ -32,13 +32,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{04
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0E1BD4B4-3282-4A08-8FBA-F534106F87BF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orc.ProjectManagement.NET46", "Orc.ProjectManagement\Orc.ProjectManagement.NET46\Orc.ProjectManagement.NET46.csproj", "{A640A199-893B-42D0-A102-18EE6C55C3D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orc.ProjectManagement.Tests.NET46", "Orc.ProjectManagement.Tests\Orc.ProjectManagement.Tests.NET46\Orc.ProjectManagement.Tests.NET46.csproj", "{AF632D55-D4C4-476C-9FB6-9AE3C94D56DC}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Orc.ProjectManagement.Tests\Orc.ProjectManagement.Tests.Shared\Orc.ProjectManagement.Tests.Shared.projitems*{68dd602a-0075-4846-a3f6-f626bf1969b4}*SharedItemsImports = 13
 		Orc.ProjectManagement\Orc.ProjectManagement.Shared\Orc.ProjectManagement.Shared.projitems*{4258fc75-dd23-4877-a56d-3a077ab57f2d}*SharedItemsImports = 4
 		Orc.ProjectManagement.Tests\Orc.ProjectManagement.Tests.Shared\Orc.ProjectManagement.Tests.Shared.projitems*{d6415689-67de-4fee-aa72-6d7eedddceb6}*SharedItemsImports = 4
+		Orc.ProjectManagement.Tests\Orc.ProjectManagement.Tests.Shared\Orc.ProjectManagement.Tests.Shared.projitems*{af632d55-d4c4-476c-9fb6-9ae3c94d56dc}*SharedItemsImports = 4
 		Orc.ProjectManagement.Tests\Orc.ProjectManagement.Tests.Shared\Orc.ProjectManagement.Tests.Shared.projitems*{ca834848-a02b-44b3-92c6-6430527792bb}*SharedItemsImports = 4
 		Orc.ProjectManagement\Orc.ProjectManagement.Shared\Orc.ProjectManagement.Shared.projitems*{178985ec-a540-45e9-8348-92f3703da89c}*SharedItemsImports = 13
+		Orc.ProjectManagement\Orc.ProjectManagement.Shared\Orc.ProjectManagement.Shared.projitems*{a640a199-893b-42d0-a102-18ee6c55c3d4}*SharedItemsImports = 4
 		Orc.ProjectManagement\Orc.ProjectManagement.Shared\Orc.ProjectManagement.Shared.projitems*{38c3a118-f85a-44ef-b406-9b2c42d06a4f}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,6 +72,14 @@ Global
 		{CA834848-A02B-44B3-92C6-6430527792BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA834848-A02B-44B3-92C6-6430527792BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA834848-A02B-44B3-92C6-6430527792BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A640A199-893B-42D0-A102-18EE6C55C3D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A640A199-893B-42D0-A102-18EE6C55C3D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A640A199-893B-42D0-A102-18EE6C55C3D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A640A199-893B-42D0-A102-18EE6C55C3D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF632D55-D4C4-476C-9FB6-9AE3C94D56DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF632D55-D4C4-476C-9FB6-9AE3C94D56DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF632D55-D4C4-476C-9FB6-9AE3C94D56DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF632D55-D4C4-476C-9FB6-9AE3C94D56DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -81,5 +95,7 @@ Global
 		{7A038899-FF34-4142-9E62-B639CC2C6B36} = {A8A1A4EE-E04A-43AB-90C9-41E7B82EE1E5}
 		{04AAC223-8FAE-42DF-9F7B-A20B60575CCB} = {A8A1A4EE-E04A-43AB-90C9-41E7B82EE1E5}
 		{0E1BD4B4-3282-4A08-8FBA-F534106F87BF} = {A8A1A4EE-E04A-43AB-90C9-41E7B82EE1E5}
+		{A640A199-893B-42D0-A102-18EE6C55C3D4} = {7A038899-FF34-4142-9E62-B639CC2C6B36}
+		{AF632D55-D4C4-476C-9FB6-9AE3C94D56DC} = {0E1BD4B4-3282-4A08-8FBA-F534106F87BF}
 	EndGlobalSection
 EndGlobal
