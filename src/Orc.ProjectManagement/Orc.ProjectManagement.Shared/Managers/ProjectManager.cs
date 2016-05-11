@@ -170,6 +170,12 @@ namespace Orc.ProjectManagement
                     await SetActiveProjectAsync(null).ConfigureAwait(false);
                 }
 
+                validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(projectLocation);
+                if (validationContext.HasErrors)
+                {
+                    throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{projectLocation}', the validator returned errors");
+                }
+
                 var loadedProject = await QuietlyLoadProjectAsync(projectLocation, false).ConfigureAwait(false);
 
                 validationContext = await _projectValidator.ValidateProjectAsync(loadedProject);
