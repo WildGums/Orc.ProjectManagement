@@ -7,8 +7,10 @@
 
 namespace Orc.ProjectManagement
 {
+    using System;
     using System.Threading.Tasks;
     using Catel;
+    using Catel.Data;
 
     internal class ActivationHistoryProjectWatcher : ProjectWatcherBase
     {
@@ -54,6 +56,18 @@ namespace Orc.ProjectManagement
             await ProjectManager.SetActiveProjectAsync(lastActiveProject).ConfigureAwait(false);
 
             await base.OnClosedAsync(project).ConfigureAwait(false);
+        }
+
+        protected override async Task OnLoadingFailedAsync(string location, Exception exception, IValidationContext validationContext)
+        {
+            await base.OnLoadingFailedAsync(location, exception, validationContext);
+            if (ProjectManager.ActiveProject == null)
+            {
+                return;
+            }
+
+            var lastActiveProject = _projectActivationHistoryService.GetLastActiveProject();
+            await ProjectManager.SetActiveProjectAsync(lastActiveProject).ConfigureAwait(false);
         }
     }
 }
