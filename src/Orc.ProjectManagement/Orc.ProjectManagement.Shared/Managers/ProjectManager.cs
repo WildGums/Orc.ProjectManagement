@@ -220,7 +220,10 @@ namespace Orc.ProjectManagement
 
             var project = await LoadProjectAsync(location).ConfigureAwait(false);
 
-            await SetActiveProjectAsync(project).ConfigureAwait(false);
+            if (project != null)
+            {
+                await SetActiveProjectAsync(project).ConfigureAwait(false);
+            }
 
             return project != null;
         }
