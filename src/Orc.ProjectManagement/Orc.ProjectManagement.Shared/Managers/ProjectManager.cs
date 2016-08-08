@@ -586,16 +586,14 @@ namespace Orc.ProjectManagement
 
                         projectRefresher.Updated += OnProjectRefresherUpdated;
                         projectRefresher.Subscribe();
+
+                        _projectRefreshers[projectLocation] = projectRefresher;
                     }
                 }
                 catch (Exception ex)
                 {
                     Log.Warning(ex, "Failed to subscribe to project refresher");
-                }
-
-                if (projectRefresher != null)
-                {
-                    _projectRefreshers[projectLocation] = projectRefresher;
+                    throw;
                 }
             }
         }
