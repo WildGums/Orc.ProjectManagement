@@ -40,6 +40,7 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectEventArgs> ProjectRefreshingCanceledAsync;
         event AsyncEventHandler<ProjectErrorEventArgs> ProjectRefreshingFailedAsync;
 
+        [ObsoleteEx(Message = "Won't be replaced", TreatAsErrorFromVersion = "1.0", RemoveInVersion = "2.0")]
         event EventHandler<ProjectEventArgs> ProjectRefreshRequiredAsync;
 
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosingAsync;

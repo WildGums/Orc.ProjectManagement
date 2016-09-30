@@ -328,6 +328,7 @@ namespace Orc.ProjectManagement
             return OnRefreshRequiredAsync(project, fileNames);
         }
 
+        [ObsoleteEx(Message = "Won't be replaced", TreatAsErrorFromVersion = "1.0", RemoveInVersion = "2.0")]
         protected virtual Task OnRefreshRequiredAsync(IProject project, params string[] fileNames)
         {
             return TaskHelper.Completed;

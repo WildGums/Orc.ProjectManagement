@@ -86,6 +86,7 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Events
+        [ObsoleteEx(Message = "Won't be replaced", TreatAsErrorFromVersion = "1.0", RemoveInVersion = "2.0")]
         public event EventHandler<ProjectEventArgs> ProjectRefreshRequiredAsync;
 
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoadingAsync;
