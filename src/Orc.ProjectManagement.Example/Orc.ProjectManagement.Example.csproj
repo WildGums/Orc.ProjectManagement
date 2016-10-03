@@ -112,7 +112,6 @@
     <Compile Include="ModuleInitializer.cs" />
     <Compile Include="ProjectManagement\PersonProjectReader.cs" />
     <Compile Include="ProjectManagement\PersonProjectWriter.cs" />
-    <Compile Include="ProjectManagement\Watchers\RefreshProjectWatcher.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
     <Compile Include="Views\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
@@ -149,6 +148,7 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="ProjectManagement\Watchers\" />
     <Folder Include="Services\" />
   </ItemGroup>
   <ItemGroup>
