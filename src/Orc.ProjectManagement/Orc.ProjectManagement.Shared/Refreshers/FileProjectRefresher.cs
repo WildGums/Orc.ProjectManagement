@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="FileRefresher.cs" company="Orchestra development team">
-//   Copyright (c) 2008 - 2014 Orchestra development team. All rights reserved.
+// <copyright file="FileRefresher.cs" company="WildGums">
+//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -11,14 +11,9 @@ namespace Orc.ProjectManagement
 
     public class FileProjectRefresher : DirectoryProjectRefresher
     {
-        public FileProjectRefresher(string location) 
-            : base(Path.GetDirectoryName(location), Path.GetFileName(location))
+        public FileProjectRefresher(string projectLocation) 
+            : base(projectLocation, Path.GetDirectoryName(projectLocation), Path.GetFileName(projectLocation))
         {
-        }
-
-        protected override string FullPathToLocation(string fullPath)
-        {
-            return fullPath;
         }
     }
 }

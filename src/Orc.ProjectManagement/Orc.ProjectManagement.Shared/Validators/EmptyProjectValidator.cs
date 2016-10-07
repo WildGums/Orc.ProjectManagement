@@ -1,17 +1,20 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="EmptyProjectValidator.cs" company="Orchestra development team">
-//   Copyright (c) 2008 - 2014 Orchestra development team. All rights reserved.
+// <copyright file="EmptyProjectValidator.cs" company="WildGums">
+//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
 
 namespace Orc.ProjectManagement
 {
+    using System.Threading.Tasks;
+    using Catel.Threading;
+
     public class EmptyProjectValidator : ProjectValidatorBase
     {
-        public override bool CanStartLoadingProject(string location)
+        public override Task<bool> CanStartLoadingProjectAsync(string location)
         {
-            return true;
+            return TaskHelper<bool>.FromResult(true);
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="IProjectManager.cs" company="Wild Gums">
-//   Copyright (c) 2008 - 2015 Wild Gums. All rights reserved.
+// <copyright file="IProjectManager.cs" company="WildGums">
+//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -9,6 +9,7 @@ namespace Orc.ProjectManagement
 {
     using System;
     using System.Collections.Generic;
+    using System.Security.Cryptography.X509Certificates;
     using System.Threading.Tasks;
     using Catel;
 
@@ -19,6 +20,8 @@ namespace Orc.ProjectManagement
 
         IProject ActiveProject { get; }
         ProjectManagementType ProjectManagementType { get; }
+
+        bool IsLoading { get; }
         #endregion
 
         #region Methods
@@ -37,6 +40,7 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectEventArgs> ProjectRefreshingCanceledAsync;
         event AsyncEventHandler<ProjectErrorEventArgs> ProjectRefreshingFailedAsync;
 
+        [ObsoleteEx(Message = "Won't be replaced", TreatAsErrorFromVersion = "1.0", RemoveInVersion = "2.0")]
         event EventHandler<ProjectEventArgs> ProjectRefreshRequiredAsync;
 
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosingAsync;

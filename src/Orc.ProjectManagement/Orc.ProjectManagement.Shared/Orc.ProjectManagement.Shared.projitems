@@ -14,6 +14,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectErrorEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectCancelEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectFileSystemEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectStateEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectUpdatingCancelEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectUpdatedEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Exceptions\InvalidProjectException.cs" />
@@ -29,6 +31,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\Extensions\IProjectExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\Interfaces\IProject.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\ProjectBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\ProjectState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ModuleInitializer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Properties\AssemblyInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Refreshers\DefaultProjectRefresherSelector.cs" />
@@ -44,14 +47,18 @@
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\Interfaces\IProjectWriter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectReaderBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectWriterBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\IProjectStateService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\ProjectActivationHistoryService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\IProjectActivationHistoryService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\IProjectManagementConfigurationService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\IProjectManagementInitializationService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\MdiProjectManagementConfigurationService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\ProjectManagementInitializationService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\ProjectStateService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\SdiProjectManagementConfigurationService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\ProjectManagementConfigurationService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Upgraders\EmptyProjectUpgrader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Upgraders\Interfaces\IProjectUpgrader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\DirectoryExistsProjectValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\EmptyProjectValidator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Validators\Extensions\IProjectValidatorExtensions.cs" />

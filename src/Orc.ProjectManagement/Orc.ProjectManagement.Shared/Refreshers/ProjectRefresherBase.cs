@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectRefresherBase.cs" company="Orchestra development team">
-//   Copyright (c) 2008 - 2014 Orchestra development team. All rights reserved.
+// <copyright file="ProjectRefresherBase.cs" company="WildGums">
+//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -22,15 +22,22 @@ namespace Orc.ProjectManagement
         // so we cannot accept ICommandManager in there (circular reference)
         private readonly Lazy<IProjectManager> _projectManager = new Lazy<IProjectManager>(() => ServiceLocator.Default.ResolveType<IProjectManager>());
 
-        protected ProjectRefresherBase(string location)
-        {
-            Argument.IsNotNullOrWhitespace(() => location);
+        protected ProjectRefresherBase(string projectLocation)
+            : this(projectLocation, projectLocation) { }
 
-            Location = location;
+        protected ProjectRefresherBase(string projectLocation, string locationToWatch)
+        {
+            Argument.IsNotNullOrWhitespace(() => projectLocation);
+            Argument.IsNotNullOrWhitespace(() => locationToWatch);
+
+            ProjectLocation = projectLocation;
+            Location = locationToWatch;
         }
 
         #region Properties
         protected IProjectManager ProjectManager { get { return _projectManager.Value; } }
+
+        public string ProjectLocation { get; private set; }
 
         public string Location { get; private set; }
 
@@ -92,9 +99,9 @@ namespace Orc.ProjectManagement
 
         protected abstract void UnsubscribeFromLocation(string location);
 
-        protected void RaiseUpdated(string path)
+        protected void RaiseUpdated(string fileName)
         {
-            Updated.SafeInvoke(this, new ProjectEventArgs(path));
+            Updated.SafeInvoke(this, new ProjectFileSystemEventArgs(ProjectLocation, fileName));
         }
 
         private Task OnProjectManagerSavingAsync(object sender, ProjectCancelEventArgs e)

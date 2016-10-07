@@ -19,6 +19,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Mocks\MemoryProjectWriter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Mocks\Project.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Mocks\ProjectValidator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ModuleInitializer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Properties\AssemblyInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectReaderBaseFacts.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectWriterBaseFacts.cs" />

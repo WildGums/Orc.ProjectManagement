@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectEventArgs.cs" company="Wild Gums">
-//   Copyright (c) 2008 - 2015 Wild Gums. All rights reserved.
+// <copyright file="ProjectEventArgs.cs" company="WildGums">
+//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -12,8 +12,6 @@ namespace Orc.ProjectManagement
         #region Constructors
         public ProjectEventArgs(IProject project)
         {
-            Project = project;
-
             Project = project;
 
             if (project != null)

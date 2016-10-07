@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="FileRefresher.cs" company="Orchestra development team">
-//   Copyright (c) 2008 - 2014 Orchestra development team. All rights reserved.
+// <copyright file="FileRefresher.cs" company="WildGums">
+//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -18,14 +18,11 @@ namespace Orc.ProjectManagement
 
         private FileSystemWatcher _fileSystemWatcher;
 
-        public DirectoryProjectRefresher(string location) 
-            : this(location, null)
-        {
-            
-        }
+        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch)
+            : this(projectLocation, directoryToWatch, null) { }
 
-        public DirectoryProjectRefresher(string location, string fileFilter)
-            : base(location)
+        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter)
+            : base(projectLocation, directoryToWatch)
         {
             FileFilter = fileFilter;
         }
@@ -34,15 +31,11 @@ namespace Orc.ProjectManagement
 
         protected override void SubscribeToLocation(string location)
         {
-            if (string.IsNullOrEmpty(FileFilter))
-            {
-                _fileSystemWatcher = new FileSystemWatcher(location);
-            }
-            else
-            {
-                _fileSystemWatcher = new FileSystemWatcher(location, FileFilter);
-            }
+            var filter = !string.IsNullOrWhiteSpace(FileFilter) ? FileFilter : "*";
+
+            _fileSystemWatcher = new FileSystemWatcher(location, filter);
             _fileSystemWatcher.NotifyFilter = NotifyFilters.LastWrite;
+            _fileSystemWatcher.Created += OnFileSystemWatcherChanged;
             _fileSystemWatcher.Changed += OnFileSystemWatcherChanged;
             _fileSystemWatcher.EnableRaisingEvents = true;
         }
@@ -50,6 +43,7 @@ namespace Orc.ProjectManagement
         protected override void UnsubscribeFromLocation(string location)
         {
             _fileSystemWatcher.EnableRaisingEvents = false;
+            _fileSystemWatcher.Created -= OnFileSystemWatcherChanged;
             _fileSystemWatcher.Changed -= OnFileSystemWatcherChanged;
             _fileSystemWatcher = null;
         }
@@ -67,15 +61,10 @@ namespace Orc.ProjectManagement
             {
                 Log.Debug("Detected change '{0}' for location '{1}'", e.ChangeType, e.FullPath);
 
-                RaiseUpdated(FullPathToLocation(e.FullPath));
+                RaiseUpdated(e.FullPath);
 
                 fileSystemWatcher.EnableRaisingEvents = true;
             }
-        }
-
-        protected virtual string FullPathToLocation(string fullPath)
-        {
-            return Location;
         }
     }
 }

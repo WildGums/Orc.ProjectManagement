@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="SharedAssemblyInfo.cs" company="Orchestra development team">
-//   Copyright (c) 2008 - 2013 Orchestra development team. All rights reserved.
+// <copyright file="SharedAssemblyInfo.cs" company="WildGums">
+//   Copyright (c) 2008 - 2013 WildGums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -14,8 +14,8 @@ using System.Runtime.CompilerServices;
 ////[assembly: AssemblyProduct("DEFINED IN ACTUAL ASSEMBLYINFO")]
 ////[assembly: AssemblyDescription("DEFINED IN ACTUAL ASSEMBLYINFO")]
 
-[assembly: AssemblyCompany("Wild Gums")]
-[assembly: AssemblyCopyright("Copyright © Wild Gums 2010 - 2015")]
+[assembly: AssemblyCompany("WildGums")]
+[assembly: AssemblyCopyright("Copyright © WildGums 2010 - 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: NeutralResourcesLanguage("en-US")]

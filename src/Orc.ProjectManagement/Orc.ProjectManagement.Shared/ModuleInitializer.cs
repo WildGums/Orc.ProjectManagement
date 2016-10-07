@@ -17,8 +17,10 @@ public static class ModuleInitializer
         var serviceLocator = ServiceLocator.Default;
 
         serviceLocator.RegisterType<IProjectManager, ProjectManager>();
+        serviceLocator.RegisterType<IProjectStateService, ProjectStateService>();
         serviceLocator.RegisterType<IProjectInitializer, EmptyProjectInitializer>();
         serviceLocator.RegisterType<IProjectValidator, EmptyProjectValidator>();
+        serviceLocator.RegisterType<IProjectUpgrader, EmptyProjectUpgrader>();
         serviceLocator.RegisterType<IProjectRefresherSelector, DefaultProjectRefresherSelector>();
         serviceLocator.RegisterType<IProjectActivationHistoryService, ProjectActivationHistoryService>();
 

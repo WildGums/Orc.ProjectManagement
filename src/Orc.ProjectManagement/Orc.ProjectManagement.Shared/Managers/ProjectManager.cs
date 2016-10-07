@@ -1,6 +1,6 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectManager.cs" company="Wild Gums">
-//   Copyright (c) 2008 - 2015 Wild Gums. All rights reserved.
+// <copyright file="ProjectManager.cs" company="WildGums">
+//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -30,17 +30,21 @@ namespace Orc.ProjectManagement
         private readonly ListDictionary<string, IProject> _projects;
         private readonly IProjectSerializerSelector _projectSerializerSelector;
         private readonly IProjectValidator _projectValidator;
-        private bool _isLoading;
+        private readonly IProjectUpgrader _projectUpgrader;
+        
+        private readonly AsyncLock _asyncLoadLock = new AsyncLock();
+        private readonly AsyncLock _asyncActivateLock = new AsyncLock();
+
         private int _savingCounter;
-        private readonly AsyncLock _asyncLock = new AsyncLock();
         #endregion
 
         #region Constructors
-        public ProjectManager(IProjectValidator projectValidator, IProjectRefresherSelector projectRefresherSelector, IProjectSerializerSelector projectSerializerSelector,
-            IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService,
+        public ProjectManager(IProjectValidator projectValidator, IProjectUpgrader projectUpgrader, IProjectRefresherSelector projectRefresherSelector, 
+            IProjectSerializerSelector projectSerializerSelector, IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService,
             IProjectManagementInitializationService projectManagementInitializationService)
         {
             Argument.IsNotNull(() => projectValidator);
+            Argument.IsNotNull(() => projectUpgrader);
             Argument.IsNotNull(() => projectRefresherSelector);
             Argument.IsNotNull(() => projectSerializerSelector);
             Argument.IsNotNull(() => projectInitializer);
@@ -48,6 +52,7 @@ namespace Orc.ProjectManagement
             Argument.IsNotNull(() => projectManagementInitializationService);
 
             _projectValidator = projectValidator;
+            _projectUpgrader = projectUpgrader;
             _projectRefresherSelector = projectRefresherSelector;
             _projectSerializerSelector = projectSerializerSelector;
             _projectInitializer = projectInitializer;
@@ -69,6 +74,8 @@ namespace Orc.ProjectManagement
         }
 
         public virtual IProject ActiveProject { get; set; }
+
+        public bool IsLoading { get; private set; }
         #endregion
 
         #region Methods
@@ -79,6 +86,7 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Events
+        [ObsoleteEx(Message = "Won't be replaced", TreatAsErrorFromVersion = "1.0", RemoveInVersion = "2.0")]
         public event EventHandler<ProjectEventArgs> ProjectRefreshRequiredAsync;
 
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoadingAsync;
@@ -139,7 +147,7 @@ namespace Orc.ProjectManagement
 
             Log.Debug("Refreshing project from '{0}'", projectLocation);
 
-            var cancelEventArgs = new ProjectCancelEventArgs(projectLocation);
+            var cancelEventArgs = new ProjectCancelEventArgs(project);
 
             await ProjectRefreshingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
 
@@ -163,12 +171,18 @@ namespace Orc.ProjectManagement
                     await SetActiveProjectAsync(null).ConfigureAwait(false);
                 }
 
-                var loadedProject = await QuietlyLoadProjectAsync(projectLocation).ConfigureAwait(false);
-
-                validationContext = _projectValidator.ValidateProject(loadedProject);
+                validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(projectLocation);
                 if (validationContext.HasErrors)
                 {
-                    throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", projectLocation));
+                    throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{projectLocation}', the validator returned errors");
+                }
+
+                var loadedProject = await QuietlyLoadProjectAsync(projectLocation, false).ConfigureAwait(false);
+
+                validationContext = await _projectValidator.ValidateProjectAsync(loadedProject);
+                if (validationContext.HasErrors)
+                {
+                    throw Log.ErrorAndCreateException<InvalidOperationException>($"Project data was loaded from '{projectLocation}', but the validator returned errors");
                 }
 
                 RegisterProject(loadedProject);
@@ -193,7 +207,7 @@ namespace Orc.ProjectManagement
             }
 
             var eventArgs = new ProjectErrorEventArgs(project,
-                new ProjectException(project, string.Format("Failed to load project from location '{0}' while refreshing.", projectLocation), error),
+                new ProjectException(project, $"Failed to load project from location '{projectLocation}' while refreshing.", error),
                 validationContext);
 
             await ProjectRefreshingFailedAsync.SafeInvokeAsync(this, eventArgs).ConfigureAwait(false);
@@ -207,7 +221,10 @@ namespace Orc.ProjectManagement
 
             var project = await LoadProjectAsync(location).ConfigureAwait(false);
 
-            await SetActiveProjectAsync(project).ConfigureAwait(false);
+            if (project != null)
+            {
+                await SetActiveProjectAsync(project).ConfigureAwait(false);
+            }
 
             return project != null;
         }
@@ -226,7 +243,7 @@ namespace Orc.ProjectManagement
             Argument.IsNotNullOrWhitespace("location", location);
 
             IProject project;
-            using (await _asyncLock.LockAsync())
+            using (await _asyncLoadLock.LockAsync())
             {
                 project = Projects.FirstOrDefault(x => string.Equals(location, x.Location, StringComparison.OrdinalIgnoreCase));
                 if (project != null)
@@ -234,9 +251,20 @@ namespace Orc.ProjectManagement
                     return project;
                 }
 
-                using (new DisposableToken(null, token => _isLoading = true, token => _isLoading = false))
+                using (new DisposableToken(null, token => IsLoading = true, token => IsLoading = false))
                 {
-                    Log.Debug("Loading project from '{0}'", location);
+                    Log.Debug($"Going to load project from '{location}', checking if an upgrade is required");
+
+                    if (await _projectUpgrader.RequiresUpgradeAsync(location))
+                    {
+                        Log.Debug($"Upgrade is required for '{location}', upgrading...");
+
+                        location = await _projectUpgrader.UpgradeAsync(location);
+
+                        Log.Debug($"Upgraded project, final location is '{location}'");
+                    }
+
+                    Log.Debug($"Loading project from '{location}'");
 
                     var cancelEventArgs = new ProjectCancelEventArgs(location);
 
@@ -261,12 +289,26 @@ namespace Orc.ProjectManagement
                             throw Log.ErrorAndCreateException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
                         }
 
-                        project = await QuietlyLoadProjectAsync(location).ConfigureAwait(false);
+                        if (!await _projectValidator.CanStartLoadingProjectAsync(location))
+                        {
+                            validationContext = new ValidationContext();
+                            validationContext.AddBusinessRuleValidationResult(BusinessRuleValidationResult.CreateError("Project validator informed that project could not be loaded"));
 
-                        validationContext = _projectValidator.ValidateProject(project);
+                            throw new ProjectException(location, $"Cannot load project from '{location}'");
+                        }
+
+                        validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(location);
                         if (validationContext.HasErrors)
                         {
-                            throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("Project data was loaded from '{0}', but the validator returned errors", location));
+                            throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}', validator returned errors");
+                        }
+
+                        project = await QuietlyLoadProjectAsync(location, true).ConfigureAwait(false);
+
+                        validationContext = await _projectValidator.ValidateProjectAsync(project);
+                        if (validationContext.HasErrors)
+                        {
+                            throw Log.ErrorAndCreateException<InvalidOperationException>($"Project data was loaded from '{location}', but the validator returned errors");
                         }
 
                         RegisterProject(project);
@@ -289,6 +331,7 @@ namespace Orc.ProjectManagement
                     Log.Info("Loaded project from '{0}'", location);
                 }
             }
+
             return project;
         }
 
@@ -300,19 +343,22 @@ namespace Orc.ProjectManagement
             InitializeProjectRefresher(projectLocation);
         }
 
-        private async Task<IProject> QuietlyLoadProjectAsync(string location)
+        private async Task<IProject> QuietlyLoadProjectAsync(string location, bool skipCanLoadValidation)
         {
-            Log.Debug("Validating to see if we can load the project from '{0}'", location);
-
-            if (!_projectValidator.CanStartLoadingProject(location))
+            if (skipCanLoadValidation)
             {
-                throw new ProjectException(location, String.Format("Cannot load project from '{0}'", location));
+                Log.Debug("Validating to see if we can load the project from '{0}'", location);
+
+                if (!await _projectValidator.CanStartLoadingProjectAsync(location))
+                {
+                    throw new ProjectException(location, $"Cannot load project from '{location}'");
+                }
             }
 
             var projectReader = _projectSerializerSelector.GetReader(location);
             if (projectReader == null)
             {
-                throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("No project reader is found for location '{0}'", location));
+                throw Log.ErrorAndCreateException<InvalidOperationException>($"No project reader is found for location '{location}'");
             }
 
             Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
@@ -320,7 +366,7 @@ namespace Orc.ProjectManagement
             var project = await projectReader.ReadAsync(location).ConfigureAwait(false);
             if (project == null)
             {
-                throw Log.ErrorAndCreateException<InvalidOperationException>(string.Format("Project could not be loaded from '{0}'", location));
+                throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}'");
             }
 
             return project;
@@ -369,7 +415,7 @@ namespace Orc.ProjectManagement
                 var projectWriter = _projectSerializerSelector.GetWriter(location);
                 if (projectWriter == null)
                 {
-                    throw Log.ErrorAndCreateException<NotSupportedException>(string.Format("No project writer is found for location '{0}'", location));
+                    throw Log.ErrorAndCreateException<NotSupportedException>($"No project writer is found for location '{location}'");
                 }
 
                 Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);
@@ -459,7 +505,7 @@ namespace Orc.ProjectManagement
 
         public virtual async Task<bool> SetActiveProjectAsync(IProject project)
         {
-            using (await _asyncLock.LockAsync())
+            using (await _asyncActivateLock.LockAsync())
             {
                 var activeProject = ActiveProject;
 
@@ -477,7 +523,7 @@ namespace Orc.ProjectManagement
                 }
 
                 Log.Info(project != null
-                    ? string.Format("Activating project '{0}'", project.Location)
+                    ? $"Activating project '{project.Location}'"
                     : "Deactivating currently active project");
 
                 var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
@@ -487,7 +533,7 @@ namespace Orc.ProjectManagement
                 if (eventArgs.Cancel)
                 {
                     Log.Info(project != null
-                        ? string.Format("Activating project '{0}' was canceled", project.Location)
+                        ? $"Activating project '{project.Location}' was canceled"
                         : "Deactivating currently active project");
 
                     await ProjectActivationCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
@@ -508,7 +554,7 @@ namespace Orc.ProjectManagement
                 if (exception != null)
                 {
                     Log.Error(exception, project != null
-                        ? string.Format("Failed to activate project '{0}'", project.Location)
+                        ? $"Failed to activate project '{project.Location}'"
                         : "Failed to deactivate currently active project");
 
                     await ProjectActivationFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(project, exception)).ConfigureAwait(false);
@@ -518,7 +564,7 @@ namespace Orc.ProjectManagement
                 await ProjectActivatedAsync.SafeInvokeAsync(this, new ProjectUpdatedEventArgs(activeProject, project)).ConfigureAwait(false);
 
                 Log.Debug(project != null
-                    ? string.Format("Activating project '{0}' was canceled", project.Location)
+                    ? $"Activating project '{project.Location}' was canceled"
                     : "Deactivating currently active project");
             }
 
@@ -537,20 +583,18 @@ namespace Orc.ProjectManagement
 
                     if (projectRefresher != null)
                     {
-                        Log.Debug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
+                        Log.Debug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName(false));
 
                         projectRefresher.Updated += OnProjectRefresherUpdated;
                         projectRefresher.Subscribe();
+
+                        _projectRefreshers[projectLocation] = projectRefresher;
                     }
                 }
                 catch (Exception ex)
                 {
                     Log.Warning(ex, "Failed to subscribe to project refresher");
-                }
-
-                if (projectRefresher != null)
-                {
-                    _projectRefreshers[projectLocation] = projectRefresher;
+                    throw;
                 }
             }
         }
@@ -565,7 +609,7 @@ namespace Orc.ProjectManagement
             {
                 try
                 {
-                    Log.Debug("Unsubscribing from project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
+                    Log.Debug("Unsubscribing from project refresher '{0}'", projectRefresher.GetType().GetSafeFullName(false));
 
                     projectRefresher.Unsubscribe();
                 }
@@ -583,7 +627,7 @@ namespace Orc.ProjectManagement
         private void OnProjectRefresherUpdated(object sender, ProjectEventArgs e)
         {
             // TODO: use dictionary for detecting if e.Project is currently loading or saving
-            if (_isLoading || _savingCounter > 0)
+            if (IsLoading || _savingCounter > 0)
             {
                 return;
             }
