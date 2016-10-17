@@ -4,6 +4,8 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+#pragma warning disable AvoidAsyncVoid
+
 namespace Orc.ProjectManagement
 {
     using System;
