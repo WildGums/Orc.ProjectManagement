@@ -19,7 +19,7 @@ namespace Orc.ProjectManagement
     using Catel.Reflection;
     using Catel.Threading;
 
-    internal class ProjectManager : IProjectManager, INeedCustomInitialization
+    public class ProjectManager : IProjectManager, INeedCustomInitialization
     {
         #region Fields
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
