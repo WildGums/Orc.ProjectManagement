@@ -4,6 +4,7 @@
 // </copyright>
 // --------------------------------------------------------------------------------------------------------------------
 
+
 namespace Orc.ProjectManagement
 {
     using System;
@@ -31,7 +32,7 @@ namespace Orc.ProjectManagement
         private readonly IProjectSerializerSelector _projectSerializerSelector;
         private readonly IProjectValidator _projectValidator;
         private readonly IProjectUpgrader _projectUpgrader;
-        
+
         private readonly AsyncLock _asyncLoadLock = new AsyncLock();
         private readonly AsyncLock _asyncActivateLock = new AsyncLock();
 
@@ -39,7 +40,7 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Constructors
-        public ProjectManager(IProjectValidator projectValidator, IProjectUpgrader projectUpgrader, IProjectRefresherSelector projectRefresherSelector, 
+        public ProjectManager(IProjectValidator projectValidator, IProjectUpgrader projectUpgrader, IProjectRefresherSelector projectRefresherSelector,
             IProjectSerializerSelector projectSerializerSelector, IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService,
             IProjectManagementInitializationService projectManagementInitializationService)
         {
@@ -137,7 +138,7 @@ namespace Orc.ProjectManagement
             return await RefreshAsync(project).ConfigureAwait(false);
         }
 
-        public virtual async Task<bool> RefreshAsync(IProject project)
+        public async Task<bool> RefreshAsync(IProject project)
         {
             Argument.IsNotNull(() => project);
 
@@ -215,7 +216,7 @@ namespace Orc.ProjectManagement
             return false;
         }
 
-        public virtual async Task<bool> LoadAsync(string location)
+        public async Task<bool> LoadAsync(string location)
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
@@ -229,7 +230,7 @@ namespace Orc.ProjectManagement
             return project != null;
         }
 
-        public virtual async Task<bool> LoadInactiveAsync(string location)
+        public async Task<bool> LoadInactiveAsync(string location)
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
@@ -355,15 +356,8 @@ namespace Orc.ProjectManagement
                 }
             }
 
-            var projectReader = _projectSerializerSelector.GetReader(location);
-            if (projectReader == null)
-            {
-                throw Log.ErrorAndCreateException<InvalidOperationException>($"No project reader is found for location '{location}'");
-            }
+            var project = await ReadProjectAsync(location);
 
-            Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
-
-            var project = await projectReader.ReadAsync(location).ConfigureAwait(false);
             if (project == null)
             {
                 throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}'");
@@ -412,19 +406,11 @@ namespace Orc.ProjectManagement
                     return false;
                 }
 
-                var projectWriter = _projectSerializerSelector.GetWriter(location);
-                if (projectWriter == null)
-                {
-                    throw Log.ErrorAndCreateException<NotSupportedException>($"No project writer is found for location '{location}'");
-                }
-
-                Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);
-
                 Exception error = null;
-                bool success = true;
+                var success = true;
                 try
                 {
-                    success = await projectWriter.WriteAsync(project, location).ConfigureAwait(false);
+                    success = await WriteProjectAsync(project, location);
                 }
                 catch (Exception ex)
                 {
@@ -441,7 +427,7 @@ namespace Orc.ProjectManagement
 
                 if (!success)
                 {
-                    Log.Error("Failed to save project '{0}' to '{1}'", project, location);
+                    Log.Error("Not saved project '{0}' to '{1}'", project, location);
                     return false;
                 }
 
@@ -452,7 +438,7 @@ namespace Orc.ProjectManagement
             }
 
             return true;
-        }
+        }        
 
         public async Task<bool> CloseAsync()
         {
@@ -465,7 +451,7 @@ namespace Orc.ProjectManagement
             return await CloseAsync(project).ConfigureAwait(false);
         }
 
-        public virtual async Task<bool> CloseAsync(IProject project)
+        public async Task<bool> CloseAsync(IProject project)
         {
             Argument.IsNotNull(() => project);
 
@@ -491,19 +477,8 @@ namespace Orc.ProjectManagement
 
             return true;
         }
-
-        private void UnregisterProject(IProject project)
-        {
-            var location = project.Location;
-            if (_projects.ContainsKey(location))
-            {
-                _projects.Remove(location);
-            }
-
-            ReleaseProjectRefresher(project);
-        }
-
-        public virtual async Task<bool> SetActiveProjectAsync(IProject project)
+        
+        public async Task<bool> SetActiveProjectAsync(IProject project)
         {
             using (await _asyncActivateLock.LockAsync())
             {
@@ -569,6 +544,45 @@ namespace Orc.ProjectManagement
             }
 
             return true;
+        }
+
+        protected virtual async Task<IProject> ReadProjectAsync(string location)
+        {
+            var projectReader = _projectSerializerSelector.GetReader(location);
+            if (projectReader == null)
+            {
+                throw Log.ErrorAndCreateException<InvalidOperationException>($"No project reader is found for location '{location}'");
+            }
+
+            Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
+
+            var project = await projectReader.ReadAsync(location).ConfigureAwait(false);
+
+            return project;
+        }
+
+        protected virtual Task<bool> WriteProjectAsync(IProject project, string location)
+        {
+            var projectWriter = _projectSerializerSelector.GetWriter(location);
+            if (projectWriter == null)
+            {
+                throw new NotSupportedException($"No project writer is found for location '{location}'");
+            }
+
+            Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);
+
+            return projectWriter.WriteAsync(project, location);
+        }
+
+        private void UnregisterProject(IProject project)
+        {
+            var location = project.Location;
+            if (_projects.ContainsKey(location))
+            {
+                _projects.Remove(location);
+            }
+
+            ReleaseProjectRefresher(project);
         }
 
         private void InitializeProjectRefresher(string projectLocation)
