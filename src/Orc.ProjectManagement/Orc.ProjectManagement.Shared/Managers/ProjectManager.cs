@@ -712,7 +712,7 @@ namespace Orc.ProjectManagement
 
         private void OnProjectRefresherUpdated(object sender, ProjectEventArgs e)
         {
-            var projectLocation = e.Project.Location;
+            var projectLocation = e.Location;
             if (_loadingProjects.Contains(projectLocation) || _savingProjects.Contains(projectLocation))
             {
                 return;
