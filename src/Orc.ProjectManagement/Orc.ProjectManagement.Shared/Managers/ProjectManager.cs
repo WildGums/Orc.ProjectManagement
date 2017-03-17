@@ -33,10 +33,12 @@ namespace Orc.ProjectManagement
         private readonly IProjectValidator _projectValidator;
         private readonly IProjectUpgrader _projectUpgrader;
 
-        private readonly AsyncLock _asyncLoadLock = new AsyncLock();
-        private readonly AsyncLock _asyncActivateLock = new AsyncLock();
+        private readonly Dictionary<string, AsyncLock> _projectOperationLockers = new Dictionary<string, AsyncLock>();
+        private readonly Dictionary<string, int> _projectOperationRefCounts = new Dictionary<string, int>();
+        private readonly AsyncLock _commonAsyncLock = new AsyncLock();
 
-        private int _savingCounter;
+        private readonly HashSet<string> _loadingProjects = new HashSet<string>();
+        private readonly HashSet<string> _savingProjects = new HashSet<string>();
         #endregion
 
         #region Constructors
@@ -76,7 +78,7 @@ namespace Orc.ProjectManagement
 
         public virtual IProject ActiveProject { get; set; }
 
-        public bool IsLoading { get; private set; }
+        public bool IsLoading => _loadingProjects.Any();
         #endregion
 
         #region Methods
@@ -127,21 +129,241 @@ namespace Orc.ProjectManagement
             }
         }
 
-        public async Task<bool> RefreshAsync()
+        public Task<bool> RefreshAsync()
+        {
+            var project = ActiveProject;
+
+            return project == null 
+                ? TaskHelper<bool>.FromResult(false) 
+                : RefreshAsync(project);
+        }                
+
+        public Task<bool> RefreshAsync(IProject project)
+        {
+            Argument.IsNotNull(() => project);
+
+            return SynchroniseProjectOperation(project.Location, () => SyncedRefreshAsync(project));
+        }
+
+        public Task<bool> LoadAsync(string location)
+        {
+            Argument.IsNotNullOrWhitespace("location", location);
+
+            return SynchroniseProjectOperation(location, async () =>
+            {
+                var project = await SyncedLoadProjectAsync(location);
+
+                if (project != null)
+                {
+                    await SetActiveProjectAsync(project);
+                }
+
+                return project != null;
+            });
+        }
+
+        public Task<bool> LoadInactiveAsync(string location)
+        {
+            Argument.IsNotNullOrWhitespace("location", location);
+
+            return SynchroniseProjectOperation(location, async () =>
+            {
+                var project = await SyncedLoadProjectAsync(location);
+
+                return project != null;
+            });
+        }
+
+        public Task<bool> SaveAsync(string location = null)
         {
             var project = ActiveProject;
             if (project == null)
             {
-                return false;
+                Log.Error("Cannot save empty project");
+                return TaskHelper<bool>.FromResult(false);
             }
 
-            return await RefreshAsync(project).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(location))
+            {
+                location = project.Location;
+            }
+
+            return SaveAsync(project, location);
         }
 
-        public async Task<bool> RefreshAsync(IProject project)
+        public Task<bool> SaveAsync(IProject project, string location = null)
         {
-            Argument.IsNotNull(() => project);
+            return SynchroniseProjectOperation(location, () => SyncedSaveAsync(project, location));
+        }
 
+        public Task<bool> CloseAsync()
+        {
+            var project = ActiveProject;
+
+            return project == null
+                ? TaskHelper<bool>.FromResult(false)
+                : CloseAsync(project);
+        }
+
+        public Task<bool> CloseAsync(IProject project)
+        {
+            var location = project.Location;
+
+            return SynchroniseProjectOperation(location, () => SyncedCloseAsync(project));
+        }        
+            
+        public async Task<bool> SetActiveProjectAsync(IProject project)
+        {
+            using (await _commonAsyncLock.LockAsync())
+            {
+                var activeProject = ActiveProject;
+
+                if (project != null && !Projects.Contains(project))
+                {
+                    return false;
+                }
+
+                var activeProjectLocation = activeProject?.Location;
+                var newProjectLocation = project?.Location;
+
+                if (string.Equals(activeProjectLocation, newProjectLocation))
+                {
+                    return false;
+                }
+
+                Log.Info(project != null
+                    ? $"Activating project '{project.Location}'"
+                    : "Deactivating currently active project");
+
+                var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
+
+                await ProjectActivationAsync.SafeInvokeAsync(this, eventArgs, false).ConfigureAwait(false);
+
+                if (eventArgs.Cancel)
+                {
+                    Log.Info(project != null
+                        ? $"Activating project '{project.Location}' was canceled"
+                        : "Deactivating currently active project");
+
+                    await ProjectActivationCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
+                    return false;
+                }
+
+                Exception exception = null;
+
+                try
+                {
+                    ActiveProject = project;
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
+
+                if (exception != null)
+                {
+                    Log.Error(exception, project != null
+                        ? $"Failed to activate project '{project.Location}'"
+                        : "Failed to deactivate currently active project");
+
+                    await ProjectActivationFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(project, exception)).ConfigureAwait(false);
+                    return false;
+                }
+
+                await ProjectActivatedAsync.SafeInvokeAsync(this, new ProjectUpdatedEventArgs(activeProject, project)).ConfigureAwait(false);
+
+                Log.Debug(project != null
+                    ? $"Activating project '{project.Location}' was canceled"
+                    : "Deactivating currently active project");
+
+                return true;
+            }
+        }
+
+        protected virtual async Task<IProject> ReadProjectAsync(string location)
+        {
+            var projectReader = _projectSerializerSelector.GetReader(location);
+            if (projectReader == null)
+            {
+                throw Log.ErrorAndCreateException<InvalidOperationException>($"No project reader is found for location '{location}'");
+            }
+
+            Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
+
+            var project = await projectReader.ReadAsync(location).ConfigureAwait(false);
+
+            return project;
+        }
+
+        protected virtual Task<bool> WriteProjectAsync(IProject project, string location)
+        {
+            var projectWriter = _projectSerializerSelector.GetWriter(location);
+            if (projectWriter == null)
+            {
+                throw new NotSupportedException($"No project writer is found for location '{location}'");
+            }
+
+            Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);
+
+            return projectWriter.WriteAsync(project, location);
+        }
+
+        private async Task<T> SynchroniseProjectOperation<T>(string projectLocation, Func<Task<T>> operation)
+        {
+            Argument.IsNotNullOrEmpty(() => projectLocation);
+
+            AsyncLock asyncLock;
+            lock (_projectOperationLockers)
+            {
+                if (!_projectOperationLockers.TryGetValue(projectLocation, out asyncLock))
+                {
+                    asyncLock = new AsyncLock();
+                    _projectOperationLockers.Add(projectLocation, asyncLock);
+                }
+
+                if (!_projectOperationRefCounts.TryGetValue(projectLocation, out int refCount))
+                {
+                    refCount = 0;
+                }
+
+                refCount++;
+
+                _projectOperationRefCounts[projectLocation] = refCount;
+            }
+
+            try
+            {
+                using (await asyncLock.LockAsync())
+                {
+                    return await operation();
+                }
+            }
+            finally
+            {
+                lock (_projectOperationLockers)
+                {
+                    if (!_projectOperationRefCounts.TryGetValue(projectLocation, out int refCount))
+                    {
+                        refCount = 0;
+                    }
+
+                    refCount--;
+
+                    if (refCount >= 1)
+                    {
+                        _projectOperationRefCounts[projectLocation] = refCount;
+                    }
+                    else
+                    {
+                        _projectOperationRefCounts.Remove(projectLocation);
+                        _projectOperationLockers.Remove(projectLocation);
+                    }
+                }
+            }
+        }
+
+        private async Task<bool> SyncedRefreshAsync(IProject project)
+        {
             var projectLocation = project.Location;
 
             var activeProjectLocation = this.GetActiveProjectLocation();
@@ -216,174 +438,101 @@ namespace Orc.ProjectManagement
             return false;
         }
 
-        public async Task<bool> LoadAsync(string location)
+        private async Task<IProject> SyncedLoadProjectAsync(string location)
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
-            var project = await LoadProjectAsync(location).ConfigureAwait(false);
-
+            var project = Projects.FirstOrDefault(x => string.Equals(location, x.Location, StringComparison.OrdinalIgnoreCase));
             if (project != null)
             {
-                await SetActiveProjectAsync(project).ConfigureAwait(false);
+                return project;
             }
 
-            return project != null;
-        }
-
-        public async Task<bool> LoadInactiveAsync(string location)
-        {
-            Argument.IsNotNullOrWhitespace("location", location);
-
-            var project = await LoadProjectAsync(location).ConfigureAwait(false);
-
-            return project != null;
-        }
-
-        private async Task<IProject> LoadProjectAsync(string location)
-        {
-            Argument.IsNotNullOrWhitespace("location", location);
-
-            IProject project;
-            using (await _asyncLoadLock.LockAsync())
+            var projectLocation = location;
+            using (new DisposableToken(null, token => _loadingProjects.Add(projectLocation), token => _loadingProjects.Remove(projectLocation)))
             {
-                project = Projects.FirstOrDefault(x => string.Equals(location, x.Location, StringComparison.OrdinalIgnoreCase));
-                if (project != null)
+                Log.Debug($"Going to load project from '{location}', checking if an upgrade is required");
+
+                if (await _projectUpgrader.RequiresUpgradeAsync(location))
                 {
-                    return project;
+                    Log.Debug($"Upgrade is required for '{location}', upgrading...");
+
+                    location = await _projectUpgrader.UpgradeAsync(location);
+
+                    Log.Debug($"Upgraded project, final location is '{location}'");
                 }
 
-                using (new DisposableToken(null, token => IsLoading = true, token => IsLoading = false))
+                Log.Debug($"Loading project from '{location}'");
+
+                var cancelEventArgs = new ProjectCancelEventArgs(location);
+
+                await ProjectLoadingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
+
+                if (cancelEventArgs.Cancel)
                 {
-                    Log.Debug($"Going to load project from '{location}', checking if an upgrade is required");
+                    Log.Debug("Canceled loading of project from '{0}'", location);
+                    await ProjectLoadingCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(location)).ConfigureAwait(false);
 
-                    if (await _projectUpgrader.RequiresUpgradeAsync(location))
-                    {
-                        Log.Debug($"Upgrade is required for '{location}', upgrading...");
-
-                        location = await _projectUpgrader.UpgradeAsync(location);
-
-                        Log.Debug($"Upgraded project, final location is '{location}'");
-                    }
-
-                    Log.Debug($"Loading project from '{location}'");
-
-                    var cancelEventArgs = new ProjectCancelEventArgs(location);
-
-                    await ProjectLoadingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
-
-                    if (cancelEventArgs.Cancel)
-                    {
-                        Log.Debug("Canceled loading of project from '{0}'", location);
-                        await ProjectLoadingCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(location)).ConfigureAwait(false);
-
-                        return null;
-                    }
-
-                    Exception error = null;
-
-                    IValidationContext validationContext = null;
-
-                    try
-                    {
-                        if (_projects.Count > 0 && ProjectManagementType == ProjectManagementType.SingleDocument)
-                        {
-                            throw Log.ErrorAndCreateException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
-                        }
-
-                        if (!await _projectValidator.CanStartLoadingProjectAsync(location))
-                        {
-                            validationContext = new ValidationContext();
-                            validationContext.AddBusinessRuleValidationResult(BusinessRuleValidationResult.CreateError("Project validator informed that project could not be loaded"));
-
-                            throw new ProjectException(location, $"Cannot load project from '{location}'");
-                        }
-
-                        validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(location);
-                        if (validationContext.HasErrors)
-                        {
-                            throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}', validator returned errors");
-                        }
-
-                        project = await QuietlyLoadProjectAsync(location, true).ConfigureAwait(false);
-
-                        validationContext = await _projectValidator.ValidateProjectAsync(project);
-                        if (validationContext.HasErrors)
-                        {
-                            throw Log.ErrorAndCreateException<InvalidOperationException>($"Project data was loaded from '{location}', but the validator returned errors");
-                        }
-
-                        RegisterProject(project);
-                    }
-                    catch (Exception ex)
-                    {
-                        error = ex;
-                        Log.Error(ex, "Failed to load project from '{0}'", location);
-                    }
-
-                    if (error != null)
-                    {
-                        await ProjectLoadingFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(location, error, validationContext)).ConfigureAwait(false);
-
-                        return null;
-                    }
-
-                    await ProjectLoadedAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
-
-                    Log.Info("Loaded project from '{0}'", location);
+                    return null;
                 }
+
+                Exception error = null;
+
+                IValidationContext validationContext = null;
+
+                try
+                {
+                    if (_projects.Count > 0 && ProjectManagementType == ProjectManagementType.SingleDocument)
+                    {
+                        throw Log.ErrorAndCreateException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
+                    }
+
+                    if (!await _projectValidator.CanStartLoadingProjectAsync(location))
+                    {
+                        validationContext = new ValidationContext();
+                        validationContext.AddBusinessRuleValidationResult(BusinessRuleValidationResult.CreateError("Project validator informed that project could not be loaded"));
+
+                        throw new ProjectException(location, $"Cannot load project from '{location}'");
+                    }
+
+                    validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(location);
+                    if (validationContext.HasErrors)
+                    {
+                        throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}', validator returned errors");
+                    }
+
+                    project = await QuietlyLoadProjectAsync(location, true).ConfigureAwait(false);
+
+                    validationContext = await _projectValidator.ValidateProjectAsync(project);
+                    if (validationContext.HasErrors)
+                    {
+                        throw Log.ErrorAndCreateException<InvalidOperationException>($"Project data was loaded from '{location}', but the validator returned errors");
+                    }
+
+                    RegisterProject(project);
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                    Log.Error(ex, "Failed to load project from '{0}'", location);
+                }
+
+                if (error != null)
+                {
+                    await ProjectLoadingFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(location, error, validationContext)).ConfigureAwait(false);
+
+                    return null;
+                }
+
+                await ProjectLoadedAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
+
+                Log.Info("Loaded project from '{0}'", location);
             }
 
             return project;
         }
 
-        private void RegisterProject(IProject project)
-        {
-            var projectLocation = project.Location;
-            _projects[projectLocation] = project;
-
-            InitializeProjectRefresher(projectLocation);
-        }
-
-        private async Task<IProject> QuietlyLoadProjectAsync(string location, bool skipCanLoadValidation)
-        {
-            if (skipCanLoadValidation)
-            {
-                Log.Debug("Validating to see if we can load the project from '{0}'", location);
-
-                if (!await _projectValidator.CanStartLoadingProjectAsync(location))
-                {
-                    throw new ProjectException(location, $"Cannot load project from '{location}'");
-                }
-            }
-
-            var project = await ReadProjectAsync(location);
-
-            if (project == null)
-            {
-                throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}'");
-            }
-
-            return project;
-        }
-
-        public async Task<bool> SaveAsync(string location = null)
-        {
-            var project = ActiveProject;
-            if (project == null)
-            {
-                Log.Error("Cannot save empty project");
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(location))
-            {
-                location = project.Location;
-            }
-
-            return await SaveAsync(project, location).ConfigureAwait(false);
-        }
-
-        public async Task<bool> SaveAsync(IProject project, string location = null)
+        private async Task<bool> SyncedSaveAsync(IProject project, string location)
         {
             Argument.IsNotNull(() => project);
 
@@ -392,7 +541,7 @@ namespace Orc.ProjectManagement
                 location = project.Location;
             }
 
-            using (new DisposableToken(null, token => _savingCounter++, token => _savingCounter--))
+            using (new DisposableToken(null, token => _savingProjects.Add(location), token => _savingProjects.Remove(location)))
             {
                 Log.Debug("Saving project '{0}' to '{1}'", project, location);
 
@@ -438,20 +587,9 @@ namespace Orc.ProjectManagement
             }
 
             return true;
-        }        
-
-        public async Task<bool> CloseAsync()
-        {
-            var project = ActiveProject;
-            if (project == null)
-            {
-                return false;
-            }
-
-            return await CloseAsync(project).ConfigureAwait(false);
         }
 
-        public async Task<bool> CloseAsync(IProject project)
+        private async Task<bool> SyncedCloseAsync(IProject project)
         {
             Argument.IsNotNull(() => project);
 
@@ -477,102 +615,36 @@ namespace Orc.ProjectManagement
 
             return true;
         }
-        
-        public async Task<bool> SetActiveProjectAsync(IProject project)
+
+        private void RegisterProject(IProject project)
         {
-            using (await _asyncActivateLock.LockAsync())
-            {
-                var activeProject = ActiveProject;
+            var projectLocation = project.Location;
+            _projects[projectLocation] = project;
 
-                if (project != null && !Projects.Contains(project))
-                {
-                    return false;
-                }
-
-                var activeProjectLocation = activeProject == null ? null : activeProject.Location;
-                var newProjectLocation = project == null ? null : project.Location;
-
-                if (string.Equals(activeProjectLocation, newProjectLocation))
-                {
-                    return false;
-                }
-
-                Log.Info(project != null
-                    ? $"Activating project '{project.Location}'"
-                    : "Deactivating currently active project");
-
-                var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
-
-                await ProjectActivationAsync.SafeInvokeAsync(this, eventArgs, false).ConfigureAwait(false);
-
-                if (eventArgs.Cancel)
-                {
-                    Log.Info(project != null
-                        ? $"Activating project '{project.Location}' was canceled"
-                        : "Deactivating currently active project");
-
-                    await ProjectActivationCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
-                    return false;
-                }
-
-                Exception exception = null;
-
-                try
-                {
-                    ActiveProject = project;
-                }
-                catch (Exception ex)
-                {
-                    exception = ex;
-                }
-
-                if (exception != null)
-                {
-                    Log.Error(exception, project != null
-                        ? $"Failed to activate project '{project.Location}'"
-                        : "Failed to deactivate currently active project");
-
-                    await ProjectActivationFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(project, exception)).ConfigureAwait(false);
-                    return false;
-                }
-
-                await ProjectActivatedAsync.SafeInvokeAsync(this, new ProjectUpdatedEventArgs(activeProject, project)).ConfigureAwait(false);
-
-                Log.Debug(project != null
-                    ? $"Activating project '{project.Location}' was canceled"
-                    : "Deactivating currently active project");
-            }
-
-            return true;
+            InitializeProjectRefresher(projectLocation);
         }
 
-        protected virtual async Task<IProject> ReadProjectAsync(string location)
+        private async Task<IProject> QuietlyLoadProjectAsync(string location, bool skipCanLoadValidation)
         {
-            var projectReader = _projectSerializerSelector.GetReader(location);
-            if (projectReader == null)
+            if (skipCanLoadValidation)
             {
-                throw Log.ErrorAndCreateException<InvalidOperationException>($"No project reader is found for location '{location}'");
+                Log.Debug("Validating to see if we can load the project from '{0}'", location);
+
+                if (!await _projectValidator.CanStartLoadingProjectAsync(location))
+                {
+                    throw new ProjectException(location, $"Cannot load project from '{location}'");
+                }
             }
 
-            Log.Debug("Using project reader '{0}'", projectReader.GetType().Name);
+            var project = await ReadProjectAsync(location);
 
-            var project = await projectReader.ReadAsync(location).ConfigureAwait(false);
+            if (project == null)
+            {
+                throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}'");
+            }
 
             return project;
-        }
-
-        protected virtual Task<bool> WriteProjectAsync(IProject project, string location)
-        {
-            var projectWriter = _projectSerializerSelector.GetWriter(location);
-            if (projectWriter == null)
-            {
-                throw new NotSupportedException($"No project writer is found for location '{location}'");
-            }
-
-            Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);
-
-            return projectWriter.WriteAsync(project, location);
-        }
+        }                
 
         private void UnregisterProject(IProject project)
         {
@@ -640,8 +712,8 @@ namespace Orc.ProjectManagement
 
         private void OnProjectRefresherUpdated(object sender, ProjectEventArgs e)
         {
-            // TODO: use dictionary for detecting if e.Project is currently loading or saving
-            if (IsLoading || _savingCounter > 0)
+            var projectLocation = e.Location;
+            if (_loadingProjects.Contains(projectLocation) || _savingProjects.Contains(projectLocation))
             {
                 return;
             }
