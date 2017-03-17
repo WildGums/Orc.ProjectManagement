@@ -35,8 +35,10 @@ namespace Orc.ProjectManagement
 
         private readonly Dictionary<string, AsyncLock> _projectOperationLockers = new Dictionary<string, AsyncLock>();
         private readonly Dictionary<string, int> _projectOperationRefCounts = new Dictionary<string, int>();
+        private readonly AsyncLock _commonAsyncLock = new AsyncLock();
 
-        private int _savingCounter;
+        private readonly HashSet<string> _loadingProjects = new HashSet<string>();
+        private readonly HashSet<string> _savingProjects = new HashSet<string>();
         #endregion
 
         #region Constructors
@@ -76,7 +78,7 @@ namespace Orc.ProjectManagement
 
         public virtual IProject ActiveProject { get; set; }
 
-        public bool IsLoading { get; private set; }
+        public bool IsLoading => _loadingProjects.Any();
         #endregion
 
         #region Methods
@@ -153,7 +155,7 @@ namespace Orc.ProjectManagement
 
                 if (project != null)
                 {
-                    await SyncedSetActiveProjectAsync(project);
+                    await SetActiveProjectAsync(project);
                 }
 
                 return project != null;
@@ -208,11 +210,74 @@ namespace Orc.ProjectManagement
             var location = project.Location;
 
             return SynchroniseProjectOperation(location, () => SyncedCloseAsync(project));
-        }
-
-        public Task<bool> SetActiveProjectAsync(IProject project)
+        }        
+            
+        public async Task<bool> SetActiveProjectAsync(IProject project)
         {
-            return SynchroniseProjectOperation(project.Location, () => SyncedSetActiveProjectAsync(project));
+            using (await _commonAsyncLock.LockAsync())
+            {
+                var activeProject = ActiveProject;
+
+                if (project != null && !Projects.Contains(project))
+                {
+                    return false;
+                }
+
+                var activeProjectLocation = activeProject?.Location;
+                var newProjectLocation = project?.Location;
+
+                if (string.Equals(activeProjectLocation, newProjectLocation))
+                {
+                    return false;
+                }
+
+                Log.Info(project != null
+                    ? $"Activating project '{project.Location}'"
+                    : "Deactivating currently active project");
+
+                var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
+
+                await ProjectActivationAsync.SafeInvokeAsync(this, eventArgs, false).ConfigureAwait(false);
+
+                if (eventArgs.Cancel)
+                {
+                    Log.Info(project != null
+                        ? $"Activating project '{project.Location}' was canceled"
+                        : "Deactivating currently active project");
+
+                    await ProjectActivationCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
+                    return false;
+                }
+
+                Exception exception = null;
+
+                try
+                {
+                    ActiveProject = project;
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+                }
+
+                if (exception != null)
+                {
+                    Log.Error(exception, project != null
+                        ? $"Failed to activate project '{project.Location}'"
+                        : "Failed to deactivate currently active project");
+
+                    await ProjectActivationFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(project, exception)).ConfigureAwait(false);
+                    return false;
+                }
+
+                await ProjectActivatedAsync.SafeInvokeAsync(this, new ProjectUpdatedEventArgs(activeProject, project)).ConfigureAwait(false);
+
+                Log.Debug(project != null
+                    ? $"Activating project '{project.Location}' was canceled"
+                    : "Deactivating currently active project");
+
+                return true;
+            }
         }
 
         protected virtual async Task<IProject> ReadProjectAsync(string location)
@@ -326,7 +391,7 @@ namespace Orc.ProjectManagement
 
                 if (isRefreshingActiveProject)
                 {
-                    await SyncedSetActiveProjectAsync(null).ConfigureAwait(false);
+                    await SetActiveProjectAsync(null).ConfigureAwait(false);
                 }
 
                 validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(projectLocation);
@@ -349,7 +414,7 @@ namespace Orc.ProjectManagement
 
                 if (isRefreshingActiveProject)
                 {
-                    await SyncedSetActiveProjectAsync(loadedProject).ConfigureAwait(false);
+                    await SetActiveProjectAsync(loadedProject).ConfigureAwait(false);
                 }
 
                 Log.Info("Refreshed project from '{0}'", projectLocation);
@@ -383,7 +448,8 @@ namespace Orc.ProjectManagement
                 return project;
             }
 
-            using (new DisposableToken(null, token => IsLoading = true, token => IsLoading = false))
+            var projectLocation = location;
+            using (new DisposableToken(null, token => _loadingProjects.Add(projectLocation), token => _loadingProjects.Remove(projectLocation)))
             {
                 Log.Debug($"Going to load project from '{location}', checking if an upgrade is required");
 
@@ -475,7 +541,7 @@ namespace Orc.ProjectManagement
                 location = project.Location;
             }
 
-            using (new DisposableToken(null, token => _savingCounter++, token => _savingCounter--))
+            using (new DisposableToken(null, token => _savingProjects.Add(location), token => _savingProjects.Remove(location)))
             {
                 Log.Debug("Saving project '{0}' to '{1}'", project, location);
 
@@ -539,78 +605,13 @@ namespace Orc.ProjectManagement
                 return false;
             }
 
-            await SyncedSetActiveProjectAsync(null).ConfigureAwait(false);
+            await SetActiveProjectAsync(null).ConfigureAwait(false);
 
             UnregisterProject(project);
 
             await ProjectClosedAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
 
             Log.Info("Closed project '{0}'", project);
-
-            return true;
-        }
-
-        private async Task<bool> SyncedSetActiveProjectAsync(IProject project)
-        {
-            var activeProject = ActiveProject;
-
-            if (project != null && !Projects.Contains(project))
-            {
-                return false;
-            }
-
-            var activeProjectLocation = activeProject?.Location;
-            var newProjectLocation = project?.Location;
-
-            if (string.Equals(activeProjectLocation, newProjectLocation))
-            {
-                return false;
-            }
-
-            Log.Info(project != null
-                ? $"Activating project '{project.Location}'"
-                : "Deactivating currently active project");
-
-            var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
-
-            await ProjectActivationAsync.SafeInvokeAsync(this, eventArgs, false).ConfigureAwait(false);
-
-            if (eventArgs.Cancel)
-            {
-                Log.Info(project != null
-                    ? $"Activating project '{project.Location}' was canceled"
-                    : "Deactivating currently active project");
-
-                await ProjectActivationCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
-                return false;
-            }
-
-            Exception exception = null;
-
-            try
-            {
-                ActiveProject = project;
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
-
-            if (exception != null)
-            {
-                Log.Error(exception, project != null
-                    ? $"Failed to activate project '{project.Location}'"
-                    : "Failed to deactivate currently active project");
-
-                await ProjectActivationFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(project, exception)).ConfigureAwait(false);
-                return false;
-            }
-
-            await ProjectActivatedAsync.SafeInvokeAsync(this, new ProjectUpdatedEventArgs(activeProject, project)).ConfigureAwait(false);
-
-            Log.Debug(project != null
-                ? $"Activating project '{project.Location}' was canceled"
-                : "Deactivating currently active project");
 
             return true;
         }
@@ -711,8 +712,8 @@ namespace Orc.ProjectManagement
 
         private void OnProjectRefresherUpdated(object sender, ProjectEventArgs e)
         {
-            // TODO: use dictionary for detecting if e.Project is currently loading or saving
-            if (IsLoading || _savingCounter > 0)
+            var projectLocation = e.Project.Location;
+            if (_loadingProjects.Contains(projectLocation) || _savingProjects.Contains(projectLocation))
             {
                 return;
             }
