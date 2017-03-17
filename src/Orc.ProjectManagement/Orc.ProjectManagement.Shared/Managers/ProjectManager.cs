@@ -182,17 +182,17 @@ namespace Orc.ProjectManagement
                 Log.Error("Cannot save empty project");
                 return TaskHelper<bool>.FromResult(false);
             }
-
-            if (string.IsNullOrWhiteSpace(location))
-            {
-                location = project.Location;
-            }
-
+            
             return SaveAsync(project, location);
         }
 
         public Task<bool> SaveAsync(IProject project, string location = null)
         {
+            if (string.IsNullOrWhiteSpace(location))
+            {
+                location = project.Location;
+            }
+
             return SynchroniseProjectOperation(location, () => SyncedSaveAsync(project, location));
         }
 
