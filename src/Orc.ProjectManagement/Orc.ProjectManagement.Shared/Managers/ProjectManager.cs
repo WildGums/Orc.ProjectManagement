@@ -207,6 +207,8 @@ namespace Orc.ProjectManagement
 
         public Task<bool> CloseAsync(IProject project)
         {
+            Argument.IsNotNull(() => project);
+
             var location = project.Location;
 
             return SynchroniseProjectOperation(location, () => SyncedCloseAsync(project));
