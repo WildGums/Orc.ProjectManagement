@@ -9,7 +9,7 @@ namespace Orc.ProjectManagement.Example.Views
 {
     using Catel.Logging;
     using Catel.Windows;
-    using Logging;
+    using Orchestra.Logging;
 
     /// <summary>
     /// Interaction logic for MainWindow.xaml.

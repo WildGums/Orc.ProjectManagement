@@ -58,6 +58,8 @@ namespace Orc.ProjectManagement.Example.ViewModels
             SaveProjectAs = new TaskCommand(OnSaveProjectAsExecuteAsync, OnSaveProjectAsCanExecute);
             CloseProject = new Command(OnCloseProjectExecute, OnCloseProjectCanExecute);
             OpenFile = new Command(OnOpenFileExecute, OnOpenFileCanExecute);
+
+            Title = "Orc.ProjectManagement example";
         }
         #endregion
 
