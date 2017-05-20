@@ -10,7 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)..\..\SolutionAssemblyInfo.cs" />
-	<Compile Include="$(MSBuildThisFileDirectory)..\..\GlobalSuppressions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\GlobalSuppressions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Constants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectErrorEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectEventArgs.cs" />
@@ -49,6 +49,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectReaderBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectWriterBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\IProjectStateService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\IProjectStateSetter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\ProjectActivationHistoryService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\IProjectActivationHistoryService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\Interfaces\IProjectManagementConfigurationService.cs" />
