@@ -156,14 +156,14 @@ namespace Orc.ProjectManagement
         {
             Argument.IsNotNull(() => project);
 
-            return SynchronizeProjectOperationAsync(project.Location, () => SyncedRefreshAsync(project));
+            return SynchroniseProjectOperationAsync(project.Location, () => SyncedRefreshAsync(project));
         }
 
         public Task<bool> LoadAsync(string location)
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
-            return SynchronizeProjectOperationAsync(location, async () =>
+            return SynchroniseProjectOperationAsync(location, async () =>
             {
                 var project = await SyncedLoadProjectAsync(location);
 
@@ -180,7 +180,7 @@ namespace Orc.ProjectManagement
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
-            return SynchronizeProjectOperationAsync(location, async () =>
+            return SynchroniseProjectOperationAsync(location, async () =>
             {
                 var project = await SyncedLoadProjectAsync(location);
 
@@ -207,7 +207,7 @@ namespace Orc.ProjectManagement
                 location = project.Location;
             }
 
-            return SynchronizeProjectOperationAsync(location, () => SyncedSaveAsync(project, location));
+            return SynchroniseProjectOperationAsync(location, () => SyncedSaveAsync(project, location));
         }
 
         public Task<bool> CloseAsync()
@@ -225,7 +225,7 @@ namespace Orc.ProjectManagement
 
             var location = project.Location;
 
-            return SynchronizeProjectOperationAsync(location, () => SyncedCloseAsync(project));
+            return SynchroniseProjectOperationAsync(location, () => SyncedCloseAsync(project));
         }        
             
         public async Task<bool> SetActiveProjectAsync(IProject project)
@@ -333,7 +333,7 @@ namespace Orc.ProjectManagement
             return projectWriter.WriteAsync(project, location);
         }
 
-        private async Task<T> SynchronizeProjectOperationAsync<T>(string projectLocation, Func<Task<T>> operation)
+        private async Task<T> SynchroniseProjectOperationAsync<T>(string projectLocation, Func<Task<T>> operation)
         {
             Argument.IsNotNullOrEmpty(() => projectLocation);
 
@@ -475,7 +475,7 @@ namespace Orc.ProjectManagement
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
-            var project = Projects.FirstOrDefault(x => string.Equals(location, x.Location, StringComparison.OrdinalIgnoreCase));
+            var project = Projects.FirstOrDefault(x => location.EqualsIgnoreCase(x.Location));
             if (project != null)
             {
                 return project;
