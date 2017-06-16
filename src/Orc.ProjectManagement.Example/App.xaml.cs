@@ -10,6 +10,7 @@
     using Catel.Reflection;
     using Catel.Services;
     using Catel.Windows;
+    using Orchestra;
 
     /// <summary>
     /// Interaction logic for App.xaml
@@ -56,7 +57,7 @@
             //var serviceLocator = ServiceLocator.Default;
             //serviceLocator.RegisterType<IMyInterface, IMyClass>();
 
-            StyleHelper.CreateStyleForwardersForDefaultStyles();
+            this.ApplyTheme();
 
             Log.Info("Calling base.OnStartup");
 
