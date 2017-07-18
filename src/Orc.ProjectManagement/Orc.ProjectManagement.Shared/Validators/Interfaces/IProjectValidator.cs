@@ -12,9 +12,6 @@ namespace Orc.ProjectManagement
 
     public interface IProjectValidator
     {
-        [ObsoleteEx(ReplacementTypeOrMember = "CanStartLoadingProjectAsync", TreatAsErrorFromVersion = "1.2", RemoveInVersion = "2.0")]
-        bool CanStartLoadingProject(string location);
-
         /// <summary>
         /// Determines whether the location exists and is ready to load a project from.
         /// </summary>
@@ -29,9 +26,6 @@ namespace Orc.ProjectManagement
         /// <param name="location">The location.</param>
         /// <returns>Task&lt;IValidationContext&gt;.</returns>
         Task<IValidationContext> ValidateProjectBeforeLoadingAsync(string location);
-
-        [ObsoleteEx(ReplacementTypeOrMember = "ValidateProjectAsync", TreatAsErrorFromVersion = "1.2", RemoveInVersion = "2.0")]
-        IValidationContext ValidateProject(IProject project);
 
         Task<IValidationContext> ValidateProjectAsync(IProject project);
     }

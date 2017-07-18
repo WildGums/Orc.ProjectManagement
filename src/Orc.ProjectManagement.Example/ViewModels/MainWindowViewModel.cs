@@ -116,7 +116,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
             _openFileService.InitialDirectory = Path.Combine(Environment.CurrentDirectory, "Data");
             _openFileService.Filter = TextFilter;
 
-            if (_openFileService.DetermineFile())
+            if (await _openFileService.DetermineFileAsync())
             {
                 await _projectManager.LoadAsync(_openFileService.FileName).ConfigureAwait(false);
             }
@@ -156,7 +156,8 @@ namespace Orc.ProjectManagement.Example.ViewModels
         private async Task OnSaveProjectAsExecuteAsync()
         {
             _saveFileService.Filter = TextFilter;
-            if (_saveFileService.DetermineFile())
+
+            if (await _saveFileService.DetermineFileAsync())
             {
                 await _projectManager.SaveAsync(_openFileService.FileName).ConfigureAwait(false);
             }

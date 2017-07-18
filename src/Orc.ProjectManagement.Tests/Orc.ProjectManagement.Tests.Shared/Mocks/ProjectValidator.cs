@@ -25,7 +25,7 @@ namespace Orc.ProjectManagement.Test.Mocks
 
             if (string.Equals(project.Location, "cannotload"))
             {
-                validationContext.AddBusinessRuleValidationResult(BusinessRuleValidationResult.CreateError("this is a dummy error"));
+                validationContext.Add(BusinessRuleValidationResult.CreateError("this is a dummy error"));
             }
 
             return validationContext;

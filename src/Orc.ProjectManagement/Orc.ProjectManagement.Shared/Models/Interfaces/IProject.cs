@@ -7,9 +7,7 @@
 
 namespace Orc.ProjectManagement
 {
-    using Catel.Data;
-
-    public interface IProject : IModel
+    public interface IProject
     {
         int Id { get; }
 

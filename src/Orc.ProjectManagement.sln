@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26020.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orc.ProjectManagement.NET40", "Orc.ProjectManagement\Orc.ProjectManagement.NET40\Orc.ProjectManagement.NET40.csproj", "{4258FC75-DD23-4877-A56D-3A077AB57F2D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orc.ProjectManagement.NET47", "Orc.ProjectManagement\Orc.ProjectManagement.NET47\Orc.ProjectManagement.NET47.csproj", "{4258FC75-DD23-4877-A56D-3A077AB57F2D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A8A1A4EE-E04A-43AB-90C9-41E7B82EE1E5}"
 EndProject
@@ -15,7 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "misc", "misc", "{1FE0D431-A
 		SolutionAssemblyInfo.cs = SolutionAssemblyInfo.cs
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orc.ProjectManagement.Tests.NET40", "Orc.ProjectManagement.Tests\Orc.ProjectManagement.Tests.NET40\Orc.ProjectManagement.Tests.NET40.csproj", "{D6415689-67DE-4FEE-AA72-6D7EEDDDCEB6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orc.ProjectManagement.Tests.NET47", "Orc.ProjectManagement.Tests\Orc.ProjectManagement.Tests.NET47\Orc.ProjectManagement.Tests.NET47.csproj", "{D6415689-67DE-4FEE-AA72-6D7EEDDDCEB6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orc.ProjectManagement.Example", "Orc.ProjectManagement.Example\Orc.ProjectManagement.Example.csproj", "{E70E1855-9D61-4063-A209-CA0A150A6F3E}"
 EndProject
