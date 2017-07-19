@@ -15,6 +15,8 @@ namespace Orc.ProjectManagement
 
         string Title { get; }
 
+        bool IsDirty { get; }
+
         void ClearIsDirty();
 
         void MarkAsDirty();
