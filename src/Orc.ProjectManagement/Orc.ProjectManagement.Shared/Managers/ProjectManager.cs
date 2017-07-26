@@ -43,17 +43,6 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Constructors
-        [ObsoleteEx(Message = "Won't be used, kept only for back compatibility", TreatAsErrorFromVersion = "1.0", RemoveInVersion = "2.0")]
-        public ProjectManager(IProjectValidator projectValidator, IProjectUpgrader projectUpgrader, IProjectRefresherSelector projectRefresherSelector,
-            IProjectSerializerSelector projectSerializerSelector, IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService,
-            IProjectManagementInitializationService projectManagementInitializationService)
-            : this(projectValidator, projectUpgrader, projectRefresherSelector, projectSerializerSelector, projectInitializer, 
-                  projectManagementConfigurationService, projectManagementInitializationService, 
-                  ServiceLocator.Default.ResolveType<IProjectStateService>())
-        {
-            
-        }
-
         public ProjectManager(IProjectValidator projectValidator, IProjectUpgrader projectUpgrader, IProjectRefresherSelector projectRefresherSelector,
             IProjectSerializerSelector projectSerializerSelector, IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService,
             IProjectManagementInitializationService projectManagementInitializationService, IProjectStateService projectStateService)
@@ -103,9 +92,6 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region Events
-        [ObsoleteEx(Message = "Won't be replaced", TreatAsErrorFromVersion = "1.0", RemoveInVersion = "2.0")]
-        public event EventHandler<ProjectEventArgs> ProjectRefreshRequiredAsync;
-
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoadingAsync;
         public event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailedAsync;
         public event AsyncEventHandler<ProjectEventArgs> ProjectLoadingCanceledAsync;
@@ -147,10 +133,10 @@ namespace Orc.ProjectManagement
         {
             var project = ActiveProject;
 
-            return project == null 
-                ? TaskHelper<bool>.FromResult(false) 
+            return project == null
+                ? TaskHelper<bool>.FromResult(false)
                 : RefreshAsync(project);
-        }                
+        }
 
         public Task<bool> RefreshAsync(IProject project)
         {
@@ -196,7 +182,7 @@ namespace Orc.ProjectManagement
                 Log.Error("Cannot save empty project");
                 return TaskHelper<bool>.FromResult(false);
             }
-            
+
             return SaveAsync(project, location);
         }
 
@@ -226,8 +212,8 @@ namespace Orc.ProjectManagement
             var location = project.Location;
 
             return SynchroniseProjectOperationAsync(location, () => SyncedCloseAsync(project));
-        }        
-            
+        }
+
         public async Task<bool> SetActiveProjectAsync(IProject project)
         {
             using (await _commonAsyncLock.LockAsync())
@@ -500,7 +486,7 @@ namespace Orc.ProjectManagement
                 _projectStateSetter.SetProjectLoading(location, true);
 
                 var cancelEventArgs = new ProjectCancelEventArgs(location);
-                
+
                 await ProjectLoadingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
 
                 if (cancelEventArgs.Cancel)
@@ -528,7 +514,7 @@ namespace Orc.ProjectManagement
                     if (!await _projectValidator.CanStartLoadingProjectAsync(location))
                     {
                         validationContext = new ValidationContext();
-                        validationContext.AddBusinessRuleValidationResult(BusinessRuleValidationResult.CreateError("Project validator informed that project could not be loaded"));
+                        validationContext.Add(BusinessRuleValidationResult.CreateError("Project validator informed that project could not be loaded"));
 
                         throw new ProjectException(location, $"Cannot load project from '{location}'");
                     }
@@ -704,7 +690,7 @@ namespace Orc.ProjectManagement
             }
 
             return project;
-        }                
+        }
 
         private void UnregisterProject(IProject project)
         {
@@ -778,7 +764,7 @@ namespace Orc.ProjectManagement
                 return;
             }
 
-            ProjectRefreshRequiredAsync.SafeInvoke(this, e);
+            // Note: not sure why we still need this
         }
         #endregion
     }

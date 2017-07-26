@@ -13,23 +13,9 @@ namespace Orc.ProjectManagement
 
     public abstract class ProjectValidatorBase : IProjectValidator
     {
-        [ObsoleteEx(ReplacementTypeOrMember = "CanStartLoadingProjectAsync", TreatAsErrorFromVersion = "1.2", RemoveInVersion = "2.0")]
-        public virtual bool CanStartLoadingProject(string location)
-        {
-            return true;
-        }
-
         public virtual Task<bool> CanStartLoadingProjectAsync(string location)
         {
-            var canStart = CanStartLoadingProject(location);
-            return TaskHelper<bool>.FromResult(canStart);
-        }
-
-        [ObsoleteEx(ReplacementTypeOrMember = "ValidateProjectAsync", TreatAsErrorFromVersion = "1.2", RemoveInVersion = "2.0")]
-        public virtual IValidationContext ValidateProject(IProject project)
-        {
-            var validationContext = new ValidationContext();
-            return validationContext;
+            return TaskHelper<bool>.FromResult(true);
         }
 
         public virtual Task<IValidationContext> ValidateProjectBeforeLoadingAsync(string location)
@@ -40,7 +26,7 @@ namespace Orc.ProjectManagement
 
         public virtual Task<IValidationContext> ValidateProjectAsync(IProject project)
         {
-            var validationContext = ValidateProject(project);
+            var validationContext = new ValidationContext();
             return TaskHelper<IValidationContext>.FromResult(validationContext);
         }
     }

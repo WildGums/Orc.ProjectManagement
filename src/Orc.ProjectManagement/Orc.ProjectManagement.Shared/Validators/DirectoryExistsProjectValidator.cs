@@ -8,11 +8,12 @@
 namespace Orc.ProjectManagement
 {
     using System.IO;
+    using System.Threading.Tasks;
 
     public class DirectoryExistsProjectValidator : ProjectValidatorBase
     {
         #region IProjectValidator Members
-        public override bool CanStartLoadingProject(string location)
+        public override async Task<bool> CanStartLoadingProjectAsync(string location)
         {
             return Directory.Exists(location);
         }

@@ -126,11 +126,6 @@ namespace Orc.ProjectManagement
             _projectManager.ProjectClosingCanceledAsync += async (sender, e) => await OnClosingCanceledInternalAsync(e.Project).ConfigureAwait(false);
         }
 
-        private void SubscribeOnRefreshRequired()
-        {
-            _projectManager.ProjectRefreshRequiredAsync += async (sender, e) => await OnProjectRefreshRequiredAsync(e).ConfigureAwait(false);
-        }
-
         private void SubscribeOnActivated()
         {
             _projectManager.ProjectActivatedAsync += async (sender, e) => await OnActivatedInternalAsync(e.OldProject, e.NewProject).ConfigureAwait(false);
@@ -169,28 +164,6 @@ namespace Orc.ProjectManagement
         private void SubscribeOnRefreshing()
         {
             _projectManager.ProjectRefreshingAsync += async (sender, e) => await OnRefreshingInternalAsync(e).ConfigureAwait(false);
-        }
-
-        private async Task OnProjectRefreshRequiredAsync(ProjectEventArgs e)
-        {
-            var projects = _projectManager.Projects.Where(project => string.Equals(project.Location, e.Location)).ToList();
-            var projectFileSystemEventArgs = e as ProjectFileSystemEventArgs;
-
-            foreach (var project in projects)
-            {
-                await OnRefreshRequiredInternalAsync(project).ConfigureAwait(false);
-            }
-
-            if (projectFileSystemEventArgs == null)
-            {
-                return;
-            }
-
-            var fileNames = projectFileSystemEventArgs.FileNames;
-            foreach (var project in projects)
-            {
-                await OnRefreshRequiredInternalAsync(project, fileNames).ConfigureAwait(false);
-            }
         }
 
         private Task OnLoadingInternalAsync(ProjectCancelEventArgs e)
@@ -321,17 +294,6 @@ namespace Orc.ProjectManagement
         }
 
         protected virtual Task OnClosingCanceledAsync(IProject project)
-        {
-            return TaskHelper.Completed;
-        }
-
-        private Task OnRefreshRequiredInternalAsync(IProject project, params string[] fileNames)
-        {
-            return OnRefreshRequiredAsync(project, fileNames);
-        }
-
-        [ObsoleteEx(Message = "Won't be replaced", TreatAsErrorFromVersion = "1.0", RemoveInVersion = "2.0")]
-        protected virtual Task OnRefreshRequiredAsync(IProject project, params string[] fileNames)
         {
             return TaskHelper.Completed;
         }

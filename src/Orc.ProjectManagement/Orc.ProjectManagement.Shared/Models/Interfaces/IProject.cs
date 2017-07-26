@@ -7,15 +7,15 @@
 
 namespace Orc.ProjectManagement
 {
-    using Catel.Data;
-
-    public interface IProject : IModel
+    public interface IProject
     {
         int Id { get; }
 
         string Location { get; set; }
 
         string Title { get; }
+
+        bool IsDirty { get; }
 
         void ClearIsDirty();
 
