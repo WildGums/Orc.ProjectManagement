@@ -78,6 +78,7 @@ namespace Orc.ProjectManagement
     }
     public interface IProject
     {
+        System.DateTime CreatedOn { get; }
         int Id { get; }
         bool IsDirty { get; }
         string Location { get; set; }
@@ -200,11 +201,13 @@ namespace Orc.ProjectManagement
     }
     public abstract class ProjectBase : Catel.Data.ModelBase, Orc.ProjectManagement.IProject
     {
+        public static readonly Catel.Data.PropertyData CreatedOnProperty;
         public static readonly Catel.Data.PropertyData IdProperty;
         public static readonly Catel.Data.PropertyData LocationProperty;
         public static readonly Catel.Data.PropertyData TitleProperty;
         public ProjectBase(string location) { }
         protected ProjectBase(string location, string title) { }
+        public virtual System.DateTime CreatedOn { get; set; }
         public int Id { get; }
         public virtual string Location { get; set; }
         public string Title { get; }
