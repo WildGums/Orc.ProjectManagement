@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>68dd602a-0075-4846-a3f6-f626bf1969b4</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Orc.ProjectManagement.Tests.Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)EventArgs\ProjectUpdatedEventArgsFacts.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GlobalInitialization.approvaltests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\Listener.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\Extensions\FactoryExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\Extensions\IServiceLocatorExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\Factory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Mocks\MemoryProjectReader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Mocks\MemoryProjectWriter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Mocks\Project.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Mocks\ProjectValidator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ModuleInitializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Properties\AssemblyInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PublicApiFacts.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectReaderBaseFacts.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Serialization\ProjectWriterBaseFacts.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Managers\" />
+  </ItemGroup>
+</Project>
