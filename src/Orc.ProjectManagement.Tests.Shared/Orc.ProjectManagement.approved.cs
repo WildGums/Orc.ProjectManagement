@@ -71,7 +71,7 @@ namespace Orc.ProjectManagement
     public class InitialProjectLocationService : Orc.ProjectManagement.IInitialProjectLocationService
     {
         public InitialProjectLocationService() { }
-        public System.Threading.Tasks.Task<string> GetInitialProjectLocationAsync() { }
+        public virtual System.Threading.Tasks.Task<string> GetInitialProjectLocationAsync() { }
     }
     public class InvalidProjectException : Orc.ProjectManagement.ProjectException
     {

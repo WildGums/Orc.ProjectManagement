@@ -15,7 +15,7 @@ namespace Orc.ProjectManagement
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-        public async Task<string> GetInitialProjectLocationAsync()
+        public virtual async Task<string> GetInitialProjectLocationAsync()
         {
             throw Log.ErrorAndCreateException<NotImplementedException>($"To use the initial project location service, implement it yourself, for example by returning the first argument from the command line arguments");
         }
