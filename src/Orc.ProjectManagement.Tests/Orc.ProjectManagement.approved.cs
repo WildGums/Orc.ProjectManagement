@@ -200,6 +200,17 @@ namespace Orc.ProjectManagement
         public MdiProjectManagementConfigurationService() { }
         public override Orc.ProjectManagement.ProjectManagementType GetProjectManagementType() { }
     }
+    public class ProjectActivationHistoryService : Orc.ProjectManagement.IProjectActivationHistoryService
+    {
+        public ProjectActivationHistoryService() { }
+        public void ContinueUsingHistory() { }
+        public void Forget(Orc.ProjectManagement.IProject project) { }
+        public System.Collections.Generic.IEnumerable<Orc.ProjectManagement.IProject> GetActivationHistory() { }
+        public Orc.ProjectManagement.IProject GetLastActiveProject() { }
+        public void Remember(Orc.ProjectManagement.IProject project) { }
+        public void SetProjectsSource(System.Collections.Generic.IEnumerable<Orc.ProjectManagement.IProject> projects) { }
+        public void SuspendUsingHistory() { }
+    }
     public abstract class ProjectBase : Catel.Data.ModelBase, Orc.ProjectManagement.IProject
     {
         public static readonly Catel.Data.PropertyData CreatedOnProperty;

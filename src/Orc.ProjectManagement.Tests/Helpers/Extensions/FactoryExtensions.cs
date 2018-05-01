@@ -102,6 +102,10 @@ namespace Orc.ProjectManagement.Tests
             factory.MockAndRegisterIfNotRegistered<IProjectSerializerSelector, DefaultProjectSerializerSelector>(factory.ServiceLocator);
 
             factory.ServiceLocator.RegisterType<IProjectValidator, EmptyProjectValidator>();
+            factory.ServiceLocator.RegisterType<IProjectUpgrader, EmptyProjectUpgrader>();
+            factory.ServiceLocator.RegisterType<IProjectStateService, ProjectStateService>();
+            factory.ServiceLocator.RegisterType<IProjectActivationHistoryService, ProjectActivationHistoryService>();
+
             factory.MockAndRegisterIfNotRegistered<IProjectRefresher>();
             factory.MockAndRegisterIfNotRegistered<IProjectRefresherSelector>();
 

@@ -11,7 +11,7 @@ namespace Orc.ProjectManagement
     using System.Linq;
     using Catel;
 
-    internal class ProjectActivationHistoryService : IProjectActivationHistoryService
+    public class ProjectActivationHistoryService : IProjectActivationHistoryService
     {
         #region Fields
         private readonly IList<IProject> _activationHistory = new List<IProject>();
