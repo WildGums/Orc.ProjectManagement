@@ -9,11 +9,13 @@
 namespace Orc.ProjectManagement
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
     using System.Threading.Tasks;
     using Catel;
     using Catel.Data;
+    using Catel.Reflection;
     using Catel.Threading;
 
     public abstract class ProjectWatcherBase
@@ -54,20 +56,37 @@ namespace Orc.ProjectManagement
         {
             var type = GetType();
 
-            var baseType = typeof (ProjectWatcherBase);
+            var baseType = typeof(ProjectWatcherBase);
 
-            var methodInfos = from method in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
-                              where method.GetBaseDefinition().DeclaringType != method.DeclaringType
-                              from subscriber in baseType.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
-                              let methodName = "Subscribe" + method.Name
-                              let subscriberName = subscriber.Name
-                              let subscriberNameAsync = subscriberName + "Async"
-                              where string.Equals(subscriberName, methodName) || string.Equals(subscriberNameAsync, methodName)
-                              select subscriber;
+            // Only subscribe to methods that are actually used
+            var overriddenMethods = (from method in type.GetMethodsEx(BindingFlags.NonPublic | BindingFlags.Instance)
+                                     where method.GetBaseDefinition().DeclaringType != method.DeclaringType
+                                     select method).ToList();
 
-            foreach (var methodInfo in methodInfos)
+            var allSubscribeMethods = (from method in baseType.GetMethodsEx(BindingFlags.NonPublic | BindingFlags.Instance)
+                                       where method.Name.StartsWith("Subscribe")
+                                       select method).ToList();
+
+            var subscribeMethods = new List<MethodInfo>();
+
+            foreach (var overriddenMethod in overriddenMethods)
             {
-                methodInfo.Invoke(this, new object[0]);
+                var methodName = overriddenMethod.Name.Replace("Async", string.Empty);
+                var syncSubscribeMethod = $"Subscribe{methodName}";
+                var asyncSubscribeMethod = $"{syncSubscribeMethod}Async";
+
+                var subscribeMethod = (from x in allSubscribeMethods
+                                       where string.Equals(syncSubscribeMethod, x.Name) || string.Equals(asyncSubscribeMethod, x.Name)
+                                       select x).FirstOrDefault();
+                if (subscribeMethod != null)
+                {
+                    subscribeMethods.Add(subscribeMethod);
+                }
+            }
+
+            foreach (var subscribeMethod in subscribeMethods)
+            {
+                subscribeMethod.Invoke(this, new object[0]);
             }
         }
 
@@ -144,6 +163,11 @@ namespace Orc.ProjectManagement
         private void SubscribeOnActivation()
         {
             _projectManager.ProjectActivationAsync += async (sender, e) => await OnActivationInternalAsync(e).ConfigureAwait(false);
+        }
+
+        private void SubscribeOnRefreshRequired()
+        {
+            _projectManager.ProjectRefreshRequiredAsync += async (sender, e) => await OnRefreshRequiredInternalAsync(e).ConfigureAwait(false);
         }
 
         private void SubscribeOnRefreshed()

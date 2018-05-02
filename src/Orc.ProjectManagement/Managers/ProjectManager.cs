@@ -34,8 +34,8 @@ namespace Orc.ProjectManagement
         private readonly IProjectValidator _projectValidator;
         private readonly IProjectUpgrader _projectUpgrader;
 
-        private readonly Dictionary<string, AsyncLock> _projectOperationLockers = new Dictionary<string, AsyncLock>();
-        private readonly Dictionary<string, int> _projectOperationRefCounts = new Dictionary<string, int>();
+        private readonly Dictionary<string, AsyncLock> _projectOperationLockers = new Dictionary<string, AsyncLock>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, int> _projectOperationRefCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         private readonly AsyncLock _commonAsyncLock = new AsyncLock();
 
         private readonly HashSet<string> _loadingProjects = new HashSet<string>();
@@ -65,7 +65,7 @@ namespace Orc.ProjectManagement
             _projectStateSetter = (IProjectStateSetter)projectStateService;
 
             _projects = new ListDictionary<string, IProject>();
-            _projectRefreshers = new ConcurrentDictionary<string, IProjectRefresher>();
+            _projectRefreshers = new ConcurrentDictionary<string, IProjectRefresher>(StringComparer.OrdinalIgnoreCase);
 
             ProjectManagementType = projectManagementConfigurationService.GetProjectManagementType();
         }
@@ -763,8 +763,15 @@ namespace Orc.ProjectManagement
                 return;
             }
 
-            // Note: not sure why we still need this
-            await ProjectRefreshRequiredAsync.SafeInvokeAsync(this, e);
+            if (_projects.TryGetValue(projectLocation, out var project))
+            {
+                // Note: not sure why we still need this
+                await ProjectRefreshRequiredAsync.SafeInvokeAsync(this, new ProjectEventArgs(project));
+            }
+            else
+            {
+                Log.Warning($"Project refresh required, but can't find project '{projectLocation}' in list of open projects");
+            }
         }
         #endregion
     }
