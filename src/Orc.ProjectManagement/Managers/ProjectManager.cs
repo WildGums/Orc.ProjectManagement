@@ -102,6 +102,7 @@ namespace Orc.ProjectManagement
         public event AsyncEventHandler<ProjectEventArgs> ProjectSavingCanceledAsync;
         public event AsyncEventHandler<ProjectEventArgs> ProjectSavedAsync;
 
+        public event AsyncEventHandler<ProjectEventArgs> ProjectRefreshRequiredAsync;
         public event AsyncEventHandler<ProjectCancelEventArgs> ProjectRefreshingAsync;
         public event AsyncEventHandler<ProjectEventArgs> ProjectRefreshedAsync;
         public event AsyncEventHandler<ProjectEventArgs> ProjectRefreshingCanceledAsync;
@@ -707,9 +708,7 @@ namespace Orc.ProjectManagement
 
         private void InitializeProjectRefresher(string projectLocation)
         {
-            IProjectRefresher projectRefresher;
-
-            if (!_projectRefreshers.TryGetValue(projectLocation, out projectRefresher) || projectRefresher == null)
+            if (!_projectRefreshers.TryGetValue(projectLocation, out var projectRefresher) || projectRefresher == null)
             {
                 try
                 {
@@ -735,11 +734,9 @@ namespace Orc.ProjectManagement
 
         private void ReleaseProjectRefresher(IProject project)
         {
-            IProjectRefresher projectRefresher;
-
             var location = project.Location;
 
-            if (_projectRefreshers.TryGetValue(location, out projectRefresher) && projectRefresher != null)
+            if (_projectRefreshers.TryGetValue(location, out var projectRefresher) && projectRefresher != null)
             {
                 try
                 {
@@ -758,7 +755,7 @@ namespace Orc.ProjectManagement
             }
         }
 
-        private void OnProjectRefresherUpdated(object sender, ProjectEventArgs e)
+        private async void OnProjectRefresherUpdated(object sender, ProjectEventArgs e)
         {
             var projectLocation = e.Location;
             if (_loadingProjects.Contains(projectLocation) || _savingProjects.Contains(projectLocation))
@@ -767,6 +764,7 @@ namespace Orc.ProjectManagement
             }
 
             // Note: not sure why we still need this
+            await ProjectRefreshRequiredAsync.SafeInvokeAsync(this, e);
         }
         #endregion
     }

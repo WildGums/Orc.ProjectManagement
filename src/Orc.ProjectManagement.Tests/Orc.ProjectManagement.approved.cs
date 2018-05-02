@@ -130,6 +130,7 @@ namespace Orc.ProjectManagement
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectCancelEventArgs> ProjectRefreshingAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectEventArgs> ProjectRefreshingCanceledAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectErrorEventArgs> ProjectRefreshingFailedAsync;
+        public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectEventArgs> ProjectRefreshRequiredAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectEventArgs> ProjectSavedAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectCancelEventArgs> ProjectSavingAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectEventArgs> ProjectSavingCanceledAsync;
@@ -303,6 +304,7 @@ namespace Orc.ProjectManagement
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectCancelEventArgs> ProjectRefreshingAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectEventArgs> ProjectRefreshingCanceledAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectErrorEventArgs> ProjectRefreshingFailedAsync;
+        public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectEventArgs> ProjectRefreshRequiredAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectEventArgs> ProjectSavedAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectCancelEventArgs> ProjectSavingAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectEventArgs> ProjectSavingCanceledAsync;
@@ -422,6 +424,7 @@ namespace Orc.ProjectManagement
         protected virtual System.Threading.Tasks.Task OnRefreshingCanceledAsync(Orc.ProjectManagement.IProject project) { }
         protected virtual System.Threading.Tasks.Task OnRefreshingFailedAsync(Orc.ProjectManagement.IProject project, System.Exception exception, Catel.Data.IValidationContext validationContext) { }
         protected virtual System.Threading.Tasks.Task OnRefreshingInternalAsync(Orc.ProjectManagement.ProjectCancelEventArgs e) { }
+        protected virtual System.Threading.Tasks.Task OnRefreshRequiredAsync(Orc.ProjectManagement.IProject project) { }
         protected virtual System.Threading.Tasks.Task OnSavedAsync(Orc.ProjectManagement.IProject project) { }
         protected virtual System.Threading.Tasks.Task OnSavingAsync(Orc.ProjectManagement.ProjectCancelEventArgs e) { }
         protected virtual System.Threading.Tasks.Task OnSavingCanceledAsync(Orc.ProjectManagement.IProject project) { }

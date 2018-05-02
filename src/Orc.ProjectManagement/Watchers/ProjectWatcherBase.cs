@@ -346,6 +346,16 @@ namespace Orc.ProjectManagement
             return TaskHelper.Completed;
         }
 
+        private Task OnRefreshRequiredInternalAsync(ProjectEventArgs e)
+        {
+            return OnRefreshRequiredAsync(e.Project);
+        }
+
+        protected virtual Task OnRefreshRequiredAsync(IProject project)
+        {
+            return TaskHelper.Completed;
+        }
+
         private Task OnRefreshedInternalAsync(IProject project)
         {
             IsRefreshing = false;

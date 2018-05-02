@@ -35,6 +35,7 @@ namespace Orc.ProjectManagement
         event AsyncEventHandler<ProjectEventArgs> ProjectSavingCanceledAsync;
         event AsyncEventHandler<ProjectEventArgs> ProjectSavedAsync;
 
+        event AsyncEventHandler<ProjectEventArgs> ProjectRefreshRequiredAsync;
         event AsyncEventHandler<ProjectCancelEventArgs> ProjectRefreshingAsync;
         event AsyncEventHandler<ProjectEventArgs> ProjectRefreshedAsync;
         event AsyncEventHandler<ProjectEventArgs> ProjectRefreshingCanceledAsync;
