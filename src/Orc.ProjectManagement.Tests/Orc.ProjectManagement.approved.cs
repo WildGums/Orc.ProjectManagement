@@ -158,6 +158,7 @@ namespace Orc.ProjectManagement
     }
     public interface IProjectRefresher
     {
+        bool IsEnabled { get; set; }
         bool IsSubscribed { get; }
         string Location { get; }
         public event System.EventHandler<Orc.ProjectManagement.ProjectEventArgs> Updated;
@@ -332,6 +333,7 @@ namespace Orc.ProjectManagement
     {
         protected ProjectRefresherBase(string projectLocation) { }
         protected ProjectRefresherBase(string projectLocation, string locationToWatch) { }
+        public bool IsEnabled { get; set; }
         public bool IsSubscribed { get; }
         public bool IsSuspended { get; }
         public string Location { get; }
