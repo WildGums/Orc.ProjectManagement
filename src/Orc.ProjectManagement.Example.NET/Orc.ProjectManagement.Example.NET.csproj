@@ -4,6 +4,7 @@
     <AssemblyName>Orc.ProjectManagement.Example.NET</AssemblyName>
     <RootNamespace>Orc.ProjectManagement.Example</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
+    <SonarQubeExclude>true</SonarQubeExclude>
   </PropertyGroup>
 
   <PropertyGroup>
