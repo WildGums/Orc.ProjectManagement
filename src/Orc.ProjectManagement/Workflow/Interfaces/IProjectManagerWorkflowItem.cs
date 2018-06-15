@@ -24,7 +24,7 @@ namespace Orc.ProjectManagement
         Task LoadedAsync(IProject project);
         Task<bool> ActivationAsync(IProject oldProject, IProject newProject, bool isRefresh);
         Task ActivationCanceledAsync(IProject project);
-        Task ActivationFailedAsync(IProject project, Exception exception);
+        Task ActivationFailedAsync(IProject project, Exception exception, IValidationContext validationContext);
         Task ActivatedAsync(IProject oldProject, IProject newProject);
         Task<bool> ClosingAsync(IProject project);
         Task ClosingCanceledAsync(IProject project);
@@ -35,7 +35,7 @@ namespace Orc.ProjectManagement
         Task RefreshedAsync(IProject project);
         Task<bool> SavingAsync(IProject project);
         Task SavingCanceledAsync(IProject project);
-        Task SavingFailedAsync(IProject project);
+        Task SavingFailedAsync(IProject project, Exception exception, IValidationContext validationContext);
         Task SavedAsync(IProject project);
         #endregion
     }

@@ -134,7 +134,7 @@ namespace Orc.ProjectManagement
             await base.OnSavingFailedAsync(project, exception);
 
             await InvokeEndingActionsAsync(SavingSequence, _savingStacks, project.Location,
-                item => item.SavingFailedAsync(project));
+                item => item.SavingFailedAsync(project, exception, new ValidationContext()));
         }
 
         protected sealed override async Task OnSavedAsync(IProject project)
@@ -208,7 +208,7 @@ namespace Orc.ProjectManagement
             await base.OnActivationFailedAsync(project, exception);
 
             await InvokeEndingActionsAsync(ActivationSequence, _activationStacks, project.Location,
-                item => item.ActivationFailedAsync(project, exception));
+                item => item.ActivationFailedAsync(project, exception, new ValidationContext()));
         }
 
         protected sealed override async Task OnActivatedAsync(IProject oldProject, IProject newProject)

@@ -30,7 +30,7 @@ namespace Orc.ProjectManagement
             return TaskHelper.Completed;
         }
 
-        public virtual Task ActivationFailedAsync(IProject project, Exception exception)
+        public virtual Task ActivationFailedAsync(IProject project, Exception exception, IValidationContext validationContext)
         {
             return TaskHelper.Completed;
         }
@@ -85,7 +85,7 @@ namespace Orc.ProjectManagement
             return TaskHelper.Completed;
         }
 
-        public virtual Task SavingFailedAsync(IProject project)
+        public virtual Task SavingFailedAsync(IProject project, Exception exception, IValidationContext validationContext)
         {
             return TaskHelper.Completed;
         }
