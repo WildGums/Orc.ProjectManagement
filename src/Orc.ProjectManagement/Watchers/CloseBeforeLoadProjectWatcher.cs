@@ -7,20 +7,23 @@
 
 namespace Orc.ProjectManagement
 {
-    using System.Linq;
     using System.Threading.Tasks;
+    using Catel;
+    using Catel.IoC;
 
     public class CloseBeforeLoadProjectWatcher : ProjectWatcherBase
     {
         #region Fields
-        private readonly IProjectManager _projectManager;
+        private readonly CloseBeforeLoadProjectWorkflowItem _closeBeforeLoadProjectWorkflowItem;
         #endregion
 
         #region Constructors
-        public CloseBeforeLoadProjectWatcher(IProjectManager projectManager)
+        public CloseBeforeLoadProjectWatcher(IProjectManager projectManager, ITypeFactory typeFactory)
             : base(projectManager)
         {
-            _projectManager = projectManager;
+            Argument.IsNotNull(() => typeFactory);
+
+            _closeBeforeLoadProjectWorkflowItem = typeFactory.CreateInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWorkflowItem>(projectManager);
         }
         #endregion
 
@@ -28,16 +31,10 @@ namespace Orc.ProjectManagement
         {
             if (e.Cancel)
             {
-                await base.OnLoadingAsync(e).ConfigureAwait(false);
                 return;
             }
 
-            foreach (var project in _projectManager.Projects.ToList())
-            {
-                e.Cancel = e.Cancel || !await _projectManager.CloseAsync(project).ConfigureAwait(false);
-            }
-
-            await base.OnLoadingAsync(e).ConfigureAwait(false);
+            e.Cancel = !await _closeBeforeLoadProjectWorkflowItem.LoadingAsync(e.Location);
         }
     }
 }

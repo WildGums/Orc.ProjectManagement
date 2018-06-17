@@ -11,63 +11,38 @@ namespace Orc.ProjectManagement
     using System.Threading.Tasks;
     using Catel;
     using Catel.Data;
+    using Catel.IoC;
 
     internal class ActivationHistoryProjectWatcher : ProjectWatcherBase
     {
         #region Fields
-        private readonly IProjectActivationHistoryService _projectActivationHistoryService;
+        private readonly ActivationHistoryProjectWorkflowItem _activationHistoryProjectWorkflowItem;
         #endregion
 
         #region Constructors
-        public ActivationHistoryProjectWatcher(IProjectManager projectManager, IProjectActivationHistoryService projectActivationHistoryService)
+        public ActivationHistoryProjectWatcher(IProjectManager projectManager, 
+            ITypeFactory typeFactory)
             : base(projectManager)
         {
-            Argument.IsNotNull(() => projectActivationHistoryService);
+            Argument.IsNotNull(() => typeFactory);
 
-            _projectActivationHistoryService = projectActivationHistoryService;
-
-            _projectActivationHistoryService.SetProjectsSource(ProjectManager.Projects);
+            _activationHistoryProjectWorkflowItem = typeFactory.CreateInstanceWithParametersAndAutoCompletion<ActivationHistoryProjectWorkflowItem>(projectManager);
         }
         #endregion
 
-        protected override async Task OnActivatedAsync(IProject oldProject, IProject newProject)
+        protected override Task OnActivatedAsync(IProject oldProject, IProject newProject)
         {
-            if (newProject == null)
-            {
-                return;
-            }
-
-            _projectActivationHistoryService.Remember(newProject);
-
-            await base.OnActivatedAsync(oldProject, newProject).ConfigureAwait(false);
+            return _activationHistoryProjectWorkflowItem.ActivatedAsync(oldProject, newProject);
         }
 
-        protected override async Task OnClosedAsync(IProject project)
+        protected override Task OnClosedAsync(IProject project)
         {
-            if (project == null)
-            {
-                return;
-            }
-
-            _projectActivationHistoryService.Forget(project);
-
-            var lastActiveProject = _projectActivationHistoryService.GetLastActiveProject();
-
-            await ProjectManager.SetActiveProjectAsync(lastActiveProject).ConfigureAwait(false);
-
-            await base.OnClosedAsync(project).ConfigureAwait(false);
+            return _activationHistoryProjectWorkflowItem.ClosedAsync(project);
         }
 
-        protected override async Task OnLoadingFailedAsync(string location, Exception exception, IValidationContext validationContext)
+        protected override Task OnLoadingFailedAsync(string location, Exception exception, IValidationContext validationContext)
         {
-            await base.OnLoadingFailedAsync(location, exception, validationContext);
-            if (ProjectManager.ActiveProject == null)
-            {
-                return;
-            }
-
-            var lastActiveProject = _projectActivationHistoryService.GetLastActiveProject();
-            await ProjectManager.SetActiveProjectAsync(lastActiveProject).ConfigureAwait(false);
+            return _activationHistoryProjectWorkflowItem.LoadingFailedAsync(location, exception, validationContext);
         }
     }
 }

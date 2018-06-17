@@ -6,10 +6,22 @@ public class static ModuleInitializer
 }
 namespace Orc.ProjectManagement
 {
+    public class ActivationHistoryProjectWorkflowItem : Orc.ProjectManagement.ProjectManagerWorkflowItemBase
+    {
+        public ActivationHistoryProjectWorkflowItem(Orc.ProjectManagement.IProjectManager projectManager, Orc.ProjectManagement.IProjectActivationHistoryService projectActivationHistoryService) { }
+        public override System.Threading.Tasks.Task ActivatedAsync(Orc.ProjectManagement.IProject oldProject, Orc.ProjectManagement.IProject newProject) { }
+        public override System.Threading.Tasks.Task ClosedAsync(Orc.ProjectManagement.IProject project) { }
+        public override System.Threading.Tasks.Task LoadingFailedAsync(string location, System.Exception exception, Catel.Data.IValidationContext validationContext) { }
+    }
     public class CloseBeforeLoadProjectWatcher : Orc.ProjectManagement.ProjectWatcherBase
     {
-        public CloseBeforeLoadProjectWatcher(Orc.ProjectManagement.IProjectManager projectManager) { }
+        public CloseBeforeLoadProjectWatcher(Orc.ProjectManagement.IProjectManager projectManager, Catel.IoC.ITypeFactory typeFactory) { }
         protected override System.Threading.Tasks.Task OnLoadingAsync(Orc.ProjectManagement.ProjectCancelEventArgs e) { }
+    }
+    public class CloseBeforeLoadProjectWorkflowItem : Orc.ProjectManagement.ProjectManagerWorkflowItemBase
+    {
+        public CloseBeforeLoadProjectWorkflowItem(Orc.ProjectManagement.IProjectManager projectManager) { }
+        public override System.Threading.Tasks.Task<bool> LoadingAsync(string location) { }
     }
     public class DefaultProjectRefresherSelector : Orc.ProjectManagement.IProjectRefresherSelector
     {

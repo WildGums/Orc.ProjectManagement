@@ -52,7 +52,7 @@ namespace Orc.ProjectManagement
             {
                 case ProjectManagementType.SingleDocument:
                     // Note: don't register and instantiate because IProjectManager is not yet registered here
-                    var closeBeforeLoadProjectWatcher = new CloseBeforeLoadProjectWatcher(projectManager);
+                    var closeBeforeLoadProjectWatcher = _typeFactory.CreateInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWatcher>(projectManager);
                     serviceLocator.RegisterInstance(closeBeforeLoadProjectWatcher);
                     break;
 
@@ -63,7 +63,7 @@ namespace Orc.ProjectManagement
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException("projectManagementType", projectManagementType, null);
+                    throw new ArgumentOutOfRangeException(nameof(projectManagementType), projectManagementType, null);
             }
         }
     }
