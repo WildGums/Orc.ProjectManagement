@@ -6,10 +6,22 @@ public class static ModuleInitializer
 }
 namespace Orc.ProjectManagement
 {
+    public class ActivationHistoryProjectWorkflowItem : Orc.ProjectManagement.ProjectManagerWorkflowItemBase
+    {
+        public ActivationHistoryProjectWorkflowItem(Orc.ProjectManagement.IProjectManager projectManager, Orc.ProjectManagement.IProjectActivationHistoryService projectActivationHistoryService) { }
+        public override System.Threading.Tasks.Task ActivatedAsync(Orc.ProjectManagement.IProject oldProject, Orc.ProjectManagement.IProject newProject) { }
+        public override System.Threading.Tasks.Task ClosedAsync(Orc.ProjectManagement.IProject project) { }
+        public override System.Threading.Tasks.Task LoadingFailedAsync(string location, System.Exception exception, Catel.Data.IValidationContext validationContext) { }
+    }
     public class CloseBeforeLoadProjectWatcher : Orc.ProjectManagement.ProjectWatcherBase
     {
-        public CloseBeforeLoadProjectWatcher(Orc.ProjectManagement.IProjectManager projectManager) { }
+        public CloseBeforeLoadProjectWatcher(Orc.ProjectManagement.IProjectManager projectManager, Catel.IoC.ITypeFactory typeFactory) { }
         protected override System.Threading.Tasks.Task OnLoadingAsync(Orc.ProjectManagement.ProjectCancelEventArgs e) { }
+    }
+    public class CloseBeforeLoadProjectWorkflowItem : Orc.ProjectManagement.ProjectManagerWorkflowItemBase
+    {
+        public CloseBeforeLoadProjectWorkflowItem(Orc.ProjectManagement.IProjectManager projectManager) { }
+        public override System.Threading.Tasks.Task<bool> LoadingAsync(string location) { }
     }
     public class DefaultProjectRefresherSelector : Orc.ProjectManagement.IProjectRefresherSelector
     {
@@ -151,6 +163,28 @@ namespace Orc.ProjectManagement
         public static TProject GetActiveProject<TProject>(this Orc.ProjectManagement.IProjectManager projectManager)
             where TProject : Orc.ProjectManagement.IProject { }
         public static string GetActiveProjectLocation(this Orc.ProjectManagement.IProjectManager projectManager) { }
+    }
+    public interface IProjectManagerWorkflowItem
+    {
+        System.Threading.Tasks.Task ActivatedAsync(Orc.ProjectManagement.IProject oldProject, Orc.ProjectManagement.IProject newProject);
+        System.Threading.Tasks.Task<bool> ActivationAsync(Orc.ProjectManagement.IProject oldProject, Orc.ProjectManagement.IProject newProject, bool isRefresh);
+        System.Threading.Tasks.Task ActivationCanceledAsync(Orc.ProjectManagement.IProject project);
+        System.Threading.Tasks.Task ActivationFailedAsync(Orc.ProjectManagement.IProject project, System.Exception exception, Catel.Data.IValidationContext validationContext);
+        System.Threading.Tasks.Task ClosedAsync(Orc.ProjectManagement.IProject project);
+        System.Threading.Tasks.Task<bool> ClosingAsync(Orc.ProjectManagement.IProject project);
+        System.Threading.Tasks.Task ClosingCanceledAsync(Orc.ProjectManagement.IProject project);
+        System.Threading.Tasks.Task LoadedAsync(Orc.ProjectManagement.IProject project);
+        System.Threading.Tasks.Task<bool> LoadingAsync(string location);
+        System.Threading.Tasks.Task LoadingCanceledAsync(string location);
+        System.Threading.Tasks.Task LoadingFailedAsync(string location, System.Exception exception, Catel.Data.IValidationContext validationContext);
+        System.Threading.Tasks.Task RefreshedAsync(Orc.ProjectManagement.IProject project);
+        System.Threading.Tasks.Task<bool> RefreshingAsync(Orc.ProjectManagement.IProject project);
+        System.Threading.Tasks.Task RefreshingCanceledAsync(Orc.ProjectManagement.IProject project);
+        System.Threading.Tasks.Task RefreshingFailedAsync(Orc.ProjectManagement.IProject project, System.Exception exception, Catel.Data.IValidationContext validationContext);
+        System.Threading.Tasks.Task SavedAsync(Orc.ProjectManagement.IProject project);
+        System.Threading.Tasks.Task<bool> SavingAsync(Orc.ProjectManagement.IProject project);
+        System.Threading.Tasks.Task SavingCanceledAsync(Orc.ProjectManagement.IProject project);
+        System.Threading.Tasks.Task SavingFailedAsync(Orc.ProjectManagement.IProject project, System.Exception exception, Catel.Data.IValidationContext validationContext);
     }
     public interface IProjectReader
     {
@@ -322,6 +356,59 @@ namespace Orc.ProjectManagement
         public System.Threading.Tasks.Task<bool> SaveAsync(Orc.ProjectManagement.IProject project, string location = null) { }
         public System.Threading.Tasks.Task<bool> SetActiveProjectAsync(Orc.ProjectManagement.IProject project) { }
         protected virtual System.Threading.Tasks.Task<bool> WriteProjectAsync(Orc.ProjectManagement.IProject project, string location) { }
+    }
+    public abstract class ProjectManagerWorkflowItemBase : Orc.ProjectManagement.IProjectManagerWorkflowItem
+    {
+        protected ProjectManagerWorkflowItemBase() { }
+        public virtual System.Threading.Tasks.Task ActivatedAsync(Orc.ProjectManagement.IProject oldProject, Orc.ProjectManagement.IProject newProject) { }
+        public virtual System.Threading.Tasks.Task<bool> ActivationAsync(Orc.ProjectManagement.IProject oldProject, Orc.ProjectManagement.IProject newProject, bool isRefresh) { }
+        public virtual System.Threading.Tasks.Task ActivationCanceledAsync(Orc.ProjectManagement.IProject project) { }
+        public virtual System.Threading.Tasks.Task ActivationFailedAsync(Orc.ProjectManagement.IProject project, System.Exception exception, Catel.Data.IValidationContext validationContext) { }
+        public virtual System.Threading.Tasks.Task ClosedAsync(Orc.ProjectManagement.IProject project) { }
+        public virtual System.Threading.Tasks.Task<bool> ClosingAsync(Orc.ProjectManagement.IProject project) { }
+        public virtual System.Threading.Tasks.Task ClosingCanceledAsync(Orc.ProjectManagement.IProject project) { }
+        public virtual System.Threading.Tasks.Task LoadedAsync(Orc.ProjectManagement.IProject project) { }
+        public virtual System.Threading.Tasks.Task<bool> LoadingAsync(string location) { }
+        public virtual System.Threading.Tasks.Task LoadingCanceledAsync(string location) { }
+        public virtual System.Threading.Tasks.Task LoadingFailedAsync(string location, System.Exception exception, Catel.Data.IValidationContext validationContext) { }
+        public virtual System.Threading.Tasks.Task RefreshedAsync(Orc.ProjectManagement.IProject project) { }
+        public virtual System.Threading.Tasks.Task<bool> RefreshingAsync(Orc.ProjectManagement.IProject project) { }
+        public virtual System.Threading.Tasks.Task RefreshingCanceledAsync(Orc.ProjectManagement.IProject project) { }
+        public virtual System.Threading.Tasks.Task RefreshingFailedAsync(Orc.ProjectManagement.IProject project, System.Exception exception, Catel.Data.IValidationContext validationContext) { }
+        public virtual System.Threading.Tasks.Task SavedAsync(Orc.ProjectManagement.IProject project) { }
+        public virtual System.Threading.Tasks.Task<bool> SavingAsync(Orc.ProjectManagement.IProject project) { }
+        public virtual System.Threading.Tasks.Task SavingCanceledAsync(Orc.ProjectManagement.IProject project) { }
+        public virtual System.Threading.Tasks.Task SavingFailedAsync(Orc.ProjectManagement.IProject project, System.Exception exception, Catel.Data.IValidationContext validationContext) { }
+    }
+    public abstract class ProjectManagerWorkflowProjectWatcherBase : Orc.ProjectManagement.ProjectWatcherBase
+    {
+        protected System.Collections.Generic.List<Orc.ProjectManagement.IProjectManagerWorkflowItem> ActivationSequence;
+        protected System.Collections.Generic.List<Orc.ProjectManagement.IProjectManagerWorkflowItem> ClosingSequence;
+        protected System.Collections.Generic.List<Orc.ProjectManagement.IProjectManagerWorkflowItem> LoadingSequence;
+        protected System.Collections.Generic.List<Orc.ProjectManagement.IProjectManagerWorkflowItem> RefreshingSequence;
+        protected System.Collections.Generic.List<Orc.ProjectManagement.IProjectManagerWorkflowItem> SavingSequence;
+        protected ProjectManagerWorkflowProjectWatcherBase(Orc.ProjectManagement.IProjectManager projectManager) { }
+        protected abstract void ArrangeWorkflowItems();
+        public virtual void Initialize() { }
+        protected virtual System.Threading.Tasks.Task OnActivatedAsync(Orc.ProjectManagement.IProject oldProject, Orc.ProjectManagement.IProject newProject) { }
+        protected virtual System.Threading.Tasks.Task OnActivationAsync(Orc.ProjectManagement.ProjectUpdatingCancelEventArgs e) { }
+        protected virtual System.Threading.Tasks.Task OnActivationCanceledAsync(Orc.ProjectManagement.IProject project) { }
+        protected virtual System.Threading.Tasks.Task OnActivationFailedAsync(Orc.ProjectManagement.IProject project, System.Exception exception) { }
+        protected virtual System.Threading.Tasks.Task OnClosedAsync(Orc.ProjectManagement.IProject project) { }
+        protected virtual System.Threading.Tasks.Task OnClosingAsync(Orc.ProjectManagement.ProjectCancelEventArgs e) { }
+        protected virtual System.Threading.Tasks.Task OnClosingCanceledAsync(Orc.ProjectManagement.IProject project) { }
+        protected virtual System.Threading.Tasks.Task OnLoadedAsync(Orc.ProjectManagement.IProject project) { }
+        protected virtual System.Threading.Tasks.Task OnLoadingAsync(Orc.ProjectManagement.ProjectCancelEventArgs e) { }
+        protected virtual System.Threading.Tasks.Task OnLoadingCanceledAsync(string location) { }
+        protected virtual System.Threading.Tasks.Task OnLoadingFailedAsync(string location, System.Exception exception, Catel.Data.IValidationContext validationContext) { }
+        protected virtual System.Threading.Tasks.Task OnRefreshedAsync(Orc.ProjectManagement.IProject project) { }
+        protected virtual System.Threading.Tasks.Task OnRefreshingAsync(Orc.ProjectManagement.ProjectCancelEventArgs e) { }
+        protected virtual System.Threading.Tasks.Task OnRefreshingCanceledAsync(Orc.ProjectManagement.IProject project) { }
+        protected virtual System.Threading.Tasks.Task OnRefreshingFailedAsync(Orc.ProjectManagement.IProject project, System.Exception exception, Catel.Data.IValidationContext validationContext) { }
+        protected virtual System.Threading.Tasks.Task OnSavedAsync(Orc.ProjectManagement.IProject project) { }
+        protected virtual System.Threading.Tasks.Task OnSavingAsync(Orc.ProjectManagement.ProjectCancelEventArgs e) { }
+        protected virtual System.Threading.Tasks.Task OnSavingCanceledAsync(Orc.ProjectManagement.IProject project) { }
+        protected virtual System.Threading.Tasks.Task OnSavingFailedAsync(Orc.ProjectManagement.IProject project, System.Exception exception) { }
     }
     public abstract class ProjectReaderBase : Orc.ProjectManagement.IProjectReader
     {
