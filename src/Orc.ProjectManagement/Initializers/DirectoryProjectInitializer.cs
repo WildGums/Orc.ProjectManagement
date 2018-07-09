@@ -33,24 +33,18 @@ namespace Orc.ProjectManagement
         public virtual async Task<IEnumerable<string>> GetInitialLocationsAsync()
         {
             var locations = new List<string>();
-
-            var silence = true;
             var dataDirectory = _configurationService.GetRoamingValue<string>("DataLocation");
             if (string.IsNullOrWhiteSpace(dataDirectory))
             {
-                // TODO: This code should be available in Catel 5.4 for all platforms
-#if NET
                 dataDirectory = Path.Combine(Catel.IO.Path.GetApplicationDataDirectory(), "data");
 
                 Log.Debug("DataLocation is empty in configuration, determining the data directory automatically to '{0}'", dataDirectory);
-#endif
             }
 
             var initialLocation = await _initialProjectLocationService.GetInitialProjectLocationAsync();
             if (!string.IsNullOrWhiteSpace(initialLocation))
             {
                 dataDirectory = initialLocation;
-                silence = false;
             }
 
             if (string.IsNullOrWhiteSpace(initialLocation))
@@ -61,17 +55,7 @@ namespace Orc.ProjectManagement
             var fullPath = Path.GetFullPath(dataDirectory);
             if (!Directory.Exists(fullPath))
             {
-                var message = string.Format("Cannot use the data directory '{0}', it does not exist", fullPath);
-
-                if (!silence)
-                {
-                    Log.Warning(message);
-                }
-                else
-                {
-                    Log.Debug(message);
-                }
-
+                Log.Debug("Cannot use the data directory '{0}', it does not exist", fullPath);
                 return null;
             }
 

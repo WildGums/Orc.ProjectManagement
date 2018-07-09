@@ -253,7 +253,7 @@ namespace Orc.ProjectManagement
         public static readonly Catel.Data.PropertyData IdProperty;
         public static readonly Catel.Data.PropertyData LocationProperty;
         public static readonly Catel.Data.PropertyData TitleProperty;
-        public ProjectBase(string location) { }
+        protected ProjectBase(string location) { }
         protected ProjectBase(string location, string title) { }
         public virtual System.DateTime CreatedOn { get; set; }
         public int Id { get; }

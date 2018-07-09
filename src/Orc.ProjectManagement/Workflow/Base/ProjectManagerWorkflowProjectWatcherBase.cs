@@ -20,7 +20,6 @@ namespace Orc.ProjectManagement
     public abstract class ProjectManagerWorkflowProjectWatcherBase : ProjectWatcherBase
     {
         #region Fields
-        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
         private readonly Dictionary<string, Stack<IProjectManagerWorkflowItem>> _activationStacks = new Dictionary<string, Stack<IProjectManagerWorkflowItem>>();
         private readonly Dictionary<string, Stack<IProjectManagerWorkflowItem>> _closingStacks = new Dictionary<string, Stack<IProjectManagerWorkflowItem>>();
         private readonly Dictionary<string, Stack<IProjectManagerWorkflowItem>> _loadingStacks = new Dictionary<string, Stack<IProjectManagerWorkflowItem>>();

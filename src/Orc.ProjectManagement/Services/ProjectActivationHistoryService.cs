@@ -97,6 +97,7 @@ namespace Orc.ProjectManagement
 
             while (_activationHistory.Remove(project))
             {
+                // Continue
             }
 
             _uniqueLocations.Remove(project.Location);

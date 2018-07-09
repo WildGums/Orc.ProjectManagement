@@ -576,7 +576,7 @@ namespace Orc.ProjectManagement
             {
                 Log.Debug("Saving project '{0}' to '{1}'", project, location);
 
-                // TODO: Support SaveAs where we store the new location, but we need to make sure that we also remove 
+                // We could support SaveAs where we store the new location, but we need to make sure that we also remove 
                 // the old one (and revert on failure & cancel). For now this is sufficient (we will just get a new instance)
                 _projectStateSetter.SetProjectSaving(location, true);
 

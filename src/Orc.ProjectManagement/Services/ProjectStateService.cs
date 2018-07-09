@@ -15,8 +15,6 @@ namespace Orc.ProjectManagement
     public class ProjectStateService : IProjectStateService, IProjectStateSetter
     {
         #region Fields
-        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
-
         private readonly Dictionary<string, ProjectState> _projectStates = new Dictionary<string, ProjectState>();
         private bool _isRefreshingActiveProject;
         #endregion
@@ -88,7 +86,7 @@ namespace Orc.ProjectManagement
                 return;
             }
 
-            if (!string.IsNullOrEmpty(location) && GetProjectState(location).IsRefreshing)
+            if (GetProjectState(location).IsRefreshing)
             {
                 IsRefreshingActiveProject = value;
             }

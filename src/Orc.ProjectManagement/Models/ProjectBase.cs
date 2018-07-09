@@ -13,7 +13,7 @@ namespace Orc.ProjectManagement
 
     public abstract class ProjectBase : ModelBase, IProject
     {
-        public ProjectBase(string location)
+        protected ProjectBase(string location)
             : this(location, location) { }
 
         protected ProjectBase(string location, string title)

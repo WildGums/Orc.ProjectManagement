@@ -35,7 +35,10 @@ namespace Orc.ProjectManagement
 
             foreach (var project in _projectManager.Projects.ToList())
             {
-                return !await _projectManager.CloseAsync(project);
+                if (!await _projectManager.CloseAsync(project))
+                {
+                    return false;
+                }
             }
 
             return true;
