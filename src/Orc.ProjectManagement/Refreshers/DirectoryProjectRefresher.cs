@@ -35,6 +35,7 @@ namespace Orc.ProjectManagement
 
             _fileSystemWatcher = new FileSystemWatcher(location, filter);
             _fileSystemWatcher.NotifyFilter = NotifyFilters.LastWrite;
+            _fileSystemWatcher.IncludeSubdirectories = true;
             _fileSystemWatcher.Created += OnFileSystemWatcherChanged;
             _fileSystemWatcher.Changed += OnFileSystemWatcherChanged;
             _fileSystemWatcher.EnableRaisingEvents = true;
