@@ -189,6 +189,20 @@ Task("Package")
 });
 
 //-------------------------------------------------------------
+
+Task("PackageLocal")
+    .IsDependentOn("Package")
+    .Does(() =>
+{
+    Information("Copying build artifacts to '{0}'", NuGetLocalPackagesDirectory);
+    
+    CreateDirectory(NuGetLocalPackagesDirectory);
+
+    var nugetPackages = GetFiles(string.Format("{0}/**/*.nupkg", OutputRootDirectory));
+    CopyFiles(nugetPackages, NuGetLocalPackagesDirectory);
+});
+
+//-------------------------------------------------------------
 // Wrapper tasks since we don't want to add "Build" as a 
 // dependency to "Package" because we want to run in multiple
 // stages
@@ -197,6 +211,12 @@ Task("Package")
 Task("BuildAndPackage")
     .IsDependentOn("Build")
     .IsDependentOn("Package");
+
+//-------------------------------------------------------------
+
+Task("BuildAndPackageLocal")
+    .IsDependentOn("Build")
+    .IsDependentOn("PackageLocal");
 
 //-------------------------------------------------------------
 
