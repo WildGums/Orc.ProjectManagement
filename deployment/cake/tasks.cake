@@ -217,7 +217,11 @@ Task("PackageLocal")
         {
             Information("Deleting already existing NuGet cached version from '{0}'", cacheDirectory);
             
-            DeleteDirectory(cacheDirectory, true);
+            DeleteDirectory(cacheDirectory, new DeleteDirectorySettings()
+            {
+                Force = true,
+                Recursive = true
+            });
         }
         
         var sourceFile = string.Format("{0}/{1}.{2}.nupkg", OutputRootDirectory, component, VersionNuGet);
