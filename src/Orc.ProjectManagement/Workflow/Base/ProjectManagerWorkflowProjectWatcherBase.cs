@@ -72,7 +72,8 @@ namespace Orc.ProjectManagement
 
             var stack = GetProjectWorkflowItemsStack(stacksDictionary, projectLocation);
 
-            foreach (var item in projectWorkflowItems)
+            var workflowItems = projectWorkflowItems.ToArray();
+            foreach (var item in workflowItems)
             {
                 if (!await actionAsync(item))
                 {
