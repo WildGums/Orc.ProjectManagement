@@ -195,12 +195,34 @@ Task("PackageLocal")
     .IsDependentOn("Package")
     .Does(() =>
 {
+    // For now only package components, we might need to move this to components-tasks.cake in the future
+    if (!HasComponents())
+    {
+        return;
+    }
+
     Information("Copying build artifacts to '{0}'", NuGetLocalPackagesDirectory);
     
     CreateDirectory(NuGetLocalPackagesDirectory);
 
-    var nugetPackages = GetFiles(string.Format("{0}/**/*.nupkg", OutputRootDirectory));
-    CopyFiles(nugetPackages, NuGetLocalPackagesDirectory);
+    foreach (var component in Components)
+    {
+        Information("Copying build artifact for '{0}'", component);
+    
+        var cacheDirectory = Environment.ExpandEnvironmentVariables(string.Format("%userprofile%/.nuget/packages/{0}/{1}", component, VersionNuGet));
+
+        //Information("Checking for existing local NuGet cached version at '{0}'", cacheDirectory);
+
+        if (DirectoryExists(cacheDirectory))
+        {
+            Information("Deleting already existing NuGet cached version from '{0}'", cacheDirectory);
+            
+            DeleteDirectory(cacheDirectory, true);
+        }
+        
+        var sourceFile = string.Format("{0}/{1}.{2}.nupkg", OutputRootDirectory, component, VersionNuGet);
+        CopyFiles(new [] { sourceFile }, NuGetLocalPackagesDirectory);
+    }
 });
 
 //-------------------------------------------------------------
@@ -222,7 +244,7 @@ Task("BuildAndPackageLocal")
 //-------------------------------------------------------------
 
 Task("Default")
-	.IsDependentOn("BuildAndPackage");
+    .IsDependentOn("BuildAndPackage");
 
 //-------------------------------------------------------------
 
