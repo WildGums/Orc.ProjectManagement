@@ -211,7 +211,7 @@ Task("PackageLocal")
     
         var cacheDirectory = Environment.ExpandEnvironmentVariables(string.Format("%userprofile%/.nuget/packages/{0}/{1}", component, VersionNuGet));
 
-        //Information("Checking for existing local NuGet cached version at '{0}'", cacheDirectory);
+        Information("Checking for existing local NuGet cached version at '{0}'", cacheDirectory);
 
         if (DirectoryExists(cacheDirectory))
         {
