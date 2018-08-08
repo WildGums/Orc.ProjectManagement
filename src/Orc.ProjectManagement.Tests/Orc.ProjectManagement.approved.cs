@@ -41,8 +41,9 @@ namespace Orc.ProjectManagement
     public class DirectoryProjectRefresher : Orc.ProjectManagement.ProjectRefresherBase
     {
         public DirectoryProjectRefresher(string projectLocation, string directoryToWatch) { }
-        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter) { }
+        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter, bool includeSubDirectories = False) { }
         public string FileFilter { get; }
+        public bool IncludeSubDirectories { get; set; }
         protected override void SubscribeToLocation(string location) { }
         protected override void UnsubscribeFromLocation(string location) { }
     }

@@ -17,17 +17,37 @@ namespace Orc.ProjectManagement
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
         private FileSystemWatcher _fileSystemWatcher;
+        private bool _includeSubDirectories;
 
         public DirectoryProjectRefresher(string projectLocation, string directoryToWatch)
             : this(projectLocation, directoryToWatch, null) { }
 
-        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter)
+        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter,
+            bool includeSubDirectories = false)
             : base(projectLocation, directoryToWatch)
         {
             FileFilter = fileFilter;
+            
+            _includeSubDirectories = includeSubDirectories;
         }
 
         public string FileFilter { get; private set; }
+
+        public bool IncludeSubDirectories
+        {
+            get => _includeSubDirectories;
+            set
+            {
+                _includeSubDirectories = value;
+
+                if (_fileSystemWatcher is null)
+                {
+                    return;
+                }
+
+                UpdateIncludeSubDirectories();
+            }
+        }
 
         protected override void SubscribeToLocation(string location)
         {
@@ -35,7 +55,9 @@ namespace Orc.ProjectManagement
 
             _fileSystemWatcher = new FileSystemWatcher(location, filter);
             _fileSystemWatcher.NotifyFilter = NotifyFilters.LastWrite;
-            _fileSystemWatcher.IncludeSubdirectories = true;
+
+            UpdateIncludeSubDirectories();
+            
             _fileSystemWatcher.Created += OnFileSystemWatcherChanged;
             _fileSystemWatcher.Changed += OnFileSystemWatcherChanged;
             _fileSystemWatcher.EnableRaisingEvents = true;
@@ -44,9 +66,15 @@ namespace Orc.ProjectManagement
         protected override void UnsubscribeFromLocation(string location)
         {
             _fileSystemWatcher.EnableRaisingEvents = false;
+
             _fileSystemWatcher.Created -= OnFileSystemWatcherChanged;
             _fileSystemWatcher.Changed -= OnFileSystemWatcherChanged;
             _fileSystemWatcher = null;
+        }
+
+        private void UpdateIncludeSubDirectories()
+        {
+            _fileSystemWatcher.IncludeSubdirectories = _includeSubDirectories;
         }
 
         private void OnFileSystemWatcherChanged(object sender, FileSystemEventArgs e)
