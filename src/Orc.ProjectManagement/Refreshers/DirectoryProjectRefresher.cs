@@ -22,8 +22,13 @@ namespace Orc.ProjectManagement
         public DirectoryProjectRefresher(string projectLocation, string directoryToWatch)
             : this(projectLocation, directoryToWatch, null) { }
 
+        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter)
+        : this(projectLocation, directoryToWatch, fileFilter, false)
+        {
+        }
+
         public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter,
-            bool includeSubDirectories = false)
+            bool includeSubDirectories)
             : base(projectLocation, directoryToWatch)
         {
             FileFilter = fileFilter;
