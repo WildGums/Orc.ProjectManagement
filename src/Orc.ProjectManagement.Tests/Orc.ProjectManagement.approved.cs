@@ -42,7 +42,9 @@ namespace Orc.ProjectManagement
     {
         public DirectoryProjectRefresher(string projectLocation, string directoryToWatch) { }
         public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter) { }
+        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter, bool includeSubDirectories) { }
         public string FileFilter { get; }
+        public bool IncludeSubDirectories { get; set; }
         protected override void SubscribeToLocation(string location) { }
         protected override void UnsubscribeFromLocation(string location) { }
     }
