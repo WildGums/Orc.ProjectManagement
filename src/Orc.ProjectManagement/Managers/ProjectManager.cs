@@ -411,18 +411,24 @@ namespace Orc.ProjectManagement
                     await SetActiveProjectAsync(null).ConfigureAwait(false);
                 }
 
-                validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(projectLocation);
-                if (validationContext.HasErrors)
+                if (_projectValidator.ValidateLocationOnRefresh)
                 {
-                    throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{projectLocation}', the validator returned errors");
+                    validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(projectLocation);
+                    if (validationContext.HasErrors)
+                    {
+                        throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{projectLocation}', the validator returned errors");
+                    }
                 }
 
                 var loadedProject = await QuietlyLoadProjectAsync(projectLocation, false).ConfigureAwait(false);
 
-                validationContext = await _projectValidator.ValidateProjectAsync(loadedProject);
-                if (validationContext.HasErrors)
+                if (_projectValidator.ValidateProjectOnRefresh)
                 {
-                    throw Log.ErrorAndCreateException<InvalidOperationException>($"Project data was loaded from '{projectLocation}', but the validator returned errors");
+                    validationContext = await _projectValidator.ValidateProjectAsync(loadedProject);
+                    if (validationContext.HasErrors)
+                    {
+                        throw Log.ErrorAndCreateException<InvalidOperationException>($"Project data was loaded from '{projectLocation}', but the validator returned errors");
+                    }
                 }
 
                 RegisterProject(loadedProject);

@@ -224,6 +224,8 @@ namespace Orc.ProjectManagement
     }
     public interface IProjectValidator
     {
+        bool ValidateLocationOnRefresh { get; }
+        bool ValidateProjectOnRefresh { get; }
         System.Threading.Tasks.Task<bool> CanStartLoadingProjectAsync(string location);
         System.Threading.Tasks.Task<Catel.Data.IValidationContext> ValidateProjectAsync(Orc.ProjectManagement.IProject project);
         System.Threading.Tasks.Task<Catel.Data.IValidationContext> ValidateProjectBeforeLoadingAsync(string location);
@@ -486,6 +488,8 @@ namespace Orc.ProjectManagement
     public abstract class ProjectValidatorBase : Orc.ProjectManagement.IProjectValidator
     {
         protected ProjectValidatorBase() { }
+        public virtual bool ValidateLocationOnRefresh { get; }
+        public virtual bool ValidateProjectOnRefresh { get; }
         public virtual System.Threading.Tasks.Task<bool> CanStartLoadingProjectAsync(string location) { }
         public virtual System.Threading.Tasks.Task<Catel.Data.IValidationContext> ValidateProjectAsync(Orc.ProjectManagement.IProject project) { }
         public virtual System.Threading.Tasks.Task<Catel.Data.IValidationContext> ValidateProjectBeforeLoadingAsync(string location) { }
