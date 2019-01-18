@@ -13,6 +13,22 @@ namespace Orc.ProjectManagement
 
     public abstract class ProjectValidatorBase : IProjectValidator
     {
+        public virtual bool ValidateLocationOnRefresh
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public virtual bool ValidateProjectOnRefresh
+        {
+            get
+            {
+                return true;
+            }
+        }
+
         public virtual Task<bool> CanStartLoadingProjectAsync(string location)
         {
             return TaskHelper<bool>.FromResult(true);
