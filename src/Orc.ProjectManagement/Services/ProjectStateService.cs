@@ -28,7 +28,7 @@ namespace Orc.ProjectManagement
                 if (_isRefreshingActiveProject != value)
                 {
                     _isRefreshingActiveProject = value;
-                    IsRefreshingActiveProjectUpdated.SafeInvoke(this);
+                    IsRefreshingActiveProjectUpdated?.Invoke(this, EventArgs.Empty);
                 }
             }
         }
@@ -155,7 +155,7 @@ namespace Orc.ProjectManagement
                 updateAction(projectState);
             }
 
-            ProjectStateUpdated.SafeInvoke(this, () => new ProjectStateEventArgs(new ProjectState(projectState)));
+            ProjectStateUpdated?.Invoke(this, new ProjectStateEventArgs(new ProjectState(projectState)));
         }
         #endregion
     }

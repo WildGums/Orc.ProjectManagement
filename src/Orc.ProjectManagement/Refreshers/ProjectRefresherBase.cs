@@ -109,7 +109,7 @@ namespace Orc.ProjectManagement
 
         protected void RaiseUpdated(string fileName)
         {
-            Updated.SafeInvoke(this, new ProjectFileSystemEventArgs(ProjectLocation, fileName));
+            Updated?.Invoke(this, new ProjectFileSystemEventArgs(ProjectLocation, fileName));
         }
 
         private Task OnProjectManagerSavingAsync(object sender, ProjectCancelEventArgs e)
