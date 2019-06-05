@@ -40,6 +40,8 @@ namespace Orc.ProjectManagement
 
         private readonly HashSet<string> _loadingProjects = new HashSet<string>();
         private readonly HashSet<string> _savingProjects = new HashSet<string>();
+
+        private readonly AsyncLock _synchronizedCommonAsyncLock = new AsyncLock();
         #endregion
 
         #region Constructors
@@ -321,13 +323,70 @@ namespace Orc.ProjectManagement
 
             return projectWriter.WriteAsync(project, location);
         }
-
+        
         private async Task<T> SynchronizeProjectOperationAsync<T>(string projectLocation, Func<Task<T>> operation)
         {
             Argument.IsNotNullOrEmpty(() => projectLocation);
 
+            var countedAsyncLock = await InitializeSynchronizationContext<T>(projectLocation);
+
+            var asyncLock = countedAsyncLock.AsyncLock;
+            var refCount = countedAsyncLock.RefCount;
+
+            try
+            {
+                using (await asyncLock.LockAsync())
+                {
+                    Log.Debug($"Start synchronized operation for '{projectLocation}' refCount = {refCount}]");
+                    return await operation();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Failed to execute synchronized operation for '{projectLocation}' refCount = {refCount}]");
+                throw;
+            }
+            finally
+            {
+                await ReleaseSynchronizationContext<T>(projectLocation);
+            }
+        }
+
+        private async Task ReleaseSynchronizationContext<T>(string projectLocation)
+        {
+            Log.Debug($"Releasing operation synchronization context for '{projectLocation}'");
+
+            using (await _synchronizedCommonAsyncLock.LockAsync())
+            {
+                if (!_projectOperationRefCounts.TryGetValue(projectLocation, out var refCount))
+                {
+                    refCount = 0;
+                }
+
+                refCount--;
+
+                if (refCount >= 1)
+                {
+                    _projectOperationRefCounts[projectLocation] = refCount;
+                }
+                else
+                {
+                    _projectOperationRefCounts.Remove(projectLocation);
+                    _projectOperationLockers.Remove(projectLocation);
+                }
+            }
+
+            Log.Debug($"Released operation synchronization context for '{projectLocation}'");
+        }
+
+        private async Task<OperationSynchronizationContext> InitializeSynchronizationContext<T>(string projectLocation)
+        {
             AsyncLock asyncLock;
-            lock (_projectOperationLockers)
+            int refCount;
+
+            Log.Debug($"Initializing operation synchronization context for '{projectLocation}'");
+
+            using (await _synchronizedCommonAsyncLock.LockAsync())
             {
                 if (!_projectOperationLockers.TryGetValue(projectLocation, out asyncLock))
                 {
@@ -335,7 +394,7 @@ namespace Orc.ProjectManagement
                     _projectOperationLockers.Add(projectLocation, asyncLock);
                 }
 
-                if (!_projectOperationRefCounts.TryGetValue(projectLocation, out int refCount))
+                if (!_projectOperationRefCounts.TryGetValue(projectLocation, out refCount))
                 {
                     refCount = 0;
                 }
@@ -345,35 +404,13 @@ namespace Orc.ProjectManagement
                 _projectOperationRefCounts[projectLocation] = refCount;
             }
 
-            try
-            {
-                using (await asyncLock.LockAsync())
-                {
-                    return await operation();
-                }
-            }
-            finally
-            {
-                lock (_projectOperationLockers)
-                {
-                    if (!_projectOperationRefCounts.TryGetValue(projectLocation, out int refCount))
-                    {
-                        refCount = 0;
-                    }
+            Log.Debug($"Initialized operation synchronization context for '{projectLocation}' refCount = [{refCount}]");
 
-                    refCount--;
-
-                    if (refCount >= 1)
-                    {
-                        _projectOperationRefCounts[projectLocation] = refCount;
-                    }
-                    else
-                    {
-                        _projectOperationRefCounts.Remove(projectLocation);
-                        _projectOperationLockers.Remove(projectLocation);
-                    }
-                }
-            }
+            return new OperationSynchronizationContext
+            {
+                AsyncLock = asyncLock, 
+                RefCount = refCount
+            };
         }
 
         private async Task<bool> SyncedRefreshAsync(IProject project)
@@ -782,5 +819,12 @@ namespace Orc.ProjectManagement
             }
         }
         #endregion
+
+
+        private class OperationSynchronizationContext
+        {
+            public AsyncLock AsyncLock { get; set; }
+            public int RefCount { get; set; }
+        } 
     }
 }
