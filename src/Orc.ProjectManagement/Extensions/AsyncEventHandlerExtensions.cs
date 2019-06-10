@@ -1,7 +1,6 @@
 ﻿namespace Orc.ProjectManagement
 {
     using System;
-    using System.Threading;
     using System.Threading.Tasks;
     using Catel;
     using Catel.Logging;
@@ -18,20 +17,15 @@
                 return false;
             }
 
-            using (var cts = new CancellationTokenSource())
+            var task = handler.SafeInvokeAsync(sender, e, allowParallelExecution);
+            var completedTask = await Task.WhenAny(task, Task.Delay(timeout));
+
+            if (completedTask != task)
             {
-                var cancellationToken = cts.Token;
-
-                var task = handler.SafeInvokeAsync(sender, e, allowParallelExecution);
-                var completedTask = await Task.WhenAny(task, Task.Delay(timeout, cancellationToken));
-
-                if (completedTask == task)
-                {
-                    return await task;
-                }
+                Log.Warning("Raising project management event has timed out");
             }
 
-            throw new TimeoutException("Raising project management event has timed out");
+            return await task;
         }
     }
 }

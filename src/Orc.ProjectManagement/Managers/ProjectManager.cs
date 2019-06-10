@@ -429,7 +429,7 @@ namespace Orc.ProjectManagement
             _projectStateSetter.SetProjectRefreshing(projectLocation, true, isRefreshingActiveProject);
 
             var cancelEventArgs = new ProjectCancelEventArgs(project);
-            await ProjectRefreshingAsync.SafeInvokeWithTimeoutAsync(this, cancelEventArgs, 3000, false);
+            await ProjectRefreshingAsync.SafeInvokeWithTimeoutAsync(this, cancelEventArgs, DefaultTimeout, false);
 
             Exception error = null;
             IValidationContext validationContext = null;
