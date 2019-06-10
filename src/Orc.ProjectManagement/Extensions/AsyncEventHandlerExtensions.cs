@@ -20,7 +20,7 @@
 
             try
             {
-                Log.Warning($"Handling project management event '{eventName}'");
+                Log.Debug($"Handling project management event '{eventName}'");
 
                 var task = SafeInvokeAsync(handler, sender, e);
                 var completedTask = await Task.WhenAny(task, Task.Delay(timeout));
