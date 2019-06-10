@@ -13,6 +13,11 @@ namespace Orc.ProjectManagement
         public override System.Threading.Tasks.Task ClosedAsync(Orc.ProjectManagement.IProject project) { }
         public override System.Threading.Tasks.Task LoadingFailedAsync(string location, System.Exception exception, Catel.Data.IValidationContext validationContext) { }
     }
+    public class static AsyncEventHandlerExtensions
+    {
+        public static System.Threading.Tasks.Task<bool> SafeInvokeWithTimeoutAsync<TEventArgs>(this Catel.AsyncEventHandler<TEventArgs> handler, string eventName, object sender, TEventArgs e, int timeout)
+            where TEventArgs : System.EventArgs { }
+    }
     public class CloseBeforeLoadProjectWatcher : Orc.ProjectManagement.ProjectWatcherBase
     {
         public CloseBeforeLoadProjectWatcher(Orc.ProjectManagement.IProjectManager projectManager, Catel.IoC.ITypeFactory typeFactory) { }
