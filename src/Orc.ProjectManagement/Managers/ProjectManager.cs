@@ -22,8 +22,11 @@ namespace Orc.ProjectManagement
 
     public class ProjectManager : IProjectManager, INeedCustomInitialization
     {
+        private const int DefaultTimeout = 3000;
+
         #region Fields
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+
         private readonly IProjectInitializer _projectInitializer;
         private readonly IProjectManagementInitializationService _projectManagementInitializationService;
         private readonly IProjectStateSetter _projectStateSetter;
@@ -247,7 +250,7 @@ namespace Orc.ProjectManagement
                 _projectStateSetter.SetProjectDeactivating(activeProject?.Location, true);
                 _projectStateSetter.SetProjectActivating(project?.Location, true);
 
-                await ProjectActivationAsync.SafeInvokeAsync(this, eventArgs, false).ConfigureAwait(false);
+                await ProjectActivationAsync.SafeInvokeWithTimeoutAsync(this, eventArgs, DefaultTimeout, false).ConfigureAwait(false);
 
                 if (eventArgs.Cancel)
                 {
@@ -257,7 +260,7 @@ namespace Orc.ProjectManagement
 
                     _projectStateSetter.SetProjectActivating(project?.Location, false);
 
-                    await ProjectActivationCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
+                    await ProjectActivationCanceledAsync.SafeInvokeWithTimeoutAsync(this, new ProjectEventArgs(project), DefaultTimeout, false).ConfigureAwait(false);
                     return false;
                 }
 
@@ -279,14 +282,14 @@ namespace Orc.ProjectManagement
                         : "Failed to deactivate currently active project");
 
                     _projectStateSetter.SetProjectActivating(project?.Location ?? string.Empty, false);
-                    await ProjectActivationFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(project, exception)).ConfigureAwait(false);
+                    await ProjectActivationFailedAsync.SafeInvokeWithTimeoutAsync(this, new ProjectErrorEventArgs(project, exception), DefaultTimeout, false).ConfigureAwait(false);
                     return false;
                 }
 
                 _projectStateSetter.SetProjectDeactivating(activeProject?.Location, false);
                 _projectStateSetter.SetProjectActivating(project?.Location, false);
 
-                await ProjectActivatedAsync.SafeInvokeAsync(this, new ProjectUpdatedEventArgs(activeProject, project)).ConfigureAwait(false);
+                await ProjectActivatedAsync.SafeInvokeWithTimeoutAsync(this, new ProjectUpdatedEventArgs(activeProject, project), DefaultTimeout, false).ConfigureAwait(false);
 
                 Log.Debug(project != null
                     ? $"Activating project '{project.Location}' was canceled"
@@ -426,7 +429,7 @@ namespace Orc.ProjectManagement
             _projectStateSetter.SetProjectRefreshing(projectLocation, true, isRefreshingActiveProject);
 
             var cancelEventArgs = new ProjectCancelEventArgs(project);
-            await ProjectRefreshingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
+            await ProjectRefreshingAsync.SafeInvokeWithTimeoutAsync(this, cancelEventArgs, 3000, false);
 
             Exception error = null;
             IValidationContext validationContext = null;
@@ -437,7 +440,7 @@ namespace Orc.ProjectManagement
                 {
                     _projectStateSetter.SetProjectRefreshing(projectLocation, false, true);
 
-                    await ProjectRefreshingCanceledAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(project)).ConfigureAwait(false);
+                    await ProjectRefreshingCanceledAsync.SafeInvokeWithTimeoutAsync(this, new ProjectErrorEventArgs(project), DefaultTimeout, false).ConfigureAwait(false);
                     return false;
                 }
 
@@ -473,7 +476,7 @@ namespace Orc.ProjectManagement
                 // Note: we disable IsRefreshingActiveProject at Activated event, that is why isActiveProject == false
                 _projectStateSetter.SetProjectRefreshing(projectLocation, true, false);
 
-                await ProjectRefreshedAsync.SafeInvokeAsync(this, new ProjectEventArgs(loadedProject)).ConfigureAwait(false);
+                await ProjectRefreshedAsync.SafeInvokeWithTimeoutAsync(this, new ProjectEventArgs(loadedProject), DefaultTimeout, false).ConfigureAwait(false);
 
                 if (isRefreshingActiveProject)
                 {
@@ -500,7 +503,7 @@ namespace Orc.ProjectManagement
                 new ProjectException(project, $"Failed to load project from location '{projectLocation}' while refreshing.", error),
                 validationContext);
 
-            await ProjectRefreshingFailedAsync.SafeInvokeAsync(this, eventArgs).ConfigureAwait(false);
+            await ProjectRefreshingFailedAsync.SafeInvokeWithTimeoutAsync(this, eventArgs, DefaultTimeout, false).ConfigureAwait(false);
 
             return false;
         }
@@ -535,7 +538,7 @@ namespace Orc.ProjectManagement
 
                 var cancelEventArgs = new ProjectCancelEventArgs(location);
 
-                await ProjectLoadingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
+                await ProjectLoadingAsync.SafeInvokeWithTimeoutAsync(this, cancelEventArgs, DefaultTimeout, false).ConfigureAwait(false);
 
                 if (cancelEventArgs.Cancel)
                 {
@@ -543,7 +546,7 @@ namespace Orc.ProjectManagement
 
                     _projectStateSetter.SetProjectLoading(location, false);
 
-                    await ProjectLoadingCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(location)).ConfigureAwait(false);
+                    await ProjectLoadingCanceledAsync.SafeInvokeWithTimeoutAsync(this, new ProjectEventArgs(location), DefaultTimeout, false).ConfigureAwait(false);
 
                     return null;
                 }
@@ -593,14 +596,14 @@ namespace Orc.ProjectManagement
                 {
                     _projectStateSetter.SetProjectLoading(location, false);
 
-                    await ProjectLoadingFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(location, error, validationContext)).ConfigureAwait(false);
+                    await ProjectLoadingFailedAsync.SafeInvokeWithTimeoutAsync(this, new ProjectErrorEventArgs(location, error, validationContext), DefaultTimeout, false).ConfigureAwait(false);
 
                     return null;
                 }
 
                 _projectStateSetter.SetProjectLoading(project?.Location, false);
 
-                await ProjectLoadedAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
+                await ProjectLoadedAsync.SafeInvokeWithTimeoutAsync(this, new ProjectEventArgs(project), DefaultTimeout, false).ConfigureAwait(false);
 
                 Log.Info("Loaded project from '{0}'", location);
             }
@@ -626,14 +629,14 @@ namespace Orc.ProjectManagement
                 _projectStateSetter.SetProjectSaving(location, true);
 
                 var cancelEventArgs = new ProjectCancelEventArgs(project);
-                await ProjectSavingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
+                await ProjectSavingAsync.SafeInvokeWithTimeoutAsync(this, cancelEventArgs, DefaultTimeout, false).ConfigureAwait(false);
 
                 if (cancelEventArgs.Cancel)
                 {
                     _projectStateSetter.SetProjectSaving(location, false);
 
                     Log.Debug("Canceled saving of project to '{0}'", location);
-                    await ProjectSavingCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
+                    await ProjectSavingCanceledAsync.SafeInvokeWithTimeoutAsync(this, new ProjectEventArgs(project), DefaultTimeout, false).ConfigureAwait(false);
                     return false;
                 }
 
@@ -653,7 +656,7 @@ namespace Orc.ProjectManagement
                     _projectStateSetter.SetProjectSaving(location, false);
 
                     Log.Error(error, "Failed to save project '{0}' to '{1}'", project, location);
-                    await ProjectSavingFailedAsync.SafeInvokeAsync(this, new ProjectErrorEventArgs(project, error)).ConfigureAwait(false);
+                    await ProjectSavingFailedAsync.SafeInvokeWithTimeoutAsync(this, new ProjectErrorEventArgs(project, error), DefaultTimeout, false).ConfigureAwait(false);
 
                     return false;
                 }
@@ -666,7 +669,7 @@ namespace Orc.ProjectManagement
 
                 _projectStateSetter.SetProjectSaving(location, false);
 
-                await ProjectSavedAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
+                await ProjectSavedAsync.SafeInvokeWithTimeoutAsync(this, new ProjectEventArgs(project), DefaultTimeout, false).ConfigureAwait(false);
 
                 var projectString = project.ToString();
                 Log.Info("Saved project '{0}' to '{1}'", projectString, location);
@@ -684,14 +687,14 @@ namespace Orc.ProjectManagement
             _projectStateSetter.SetProjectClosing(project.Location, true);
 
             var cancelEventArgs = new ProjectCancelEventArgs(project);
-            await ProjectClosingAsync.SafeInvokeAsync(this, cancelEventArgs, false).ConfigureAwait(false);
+            await ProjectClosingAsync.SafeInvokeWithTimeoutAsync(this, cancelEventArgs, DefaultTimeout, false).ConfigureAwait(false);
 
             if (cancelEventArgs.Cancel)
             {
                 _projectStateSetter.SetProjectClosing(project.Location, false);
 
                 Log.Debug("Canceled closing project '{0}'", project);
-                await ProjectClosingCanceledAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
+                await ProjectClosingCanceledAsync.SafeInvokeWithTimeoutAsync(this, new ProjectEventArgs(project), DefaultTimeout, false).ConfigureAwait(false);
                 return false;
             }
 
@@ -703,7 +706,7 @@ namespace Orc.ProjectManagement
             UnregisterProject(project);
 
             _projectStateSetter.SetProjectClosing(project.Location, false);
-            await ProjectClosedAsync.SafeInvokeAsync(this, new ProjectEventArgs(project)).ConfigureAwait(false);
+            await ProjectClosedAsync.SafeInvokeWithTimeoutAsync(this, new ProjectEventArgs(project), DefaultTimeout, false).ConfigureAwait(false);
 
             Log.Info("Closed project '{0}'", project);
 
@@ -811,7 +814,7 @@ namespace Orc.ProjectManagement
             if (_projects.TryGetValue(projectLocation, out var project))
             {
                 // Note: not sure why we still need this
-                await ProjectRefreshRequiredAsync.SafeInvokeAsync(this, new ProjectEventArgs(project));
+                await ProjectRefreshRequiredAsync.SafeInvokeWithTimeoutAsync(this, new ProjectEventArgs(project), DefaultTimeout, false);
             }
             else
             {
