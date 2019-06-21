@@ -59,7 +59,7 @@
                 {
                     Log.Debug($"Executing event handler: target '{eventListener.Target}', method '{eventListener.Method.Name}'");
 
-                    await eventListener(sender, e);
+                    await eventListener(sender, e).ConfigureAwait(false);
 
                     Log.Debug($"Event handler successfully executed: target '{eventListener.Target}', method '{eventListener.Method.Name}'");
                 }
