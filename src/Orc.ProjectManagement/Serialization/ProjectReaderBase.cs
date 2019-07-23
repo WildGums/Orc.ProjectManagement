@@ -22,10 +22,16 @@ namespace Orc.ProjectManagement
             Log.Debug("Reading data from '{0}'", location);
 
             var project = await ReadFromLocationAsync(location).ConfigureAwait(false);
+            if (project is null)
+            {
+                Log.Info("Project reader returned no project");
+            }
+            else
+            {
+                project.ClearIsDirty();
 
-            project.ClearIsDirty();
-
-            Log.Info("Read data from '{0}'", location);
+                Log.Info("Read data from '{0}'", location);
+            }
 
             return project;
         }
