@@ -159,7 +159,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
             if (await _saveFileService.DetermineFileAsync())
             {
-                await _projectManager.SaveAsync(_openFileService.FileName).ConfigureAwait(false);
+                await _projectManager.SaveAsync(_saveFileService.FileName).ConfigureAwait(false);
             }
         }
 
