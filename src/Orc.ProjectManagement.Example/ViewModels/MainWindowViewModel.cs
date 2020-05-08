@@ -113,12 +113,15 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
         private async Task OnLoadProjectExecuteAsync()
         {
-            _openFileService.InitialDirectory = Path.Combine(Environment.CurrentDirectory, "Data");
-            _openFileService.Filter = TextFilter;
-
-            if (await _openFileService.DetermineFileAsync())
+            var result = await _openFileService.DetermineFileAsync(new DetermineOpenFileContext
             {
-                await _projectManager.LoadAsync(_openFileService.FileName).ConfigureAwait(false);
+                InitialDirectory = Path.Combine(Environment.CurrentDirectory, "Data"),
+                Filter = TextFilter
+            });
+
+            if (result.Result)
+            {
+                await _projectManager.LoadAsync(result.FileName).ConfigureAwait(false);
             }
         }
 
@@ -155,11 +158,14 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
         private async Task OnSaveProjectAsExecuteAsync()
         {
-            _saveFileService.Filter = TextFilter;
-
-            if (await _saveFileService.DetermineFileAsync())
+            var result = await _saveFileService.DetermineFileAsync(new DetermineSaveFileContext
             {
-                await _projectManager.SaveAsync(_saveFileService.FileName).ConfigureAwait(false);
+                Filter = TextFilter
+            });
+
+            if (result.Result)
+            {
+                await _projectManager.SaveAsync(result.FileName).ConfigureAwait(false);
             }
         }
 
