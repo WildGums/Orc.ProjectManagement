@@ -27,7 +27,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0E1BD4B4
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orc.ProjectManagement", "Orc.ProjectManagement\Orc.ProjectManagement.csproj", "{D05EFBE8-AE89-4C51-84E7-4457D092EA21}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orc.ProjectManagement.Example.NET", "Orc.ProjectManagement.Example.NET\Orc.ProjectManagement.Example.NET.csproj", "{DD06E129-2E18-4F15-936B-8EA7C097E8D6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orc.ProjectManagement.Example", "Orc.ProjectManagement.Example\Orc.ProjectManagement.Example.csproj", "{DD06E129-2E18-4F15-936B-8EA7C097E8D6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orc.ProjectManagement.Tests", "Orc.ProjectManagement.Tests\Orc.ProjectManagement.Tests.csproj", "{E5C4CCB8-C9B8-4B7A-8997-32E95635089A}"
 EndProject
