@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="ProjectManager.cs" company="WildGums">
 //   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
 // </copyright>
@@ -30,6 +30,7 @@ namespace Orc.ProjectManagement
         private readonly IProjectInitializer _projectInitializer;
         private readonly IProjectManagementInitializationService _projectManagementInitializationService;
         private readonly IProjectStateSetter _projectStateSetter;
+        private readonly IProjectStateService _projectStateService;
         private readonly IDictionary<string, IProjectRefresher> _projectRefreshers;
         private readonly IProjectRefresherSelector _projectRefresherSelector;
         private readonly ListDictionary<string, IProject> _projects;
@@ -68,6 +69,7 @@ namespace Orc.ProjectManagement
             _projectInitializer = projectInitializer;
             _projectManagementInitializationService = projectManagementInitializationService;
             _projectStateSetter = (IProjectStateSetter)projectStateService;
+            _projectStateService = projectStateService;
 
             _projects = new ListDictionary<string, IProject>();
             _projectRefreshers = new ConcurrentDictionary<string, IProjectRefresher>(StringComparer.OrdinalIgnoreCase);
@@ -194,14 +196,20 @@ namespace Orc.ProjectManagement
             return SaveAsync(project, location);
         }
 
-        public Task<bool> SaveAsync(IProject project, string location = null)
+        public async Task<bool> SaveAsync(IProject project, string location = null)
         {
             if (string.IsNullOrWhiteSpace(location))
             {
                 location = project.Location;
             }
 
-            return SynchronizeProjectOperationAsync(location, () => SyncedSaveAsync(project, location));
+            var state = _projectStateService.GetProjectState(project);
+            if (state.IsClosing)
+            {
+                return await SyncedSaveAsync(project, location);
+            }
+
+            return await SynchronizeProjectOperationAsync(location, () => SyncedSaveAsync(project, location));
         }
 
         public Task<bool> CloseAsync()
