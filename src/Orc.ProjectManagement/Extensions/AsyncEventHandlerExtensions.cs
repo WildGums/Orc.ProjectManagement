@@ -20,7 +20,7 @@
 
             try
             {
-                Log.Debug($"Handling project management event '{eventName}'");
+                Log.DebugIfAttached($"Handling project management event '{eventName}'");
 
                 var task = SafeInvokeAsync(handler, sender, e);
                 var completedTask = await Task.WhenAny(task, Task.Delay(timeout));
@@ -31,7 +31,7 @@
                 }
                 else
                 {
-                    Log.Debug($"Handled project management event '{eventName}'");
+                    Log.DebugIfAttached($"Handled project management event '{eventName}'");
                 }
 
                 return await task.ConfigureAwait(false);
@@ -57,11 +57,11 @@
             {
                 try
                 {
-                    Log.Debug($"Executing event handler: target '{eventListener.Target}', method '{eventListener.Method.Name}'");
+                    Log.DebugIfAttached($"Executing event handler: target '{eventListener.Target}', method '{eventListener.Method.Name}'");
 
                     await eventListener(sender, e).ConfigureAwait(false);
 
-                    Log.Debug($"Event handler successfully executed: target '{eventListener.Target}', method '{eventListener.Method.Name}'");
+                    Log.DebugIfAttached($"Event handler successfully executed: target '{eventListener.Target}', method '{eventListener.Method.Name}'");
                 }
                 catch (Exception ex)
                 {
