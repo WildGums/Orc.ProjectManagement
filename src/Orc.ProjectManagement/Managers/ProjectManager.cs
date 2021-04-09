@@ -1,4 +1,4 @@
-// --------------------------------------------------------------------------------------------------------------------
+﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="ProjectManager.cs" company="WildGums">
 //   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
 // </copyright>
@@ -204,7 +204,7 @@ namespace Orc.ProjectManagement
             }
 
             var state = _projectStateService.GetProjectState(project);
-            if (state.IsClosing)
+            if (state.IsClosing || state.IsRefreshing)
             {
                 return await SyncedSaveAsync(project, location);
             }
@@ -344,7 +344,7 @@ namespace Orc.ProjectManagement
 
             return projectWriter.WriteAsync(project, location);
         }
-        
+
         private async Task<T> SynchronizeProjectOperationAsync<T>(string projectLocation, Func<Task<T>> operation)
         {
             Argument.IsNotNullOrEmpty(() => projectLocation);
@@ -429,7 +429,7 @@ namespace Orc.ProjectManagement
 
             return new OperationSynchronizationContext
             {
-                AsyncLock = asyncLock, 
+                AsyncLock = asyncLock,
                 RefCount = refCount
             };
         }
@@ -650,7 +650,7 @@ namespace Orc.ProjectManagement
             {
                 Log.Debug("Saving project '{0}' to '{1}'", project, location);
 
-                // We could support SaveAs where we store the new location, but we need to make sure that we also remove 
+                // We could support SaveAs where we store the new location, but we need to make sure that we also remove
                 // the old one (and revert on failure & cancel). For now this is sufficient (we will just get a new instance)
                 _projectStateSetter.SetProjectSaving(location, true);
 
@@ -864,6 +864,6 @@ namespace Orc.ProjectManagement
         {
             public AsyncLock AsyncLock { get; set; }
             public int RefCount { get; set; }
-        } 
+        }
     }
 }
