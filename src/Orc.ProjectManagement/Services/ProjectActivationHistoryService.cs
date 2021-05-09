@@ -22,7 +22,7 @@ namespace Orc.ProjectManagement
         #region Methods
         public void Remember(IProject project)
         {
-            if (project == null || _isHistoryUsageSuspended)
+            if (project is null || _isHistoryUsageSuspended)
             {
                 return;
             }
@@ -37,7 +37,7 @@ namespace Orc.ProjectManagement
 
         public void Forget(IProject project)
         {
-            if (project == null)
+            if (project is null)
             {
                 return;
             }
@@ -90,7 +90,7 @@ namespace Orc.ProjectManagement
 
         private void RemoveFromHistory(IProject project)
         {
-            if (project == null)
+            if (project is null)
             {
                 return;
             }

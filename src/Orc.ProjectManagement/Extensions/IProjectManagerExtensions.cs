@@ -25,7 +25,7 @@ namespace Orc.ProjectManagement
             Argument.IsNotNull(() => projectManager);
 
             var activeProject = projectManager.ActiveProject;
-            return activeProject == null ? null : activeProject.Location;
+            return activeProject is null ? null : activeProject.Location;
         }
         #endregion
     }

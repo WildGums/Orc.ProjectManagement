@@ -36,7 +36,7 @@ namespace Orc.ProjectManagement
         {
             await base.ActivatedAsync(oldProject, newProject);
 
-            if (newProject == null)
+            if (newProject is null)
             {
                 return;
             }
@@ -48,7 +48,7 @@ namespace Orc.ProjectManagement
         {
             await base.ClosedAsync(project);
 
-            if (project == null)
+            if (project is null)
             {
                 return;
             }
@@ -64,7 +64,7 @@ namespace Orc.ProjectManagement
         {
             await base.LoadingFailedAsync(location, exception, validationContext);
 
-            if (_projectManager.ActiveProject == null)
+            if (_projectManager.ActiveProject is null)
             {
                 return;
             }

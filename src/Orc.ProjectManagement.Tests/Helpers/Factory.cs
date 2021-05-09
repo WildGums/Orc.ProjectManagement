@@ -61,12 +61,12 @@ namespace Orc.ProjectManagement.Tests
             T inatance = null;
 
             var index = 0;
-            while (inatance == null && index < constructors.Count())
+            while (inatance is null && index < constructors.Count())
             {
                 var constructor = constructors[index++];
 
                 var parameters = PrepareParameters(constructor);
-                if (parameters == null)
+                if (parameters is null)
                 {
                     continue;
                 }
