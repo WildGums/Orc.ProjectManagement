@@ -21,7 +21,7 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheLoadMethod
         {
             [TestCase]
-            public async Task RaisesProjectLoadingEvent()
+            public async Task RaisesProjectLoadingEventAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -35,7 +35,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectLoadingFailedEvent()
+            public async Task RaisesProjectLoadingFailedEventAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -49,7 +49,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectLoadingCanceledEvent()
+            public async Task RaisesProjectLoadingCanceledEventAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -64,7 +64,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task DoesntRaiseProjectLoadedEventIfCanceled()
+            public async Task DoesntRaiseProjectLoadedEventIfCanceledAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -79,7 +79,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectLoadedEvent()
+            public async Task RaisesProjectLoadedEventAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -131,7 +131,7 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheLoadInactiveMethod
         {
             [TestCase]
-            public async Task RaisesProjectLoadingEvent()
+            public async Task RaisesProjectLoadingEventAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -145,7 +145,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectLoadingFailedEvent()
+            public async Task RaisesProjectLoadingFailedEventAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -159,7 +159,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectLoadingCanceledEvent()
+            public async Task RaisesProjectLoadingCanceledEventAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -174,7 +174,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task DoesntRaiseProjectLoadedEventIfCanceled()
+            public async Task DoesntRaiseProjectLoadedEventIfCanceledAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -189,7 +189,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectLoadedEvent()
+            public async Task RaisesProjectLoadedEventAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -219,7 +219,7 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheRefreshMethod
         {
             [TestCase]
-            public async Task DoesNothingWithoutProject()
+            public async Task DoesNothingWithoutProjectAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -232,7 +232,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectActivatedEvent()
+            public async Task RaisesProjectActivatedEventAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -252,7 +252,7 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheSaveMethod
         {
             [TestCase("myLocation")]
-            public async Task UpdatesLocationAfterSavingProject(string newLocation)
+            public async Task UpdatesLocationAfterSavingProjectAsync(string newLocation)
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -267,7 +267,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectSavingEvent()
+            public async Task RaisesProjectSavingEventAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -283,7 +283,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectSavedEvent()
+            public async Task RaisesProjectSavedEventAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -303,7 +303,7 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheCloseMethod
         {
             [TestCase]
-            public async Task UpdatesProjectAfterClosingProject()
+            public async Task UpdatesProjectAfterClosingProjectAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -318,7 +318,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task UpdatesLocationAfterClosingProject()
+            public async Task UpdatesLocationAfterClosingProjectAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -333,7 +333,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectClosingEvent()
+            public async Task RaisesProjectClosingEventAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -349,7 +349,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase]
-            public async Task RaisesProjectClosedEvent()
+            public async Task RaisesProjectClosedEventAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -365,7 +365,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase(Reason = "ORCOMP-147")]
-            public async Task DoesNotReloadClosedProjectAgain()
+            public async Task DoesNotReloadClosedProjectAgainAsync()
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -392,7 +392,7 @@ namespace Orc.ProjectManagement.Test.Managers
         public class TheSetActiveProjectMethod
         {
             [TestCase("dummyLocation")]
-            public async Task UpdatesActiveProjectByValueFromParameter(string newLocation)
+            public async Task UpdatesActiveProjectByValueFromParameterAsync(string newLocation)
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -410,7 +410,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase("dummyLocation")]
-            public async Task RaiseProjectActivationEvent(string newLocation)
+            public async Task RaiseProjectActivationEventAsync(string newLocation)
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();
@@ -427,7 +427,7 @@ namespace Orc.ProjectManagement.Test.Managers
             }
 
             [TestCase("dummyLocation")]
-            public async Task RaiseProjectActivatedEvent(string newLocation)
+            public async Task RaiseProjectActivatedEventAsync(string newLocation)
             {
                 var factory = Factory.Create().SetupDefault();
                 var projectManager = factory.GetProjectManager();

@@ -143,7 +143,7 @@ namespace Orc.ProjectManagement
         {
             var project = ActiveProject;
 
-            return project == null
+            return project is null
                 ? TaskHelper<bool>.FromResult(false)
                 : RefreshAsync(project);
         }
@@ -163,12 +163,12 @@ namespace Orc.ProjectManagement
             {
                 var project = await SyncedLoadProjectAsync(location);
 
-                if (project != null)
+                if (project is not null)
                 {
                     await SetActiveProjectAsync(project);
                 }
 
-                return project != null;
+                return project is not null;
             });
         }
 
@@ -180,14 +180,14 @@ namespace Orc.ProjectManagement
             {
                 var project = await SyncedLoadProjectAsync(location);
 
-                return project != null;
+                return project is not null;
             });
         }
 
         public Task<bool> SaveAsync(string location = null)
         {
             var project = ActiveProject;
-            if (project == null)
+            if (project is null)
             {
                 Log.Error("Cannot save empty project");
                 return TaskHelper<bool>.FromResult(false);
@@ -216,7 +216,7 @@ namespace Orc.ProjectManagement
         {
             var project = ActiveProject;
 
-            return project == null
+            return project is null
                 ? TaskHelper<bool>.FromResult(false)
                 : CloseAsync(project);
         }
@@ -236,7 +236,7 @@ namespace Orc.ProjectManagement
             {
                 var activeProject = ActiveProject;
 
-                if (project != null && !Projects.Contains(project))
+                if (project is not null && !Projects.Contains(project))
                 {
                     return false;
                 }
@@ -249,7 +249,7 @@ namespace Orc.ProjectManagement
                     return false;
                 }
 
-                Log.Info(project != null
+                Log.Info(project is not null
                     ? $"Activating project '{project.Location}'"
                     : "Deactivating currently active project");
 
@@ -264,7 +264,7 @@ namespace Orc.ProjectManagement
 
                 if (eventArgs.Cancel)
                 {
-                    Log.Info(project != null
+                    Log.Info(project is not null
                         ? $"Activating project '{project.Location}' was canceled"
                         : "Deactivating currently active project");
 
@@ -288,9 +288,9 @@ namespace Orc.ProjectManagement
                     exception = ex;
                 }
 
-                if (exception != null)
+                if (exception is not null)
                 {
-                    Log.Error(exception, project != null
+                    Log.Error(exception, project is not null
                         ? $"Failed to activate project '{project.Location}'"
                         : "Failed to deactivate currently active project");
 
@@ -309,7 +309,7 @@ namespace Orc.ProjectManagement
                     .SafeInvokeWithTimeoutAsync(nameof(ProjectActivatedAsync), this, new ProjectUpdatedEventArgs(activeProject, project), DefaultTimeout)
                     .ConfigureAwait(false);
 
-                Log.Debug(project != null
+                Log.Debug(project is not null
                     ? $"Activating project '{project.Location}' was canceled"
                     : "Deactivating currently active project");
 
@@ -320,7 +320,7 @@ namespace Orc.ProjectManagement
         protected virtual async Task<IProject> ReadProjectAsync(string location)
         {
             var projectReader = _projectSerializerSelector.GetReader(location);
-            if (projectReader == null)
+            if (projectReader is null)
             {
                 throw Log.ErrorAndCreateException<InvalidOperationException>($"No project reader is found for location '{location}'");
             }
@@ -335,7 +335,7 @@ namespace Orc.ProjectManagement
         protected virtual Task<bool> WriteProjectAsync(IProject project, string location)
         {
             var projectWriter = _projectSerializerSelector.GetWriter(location);
-            if (projectWriter == null)
+            if (projectWriter is null)
             {
                 throw new NotSupportedException($"No project writer is found for location '{location}'");
             }
@@ -349,7 +349,7 @@ namespace Orc.ProjectManagement
         {
             Argument.IsNotNullOrEmpty(() => projectLocation);
 
-            var countedAsyncLock = await InitializeSynchronizationContext<T>(projectLocation);
+            var countedAsyncLock = await InitializeSynchronizationContextAsync<T>(projectLocation);
 
             var asyncLock = countedAsyncLock.AsyncLock;
             var refCount = countedAsyncLock.RefCount;
@@ -369,11 +369,11 @@ namespace Orc.ProjectManagement
             }
             finally
             {
-                await ReleaseSynchronizationContext<T>(projectLocation);
+                await ReleaseSynchronizationContextAsync<T>(projectLocation);
             }
         }
 
-        private async Task ReleaseSynchronizationContext<T>(string projectLocation)
+        private async Task ReleaseSynchronizationContextAsync<T>(string projectLocation)
         {
             Log.Debug($"Releasing operation synchronization context for '{projectLocation}'");
 
@@ -400,7 +400,7 @@ namespace Orc.ProjectManagement
             Log.Debug($"Released operation synchronization context for '{projectLocation}'");
         }
 
-        private async Task<OperationSynchronizationContext> InitializeSynchronizationContext<T>(string projectLocation)
+        private async Task<OperationSynchronizationContext> InitializeSynchronizationContextAsync<T>(string projectLocation)
         {
             AsyncLock asyncLock;
             int refCount;
@@ -513,7 +513,7 @@ namespace Orc.ProjectManagement
                 error = ex;
             }
 
-            if (error == null)
+            if (error is null)
             {
                 return true;
             }
@@ -535,7 +535,7 @@ namespace Orc.ProjectManagement
             Argument.IsNotNullOrWhitespace("location", location);
 
             var project = Projects.FirstOrDefault(x => location.EqualsIgnoreCase(x.Location));
-            if (project != null)
+            if (project is not null)
             {
                 return project;
             }
@@ -616,7 +616,7 @@ namespace Orc.ProjectManagement
                     Log.Error(ex, "Failed to load project from '{0}'", location);
                 }
 
-                if (error != null)
+                if (error is not null)
                 {
                     _projectStateSetter.SetProjectLoading(location, false);
 
@@ -680,7 +680,7 @@ namespace Orc.ProjectManagement
                     error = ex;
                 }
 
-                if (error != null)
+                if (error is not null)
                 {
                     _projectStateSetter.SetProjectSaving(location, false);
 
@@ -770,7 +770,7 @@ namespace Orc.ProjectManagement
 
             var project = await ReadProjectAsync(location);
 
-            if (project == null)
+            if (project is null)
             {
                 throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}'");
             }
@@ -791,13 +791,13 @@ namespace Orc.ProjectManagement
 
         private void InitializeProjectRefresher(string projectLocation)
         {
-            if (!_projectRefreshers.TryGetValue(projectLocation, out var projectRefresher) || projectRefresher == null)
+            if (!_projectRefreshers.TryGetValue(projectLocation, out var projectRefresher) || projectRefresher is null)
             {
                 try
                 {
                     projectRefresher = _projectRefresherSelector.GetProjectRefresher(projectLocation);
 
-                    if (projectRefresher != null)
+                    if (projectRefresher is not null)
                     {
                         Log.Debug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName(false));
 
@@ -819,7 +819,7 @@ namespace Orc.ProjectManagement
         {
             var location = project.Location;
 
-            if (_projectRefreshers.TryGetValue(location, out var projectRefresher) && projectRefresher != null)
+            if (_projectRefreshers.TryGetValue(location, out var projectRefresher) && projectRefresher is not null)
             {
                 try
                 {

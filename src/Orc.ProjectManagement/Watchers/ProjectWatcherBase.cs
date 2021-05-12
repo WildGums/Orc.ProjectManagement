@@ -78,7 +78,7 @@ namespace Orc.ProjectManagement
                 var subscribeMethod = (from x in allSubscribeMethods
                                        where string.Equals(syncSubscribeMethod, x.Name) || string.Equals(asyncSubscribeMethod, x.Name)
                                        select x).FirstOrDefault();
-                if (subscribeMethod != null)
+                if (subscribeMethod is not null)
                 {
                     subscribeMethods.Add(subscribeMethod);
                 }

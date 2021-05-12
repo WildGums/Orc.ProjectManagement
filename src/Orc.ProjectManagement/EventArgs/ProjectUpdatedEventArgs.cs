@@ -26,7 +26,7 @@ namespace Orc.ProjectManagement
         {
             get
             {
-                if (OldProject == null || NewProject == null)
+                if (OldProject is null || NewProject is null)
                 {
                     return false;
                 }

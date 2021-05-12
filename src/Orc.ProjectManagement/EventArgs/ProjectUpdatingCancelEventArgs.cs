@@ -33,14 +33,14 @@ namespace Orc.ProjectManagement
 
         public string OldProjectLocation
         {
-            get { return OldProject == null ? _oldProjectLocation : OldProject.Location; }
+            get { return OldProject is null ? _oldProjectLocation : OldProject.Location; }
         }
 
         public IProject NewProject { get; private set; }
 
         public string NewProjectLocation
         {
-            get { return NewProject == null ? _newProjectLocation : NewProject.Location; }
+            get { return NewProject is null ? _newProjectLocation : NewProject.Location; }
         }
 
         public bool IsRefresh

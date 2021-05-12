@@ -31,7 +31,7 @@ namespace Orc.ProjectManagement
         public IProjectRefresher GetProjectRefresher(string location)
         {
             var registrationInfo = _serviceLocator.GetRegistrationInfo(typeof (IProjectRefresher));
-            if (registrationInfo == null)
+            if (registrationInfo is null)
             {
                 return null;
             }
