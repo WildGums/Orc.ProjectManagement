@@ -19,6 +19,7 @@ namespace Orc.ProjectManagement
     using Catel.Logging;
     using Catel.Reflection;
     using Catel.Threading;
+    using MethodTimer;
 
     public class ProjectManager : IProjectManager, INeedCustomInitialization
     {
@@ -126,6 +127,7 @@ namespace Orc.ProjectManagement
         #endregion
 
         #region IProjectManager Members
+        [Time]
         public async Task InitializeAsync()
         {
             var locations = (from location in await _projectInitializer.GetInitialLocationsAsync()
@@ -148,6 +150,7 @@ namespace Orc.ProjectManagement
                 : RefreshAsync(project);
         }
 
+        [Time]
         public Task<bool> RefreshAsync(IProject project)
         {
             Argument.IsNotNull(() => project);
@@ -155,6 +158,7 @@ namespace Orc.ProjectManagement
             return SynchronizeProjectOperationAsync(project.Location, () => SyncedRefreshAsync(project));
         }
 
+        [Time]
         public Task<bool> LoadAsync(string location)
         {
             Argument.IsNotNullOrWhitespace("location", location);
@@ -172,6 +176,7 @@ namespace Orc.ProjectManagement
             });
         }
 
+        [Time]
         public Task<bool> LoadInactiveAsync(string location)
         {
             Argument.IsNotNullOrWhitespace("location", location);
@@ -196,6 +201,7 @@ namespace Orc.ProjectManagement
             return SaveAsync(project, location);
         }
 
+        [Time]
         public async Task<bool> SaveAsync(IProject project, string location = null)
         {
             if (string.IsNullOrWhiteSpace(location))
@@ -221,6 +227,7 @@ namespace Orc.ProjectManagement
                 : CloseAsync(project);
         }
 
+        [Time]
         public Task<bool> CloseAsync(IProject project)
         {
             Argument.IsNotNull(() => project);
@@ -230,6 +237,7 @@ namespace Orc.ProjectManagement
             return SynchronizeProjectOperationAsync(location, () => SyncedCloseAsync(project));
         }
 
+        [Time]
         public async Task<bool> SetActiveProjectAsync(IProject project)
         {
             using (await _commonAsyncLock.LockAsync())
@@ -317,6 +325,7 @@ namespace Orc.ProjectManagement
             }
         }
 
+        [Time]
         protected virtual async Task<IProject> ReadProjectAsync(string location)
         {
             var projectReader = _projectSerializerSelector.GetReader(location);
@@ -332,6 +341,7 @@ namespace Orc.ProjectManagement
             return project;
         }
 
+        [Time]
         protected virtual Task<bool> WriteProjectAsync(IProject project, string location)
         {
             var projectWriter = _projectSerializerSelector.GetWriter(location);
