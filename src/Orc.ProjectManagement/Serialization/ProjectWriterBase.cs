@@ -10,12 +10,14 @@ namespace Orc.ProjectManagement
     using System.Threading.Tasks;
     using Catel;
     using Catel.Logging;
+    using MethodTimer;
 
     public abstract class ProjectWriterBase<TProject> : IProjectWriter
         where TProject : IProject
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
+        [Time]
         public async Task<bool> WriteAsync(IProject project, string location)
         {
             Argument.IsNotNull(() => project);

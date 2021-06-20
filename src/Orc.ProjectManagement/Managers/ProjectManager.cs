@@ -325,7 +325,6 @@ namespace Orc.ProjectManagement
             }
         }
 
-        [Time]
         protected virtual async Task<IProject> ReadProjectAsync(string location)
         {
             var projectReader = _projectSerializerSelector.GetReader(location);
@@ -341,7 +340,6 @@ namespace Orc.ProjectManagement
             return project;
         }
 
-        [Time]
         protected virtual Task<bool> WriteProjectAsync(IProject project, string location)
         {
             var projectWriter = _projectSerializerSelector.GetWriter(location);
