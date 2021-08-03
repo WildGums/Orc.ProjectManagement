@@ -15,7 +15,10 @@ namespace Orc.ProjectManagement
     public class ProjectStateService : IProjectStateService, IProjectStateSetter
     {
         #region Fields
+        private static readonly ProjectState DefaultProjectState = new ProjectState();
+
         private readonly Dictionary<string, ProjectState> _projectStates = new Dictionary<string, ProjectState>();
+
         private bool _isRefreshingActiveProject;
         #endregion
 
@@ -121,7 +124,7 @@ namespace Orc.ProjectManagement
 
         private ProjectState GetProjectState(string location)
         {
-            ProjectState projectState = null;
+            ProjectState projectState = DefaultProjectState;
 
             lock (_projectStates)
             {
