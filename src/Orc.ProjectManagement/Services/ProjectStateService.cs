@@ -124,14 +124,16 @@ namespace Orc.ProjectManagement
 
         private ProjectState GetProjectState(string location)
         {
-            ProjectState projectState = DefaultProjectState;
-
             lock (_projectStates)
             {
-                _projectStates.TryGetValue(location, out projectState);
-            }
+                if (!_projectStates.TryGetValue(location, out var projectState))
+                {
+                    projectState = DefaultProjectState;
+                    // Do not add into the dictionary here
+                }
 
-            return projectState;
+                return projectState;
+            }
         }
 
         private void UpdateProjectState(string location, Action<ProjectState> updateAction)
