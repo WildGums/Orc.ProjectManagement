@@ -693,6 +693,7 @@ namespace Orc.ProjectManagement
                     _projectStateSetter.SetProjectSaving(location, false);
 
                     Log.Error(error, "Failed to save project '{0}' to '{1}'", project, location);
+
                     await ProjectSavingFailedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectSavingFailedAsync), this, new ProjectErrorEventArgs(project, error), DefaultTimeout)
                         .ConfigureAwait(false);
 
@@ -701,7 +702,13 @@ namespace Orc.ProjectManagement
 
                 if (!success)
                 {
+                    _projectStateSetter.SetProjectSaving(location, false);
+
                     Log.Error("Not saved project '{0}' to '{1}'", project, location);
+
+                    await ProjectSavingFailedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectSavingFailedAsync), this, new ProjectErrorEventArgs(project), DefaultTimeout)
+                        .ConfigureAwait(false);
+
                     return false;
                 }
 
