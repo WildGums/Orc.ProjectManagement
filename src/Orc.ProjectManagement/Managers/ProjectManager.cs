@@ -484,7 +484,7 @@ namespace Orc.ProjectManagement
                     validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(projectLocation);
                     if (validationContext.HasErrors)
                     {
-                        throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{projectLocation}', the validator returned errors");
+                        throw new InvalidOperationException($"Project could not be loaded from '{projectLocation}', the validator returned errors");
                     }
                 }
 
@@ -495,7 +495,7 @@ namespace Orc.ProjectManagement
                     validationContext = await _projectValidator.ValidateProjectAsync(loadedProject);
                     if (validationContext.HasErrors)
                     {
-                        throw Log.ErrorAndCreateException<InvalidOperationException>($"Project data was loaded from '{projectLocation}', but the validator returned errors");
+                        throw new InvalidOperationException($"Project data was loaded from '{projectLocation}', but the validator returned errors");
                     }
                 }
 
@@ -516,7 +516,7 @@ namespace Orc.ProjectManagement
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Failed to load project from '{0}'", projectLocation);
+                Log.Warning(ex, "Failed to load project from '{0}'", projectLocation);
 
                 error = ex;
             }
@@ -591,7 +591,7 @@ namespace Orc.ProjectManagement
                 {
                     if (_projects.Count > 0 && ProjectManagementType == ProjectManagementType.SingleDocument)
                     {
-                        throw Log.ErrorAndCreateException<SdiProjectManagementException>("Cannot load project '{0}', currently in SDI mode", location);
+                        throw new SdiProjectManagementException("Cannot load project '{0}', currently in SDI mode", location);
                     }
 
                     if (!await _projectValidator.CanStartLoadingProjectAsync(location))
@@ -605,7 +605,7 @@ namespace Orc.ProjectManagement
                     validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(location);
                     if (validationContext.HasErrors)
                     {
-                        throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}', validator returned errors");
+                        throw new InvalidOperationException($"Project could not be loaded from '{location}', validator returned errors");
                     }
 
                     project = await QuietlyLoadProjectAsync(location, true).ConfigureAwait(false);
@@ -613,7 +613,7 @@ namespace Orc.ProjectManagement
                     validationContext = await _projectValidator.ValidateProjectAsync(project);
                     if (validationContext.HasErrors)
                     {
-                        throw Log.ErrorAndCreateException<InvalidOperationException>($"Project data was loaded from '{location}', but the validator returned errors");
+                        throw new InvalidOperationException($"Project data was loaded from '{location}', but the validator returned errors");
                     }
 
                     RegisterProject(project);
@@ -787,7 +787,7 @@ namespace Orc.ProjectManagement
 
             if (project is null)
             {
-                throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}'");
+                throw new InvalidOperationException($"Project could not be loaded from '{location}'");
             }
 
             return project;
