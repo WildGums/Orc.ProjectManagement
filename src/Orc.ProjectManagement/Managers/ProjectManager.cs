@@ -194,7 +194,7 @@ namespace Orc.ProjectManagement
             var project = ActiveProject;
             if (project is null)
             {
-                Log.Error("Cannot save empty project");
+                Log.Warning("Cannot save empty project");
                 return TaskHelper<bool>.FromResult(false);
             }
 
@@ -621,7 +621,7 @@ namespace Orc.ProjectManagement
                 catch (Exception ex)
                 {
                     error = ex;
-                    Log.Error(ex, "Failed to load project from '{0}'", location);
+                    Log.Warning(ex, "Failed to load project from '{0}'", location);
                 }
 
                 if (error is not null)
@@ -704,7 +704,7 @@ namespace Orc.ProjectManagement
                 {
                     _projectStateSetter.SetProjectSaving(location, false);
 
-                    Log.Error("Not saved project '{0}' to '{1}'", project, location);
+                    Log.Warning("Not saved project '{0}' to '{1}'", project, location);
 
                     await ProjectSavingFailedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectSavingFailedAsync), this, new ProjectErrorEventArgs(project), DefaultTimeout)
                         .ConfigureAwait(false);
