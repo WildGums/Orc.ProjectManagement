@@ -27,7 +27,7 @@ namespace Orc.ProjectManagement
 
             if (!await WriteToLocationAsync((TProject) project, location).ConfigureAwait(false))
             {
-                Log.Error("Failed to write all data to '{0}'", location);
+                Log.Warning("Failed to write all data to '{0}'", location);
                 return false;
             }
 
