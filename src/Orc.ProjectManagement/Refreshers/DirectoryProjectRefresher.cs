@@ -16,7 +16,9 @@ namespace Orc.ProjectManagement
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
+#pragma warning disable IDISP006 // Implement IDisposable.
         private FileSystemWatcher _fileSystemWatcher;
+#pragma warning restore IDISP006 // Implement IDisposable.
         private bool _includeSubDirectories;
 
         public DirectoryProjectRefresher(string projectLocation, string directoryToWatch)
@@ -58,23 +60,46 @@ namespace Orc.ProjectManagement
         {
             var filter = !string.IsNullOrWhiteSpace(FileFilter) ? FileFilter : "*";
 
+            var watcher = _fileSystemWatcher;
+            if (watcher is not null)
+            {
+                watcher.EnableRaisingEvents = false;
+
+                watcher.Created -= OnFileSystemWatcherChanged;
+                watcher.Changed -= OnFileSystemWatcherChanged;
+
+                watcher?.Dispose();
+            }
+
+#pragma warning disable IDISP003 // Dispose previous before re-assigning.
             _fileSystemWatcher = new FileSystemWatcher(location, filter);
+#pragma warning restore IDISP003 // Dispose previous before re-assigning.
             _fileSystemWatcher.NotifyFilter = NotifyFilters.LastWrite;
 
             UpdateIncludeSubDirectories();
             
             _fileSystemWatcher.Created += OnFileSystemWatcherChanged;
             _fileSystemWatcher.Changed += OnFileSystemWatcherChanged;
+
             _fileSystemWatcher.EnableRaisingEvents = true;
         }
 
         protected override void UnsubscribeFromLocation(string location)
         {
-            _fileSystemWatcher.EnableRaisingEvents = false;
+            var watcher = _fileSystemWatcher;
+            if (watcher is not null)
+            {
+                watcher.EnableRaisingEvents = false;
 
-            _fileSystemWatcher.Created -= OnFileSystemWatcherChanged;
-            _fileSystemWatcher.Changed -= OnFileSystemWatcherChanged;
+                watcher.Created -= OnFileSystemWatcherChanged;
+                watcher.Changed -= OnFileSystemWatcherChanged;
+
+                watcher.Dispose();
+            }
+
+#pragma warning disable IDISP003 // Dispose previous before re-assigning.
             _fileSystemWatcher = null;
+#pragma warning restore IDISP003 // Dispose previous before re-assigning.
         }
 
         private void UpdateIncludeSubDirectories()
