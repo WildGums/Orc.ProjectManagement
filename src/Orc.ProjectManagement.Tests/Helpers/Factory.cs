@@ -27,12 +27,16 @@ namespace Orc.ProjectManagement.Tests
         #endregion
 
         #region Properties
+#pragma warning disable IDISP006 // Implement IDisposable.
         public IServiceLocator ServiceLocator { get; private set; }
+#pragma warning restore IDISP006 // Implement IDisposable.
         #endregion
 
         public static Factory Create()
         {
+#pragma warning disable IDISP001 // Dispose created.
             var serviceLocator = new ServiceLocator();
+#pragma warning restore IDISP001 // Dispose created.
 
             return new Factory(serviceLocator);
         }
