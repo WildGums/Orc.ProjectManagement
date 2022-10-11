@@ -1,28 +1,16 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectStateService.cs" company="WildGums">
-//   Copyright (c) 2008 - 2017 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
     using System;
     using System.Collections.Generic;
-    using Catel;
-    using Catel.Logging;
 
     public class ProjectStateService : IProjectStateService, IProjectStateSetter
     {
-        #region Fields
         private static readonly ProjectState DefaultProjectState = new ProjectState();
 
         private readonly Dictionary<string, ProjectState> _projectStates = new Dictionary<string, ProjectState>();
 
         private bool _isRefreshingActiveProject;
-        #endregion
 
-        #region Properties
         public bool IsRefreshingActiveProject
         {
             get { return _isRefreshingActiveProject; }
@@ -35,19 +23,14 @@ namespace Orc.ProjectManagement
                 }
             }
         }
-        #endregion
 
-        #region Methods
+        public event EventHandler<EventArgs>? IsRefreshingActiveProjectUpdated;
 
-        #region Events
-        public event EventHandler<EventArgs> IsRefreshingActiveProjectUpdated;
-
-        public event EventHandler<ProjectStateEventArgs> ProjectStateUpdated;
-        #endregion
+        public event EventHandler<ProjectStateEventArgs>? ProjectStateUpdated;
 
         public ProjectState GetProjectState(IProject project)
         {
-            Argument.IsNotNull(() => project);
+            ArgumentNullException.ThrowIfNull(project);
 
             return GetProjectState(project.Location);
         }
@@ -82,7 +65,7 @@ namespace Orc.ProjectManagement
             UpdateProjectState(location, state => state.IsClosing = value);
         }
 
-        public void SetProjectActivating(string location, bool value)
+        public void SetProjectActivating(string? location, bool value)
         {
             if (string.IsNullOrEmpty(location))
             {
@@ -97,7 +80,7 @@ namespace Orc.ProjectManagement
             UpdateProjectState(location, state => state.IsActivating = value);
         }
 
-        public void SetProjectDeactivating(string location, bool value)
+        public void SetProjectDeactivating(string? location, bool value)
         {
             if (string.IsNullOrEmpty(location))
             {
@@ -143,7 +126,7 @@ namespace Orc.ProjectManagement
                 return;
             }
 
-            ProjectState projectState;
+            ProjectState? projectState;
 
             lock (_projectStates)
             {
@@ -162,6 +145,5 @@ namespace Orc.ProjectManagement
 
             ProjectStateUpdated?.Invoke(this, new ProjectStateEventArgs(new ProjectState(projectState)));
         }
-        #endregion
     }
 }

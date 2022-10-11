@@ -1,21 +1,14 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectUpdatingCancelEventArgs.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
     using System.ComponentModel;
     using Catel;
 
     public class ProjectUpdatingCancelEventArgs : CancelEventArgs
     {
-        private readonly string _oldProjectLocation;
-        private readonly string _newProjectLocation;
+        private readonly string? _oldProjectLocation;
+        private readonly string? _newProjectLocation;
 
-        public ProjectUpdatingCancelEventArgs(IProject oldProject, IProject newProject, bool cancel = false)
+        public ProjectUpdatingCancelEventArgs(IProject? oldProject, IProject? newProject, bool cancel = false)
             : base(cancel)
         {
             OldProject = oldProject;
@@ -29,18 +22,18 @@ namespace Orc.ProjectManagement
             _newProjectLocation = newProjectLocation;
         }
 
-        public IProject OldProject { get; private set; }
+        public IProject? OldProject { get; private set; }
 
-        public string OldProjectLocation
+        public string? OldProjectLocation
         {
-            get { return OldProject is null ? _oldProjectLocation : OldProject.Location; }
+            get { return OldProject?.Location ?? _oldProjectLocation; }
         }
 
-        public IProject NewProject { get; private set; }
+        public IProject? NewProject { get; private set; }
 
-        public string NewProjectLocation
+        public string? NewProjectLocation
         {
-            get { return NewProject is null ? _newProjectLocation : NewProject.Location; }
+            get { return NewProject?.Location ?? _newProjectLocation; }
         }
 
         public bool IsRefresh

@@ -1,11 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="FileRefresher.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
     using System;
     using System.IO;
@@ -17,24 +10,22 @@ namespace Orc.ProjectManagement
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
 #pragma warning disable IDISP006 // Implement IDisposable.
-        private FileSystemWatcher _fileSystemWatcher;
+        private FileSystemWatcher? _fileSystemWatcher;
 #pragma warning restore IDISP006 // Implement IDisposable.
         private bool _includeSubDirectories;
 
         public DirectoryProjectRefresher(string projectLocation, string directoryToWatch)
-            : this(projectLocation, directoryToWatch, null) { }
+            : this(projectLocation, directoryToWatch, "") { }
 
         public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter)
         : this(projectLocation, directoryToWatch, fileFilter, false)
         {
         }
 
-        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter,
-            bool includeSubDirectories)
+        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter, bool includeSubDirectories)
             : base(projectLocation, directoryToWatch)
         {
             FileFilter = fileFilter;
-            
             _includeSubDirectories = includeSubDirectories;
         }
 
@@ -104,10 +95,14 @@ namespace Orc.ProjectManagement
 
         private void UpdateIncludeSubDirectories()
         {
-            _fileSystemWatcher.IncludeSubdirectories = _includeSubDirectories;
+            var fileSystemWatcher = _fileSystemWatcher;
+            if (fileSystemWatcher is not null)
+            {
+                fileSystemWatcher.IncludeSubdirectories = _includeSubDirectories;
+            }
         }
 
-        private void OnFileSystemWatcherChanged(object sender, FileSystemEventArgs e)
+        private void OnFileSystemWatcherChanged(object? sender, FileSystemEventArgs e)
         {
             if (IsSuspended)
             {
@@ -116,13 +111,16 @@ namespace Orc.ProjectManagement
             }
 
             var fileSystemWatcher = _fileSystemWatcher;
-            using (new DisposableToken(this, x => fileSystemWatcher.EnableRaisingEvents = false, x => fileSystemWatcher.EnableRaisingEvents = true))
+            if (fileSystemWatcher is not null)
             {
-                Log.Debug("Detected change '{0}' for location '{1}'", e.ChangeType, e.FullPath);
+                using (new DisposableToken(this, x => fileSystemWatcher.EnableRaisingEvents = false, x => fileSystemWatcher.EnableRaisingEvents = true))
+                {
+                    Log.Debug("Detected change '{0}' for location '{1}'", e.ChangeType, e.FullPath);
 
-                RaiseUpdated(e.FullPath);
+                    RaiseUpdated(e.FullPath);
 
-                fileSystemWatcher.EnableRaisingEvents = true;
+                    fileSystemWatcher.EnableRaisingEvents = true;
+                }
             }
         }
     }

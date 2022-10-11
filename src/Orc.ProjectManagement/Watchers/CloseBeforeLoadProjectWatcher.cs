@@ -1,32 +1,21 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="CloseBeforeLoadProjectWatcher.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
+    using System;
     using System.Threading.Tasks;
-    using Catel;
     using Catel.IoC;
 
     public class CloseBeforeLoadProjectWatcher : ProjectWatcherBase
     {
-        #region Fields
         private readonly CloseBeforeLoadProjectWorkflowItem _closeBeforeLoadProjectWorkflowItem;
-        #endregion
 
-        #region Constructors
         public CloseBeforeLoadProjectWatcher(IProjectManager projectManager, ITypeFactory typeFactory)
             : base(projectManager)
         {
-            Argument.IsNotNull(() => typeFactory);
+            ArgumentNullException.ThrowIfNull(typeFactory);
 
-            _closeBeforeLoadProjectWorkflowItem = typeFactory.CreateInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWorkflowItem>(projectManager);
+            _closeBeforeLoadProjectWorkflowItem = typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWorkflowItem>(projectManager);
         }
-        #endregion
-
+        
         protected override async Task OnLoadingAsync(ProjectCancelEventArgs e)
         {
             if (e.Cancel)

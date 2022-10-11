@@ -1,11 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ActivationHistoryProjectWorkflowItem.cs" company="WildGums">
-//   Copyright (c) 2008 - 2018 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
     using System;
     using System.Threading.Tasks;
@@ -14,25 +7,21 @@ namespace Orc.ProjectManagement
 
     public class ActivationHistoryProjectWorkflowItem : ProjectManagerWorkflowItemBase
     {
-        #region Fields
         private readonly IProjectManager _projectManager;
         private readonly IProjectActivationHistoryService _projectActivationHistoryService;
-        #endregion
 
-        #region Constructors
         public ActivationHistoryProjectWorkflowItem(IProjectManager projectManager, IProjectActivationHistoryService projectActivationHistoryService)
         {
-            Argument.IsNotNull(() => projectManager);
-            Argument.IsNotNull(() => projectActivationHistoryService);
+            ArgumentNullException.ThrowIfNull(projectManager);
+            ArgumentNullException.ThrowIfNull(projectActivationHistoryService);
 
             _projectManager = projectManager;
             _projectActivationHistoryService = projectActivationHistoryService;
 
             _projectActivationHistoryService.SetProjectsSource(projectManager.Projects);
         }
-        #endregion
 
-        public override async Task ActivatedAsync(IProject oldProject, IProject newProject)
+        public override async Task ActivatedAsync(IProject? oldProject, IProject? newProject)
         {
             await base.ActivatedAsync(oldProject, newProject);
 
@@ -60,7 +49,7 @@ namespace Orc.ProjectManagement
             await _projectManager.SetActiveProjectAsync(lastActiveProject).ConfigureAwait(false);
         }
 
-        public override async Task LoadingFailedAsync(string location, Exception exception, IValidationContext validationContext)
+        public override async Task LoadingFailedAsync(string location, Exception? exception, IValidationContext validationContext)
         {
             await base.LoadingFailedAsync(location, exception, validationContext);
 

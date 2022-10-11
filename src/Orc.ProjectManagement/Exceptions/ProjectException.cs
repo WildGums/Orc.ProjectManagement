@@ -1,17 +1,9 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectException.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
     using System;
 
     public class ProjectException : Exception
     {
-        #region Constructors
         public ProjectException(string location, string message)
             : base(message)
         {
@@ -29,11 +21,8 @@ namespace Orc.ProjectManagement
         {
             Project = project;
         }
-        #endregion
 
-        #region Properties
-        public string Location { get; private set; }
-        public IProject Project { get; private set; }
-        #endregion
+        public string? Location { get; private set; }
+        public IProject? Project { get; private set; }
     }
 }

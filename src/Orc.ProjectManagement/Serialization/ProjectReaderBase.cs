@@ -1,11 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectReaderService.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
     using System.Threading.Tasks;
     using Catel;
@@ -17,7 +10,7 @@ namespace Orc.ProjectManagement
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
         [Time]
-        public async Task<IProject> ReadAsync(string location)
+        public async Task<IProject?> ReadAsync(string location)
         {
             Argument.IsNotNullOrWhitespace(() => location);
 

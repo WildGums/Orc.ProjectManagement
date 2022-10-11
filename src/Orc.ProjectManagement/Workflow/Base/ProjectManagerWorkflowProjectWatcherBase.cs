@@ -1,17 +1,9 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectManagerWorkflowProjectWatcherBase.cs" company="WildGums">
-//   Copyright (c) 2008 - 2018 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Catel.Data;
-    using Catel.Logging;
 
     /// <summary>
     /// This is the first step of moving out of ProjectWatcer conception
@@ -19,28 +11,23 @@ namespace Orc.ProjectManagement
     /// </summary>
     public abstract class ProjectManagerWorkflowProjectWatcherBase : ProjectWatcherBase
     {
-        #region Fields
         private readonly Dictionary<string, Stack<IProjectManagerWorkflowItem>> _activationStacks = new Dictionary<string, Stack<IProjectManagerWorkflowItem>>();
         private readonly Dictionary<string, Stack<IProjectManagerWorkflowItem>> _closingStacks = new Dictionary<string, Stack<IProjectManagerWorkflowItem>>();
         private readonly Dictionary<string, Stack<IProjectManagerWorkflowItem>> _loadingStacks = new Dictionary<string, Stack<IProjectManagerWorkflowItem>>();
         private readonly Dictionary<string, Stack<IProjectManagerWorkflowItem>> _refreshingStacks = new Dictionary<string, Stack<IProjectManagerWorkflowItem>>();
         private readonly Dictionary<string, Stack<IProjectManagerWorkflowItem>> _savingStacks = new Dictionary<string, Stack<IProjectManagerWorkflowItem>>();
 
-        protected List<IProjectManagerWorkflowItem> ActivationSequence;
-        protected List<IProjectManagerWorkflowItem> ClosingSequence;
-        protected List<IProjectManagerWorkflowItem> LoadingSequence;
-        protected List<IProjectManagerWorkflowItem> RefreshingSequence;
-        protected List<IProjectManagerWorkflowItem> SavingSequence;
-        #endregion
+        protected List<IProjectManagerWorkflowItem>? ActivationSequence;
+        protected List<IProjectManagerWorkflowItem>? ClosingSequence;
+        protected List<IProjectManagerWorkflowItem>? LoadingSequence;
+        protected List<IProjectManagerWorkflowItem>? RefreshingSequence;
+        protected List<IProjectManagerWorkflowItem>? SavingSequence;
 
-        #region Constructors
         protected ProjectManagerWorkflowProjectWatcherBase(IProjectManager projectManager)
             : base(projectManager)
         {
         }
-        #endregion
 
-        #region Methods
         public virtual void Initialize()
         {
             ArrangeWorkflowItems();
@@ -61,7 +48,7 @@ namespace Orc.ProjectManagement
             return stack;
         }
 
-        private async Task<bool> InvokeStartingActionsAsync(List<IProjectManagerWorkflowItem> projectWorkflowItems,
+        private async Task<bool> InvokeStartingActionsAsync(List<IProjectManagerWorkflowItem>? projectWorkflowItems,
             Dictionary<string, Stack<IProjectManagerWorkflowItem>> stacksDictionary, string projectLocation,
             Func<IProjectManagerWorkflowItem, Task<bool>> actionAsync)
         {
@@ -86,7 +73,7 @@ namespace Orc.ProjectManagement
             return true;
         }
 
-        private async Task InvokeEndingActionsAsync(List<IProjectManagerWorkflowItem> projectWorkflowItems,
+        private async Task InvokeEndingActionsAsync(List<IProjectManagerWorkflowItem>? projectWorkflowItems,
             Dictionary<string, Stack<IProjectManagerWorkflowItem>> stacksDictionary, string projectLocation,
             Func<IProjectManagerWorkflowItem, Task> actionAsync)
         {
@@ -105,9 +92,7 @@ namespace Orc.ProjectManagement
 
             _savingStacks.Remove(projectLocation);
         }
-        #endregion
 
-        #region ProjectWatcher overrides
         protected sealed override async Task OnSavingAsync(ProjectCancelEventArgs e)
         {
             await base.OnSavingAsync(e);
@@ -117,7 +102,7 @@ namespace Orc.ProjectManagement
                 return;
             }
 
-            e.Cancel = !await InvokeStartingActionsAsync(SavingSequence, _savingStacks, e.Project.Location,
+            e.Cancel = !await InvokeStartingActionsAsync(SavingSequence, _savingStacks, e.Location,
                 item => item.SavingAsync(e.Project));
         }
 
@@ -129,7 +114,7 @@ namespace Orc.ProjectManagement
                 item => item.SavingCanceledAsync(project));
         }
 
-        protected sealed override async Task OnSavingFailedAsync(IProject project, Exception exception)
+        protected sealed override async Task OnSavingFailedAsync(IProject project, Exception? exception)
         {
             await base.OnSavingFailedAsync(project, exception);
 
@@ -166,7 +151,7 @@ namespace Orc.ProjectManagement
                 item => item.LoadingCanceledAsync(location));
         }
 
-        protected sealed override async Task OnLoadingFailedAsync(string location, Exception exception, IValidationContext validationContext)
+        protected sealed override async Task OnLoadingFailedAsync(string location, Exception? exception, IValidationContext validationContext)
         {
             await base.OnLoadingFailedAsync(location, exception, validationContext);
 
@@ -203,7 +188,7 @@ namespace Orc.ProjectManagement
                 item => item.ActivationCanceledAsync(project));
         }
 
-        protected sealed override async Task OnActivationFailedAsync(IProject project, Exception exception)
+        protected sealed override async Task OnActivationFailedAsync(IProject project, Exception? exception)
         {
             await base.OnActivationFailedAsync(project, exception);
 
@@ -211,7 +196,7 @@ namespace Orc.ProjectManagement
                 item => item.ActivationFailedAsync(project, exception, new ValidationContext()));
         }
 
-        protected sealed override async Task OnActivatedAsync(IProject oldProject, IProject newProject)
+        protected sealed override async Task OnActivatedAsync(IProject? oldProject, IProject? newProject)
         {
             await base.OnActivatedAsync(oldProject, newProject);
 
@@ -228,7 +213,7 @@ namespace Orc.ProjectManagement
                 return;
             }
 
-            e.Cancel = !await InvokeStartingActionsAsync(ClosingSequence, _closingStacks, e.Project.Location,
+            e.Cancel = !await InvokeStartingActionsAsync(ClosingSequence, _closingStacks, e.Location,
                 item => item.ClosingAsync(e.Project));
         }
 
@@ -257,7 +242,7 @@ namespace Orc.ProjectManagement
                 return;
             }
 
-            e.Cancel = !await InvokeStartingActionsAsync(RefreshingSequence, _refreshingStacks, e.Project.Location,
+            e.Cancel = !await InvokeStartingActionsAsync(RefreshingSequence, _refreshingStacks, e.Location,
                 item => item.RefreshingAsync(e.Project));
         }
 
@@ -269,7 +254,7 @@ namespace Orc.ProjectManagement
                 item => item.RefreshingCanceledAsync(project));
         }
 
-        protected sealed override async Task OnRefreshingFailedAsync(IProject project, Exception exception, IValidationContext validationContext)
+        protected sealed override async Task OnRefreshingFailedAsync(IProject project, Exception? exception, IValidationContext validationContext)
         {
             await base.OnRefreshingFailedAsync(project, exception, validationContext);
 
@@ -284,6 +269,5 @@ namespace Orc.ProjectManagement
             await InvokeEndingActionsAsync(RefreshingSequence, _refreshingStacks, project.Location,
                 item => item.RefreshedAsync(project));
         }
-        #endregion
     }
 }

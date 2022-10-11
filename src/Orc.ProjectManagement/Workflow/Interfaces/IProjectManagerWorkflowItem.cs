@@ -1,11 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="IProjectManagerWorkflowItem.cs" company="WildGums">
-//   Copyright (c) 2008 - 2018 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
     using System;
     using System.Threading.Tasks;
@@ -17,26 +10,24 @@ namespace Orc.ProjectManagement
     /// </summary>
     public interface IProjectManagerWorkflowItem
     {
-        #region Methods
         Task<bool> LoadingAsync(string location);
         Task LoadingCanceledAsync(string location);
-        Task LoadingFailedAsync(string location, Exception exception, IValidationContext validationContext);
+        Task LoadingFailedAsync(string location, Exception? exception, IValidationContext validationContext);
         Task LoadedAsync(IProject project);
-        Task<bool> ActivationAsync(IProject oldProject, IProject newProject, bool isRefresh);
+        Task<bool> ActivationAsync(IProject? oldProject, IProject? newProject, bool isRefresh);
         Task ActivationCanceledAsync(IProject project);
-        Task ActivationFailedAsync(IProject project, Exception exception, IValidationContext validationContext);
-        Task ActivatedAsync(IProject oldProject, IProject newProject);
+        Task ActivationFailedAsync(IProject project, Exception? exception, IValidationContext validationContext);
+        Task ActivatedAsync(IProject? oldProject, IProject? newProject);
         Task<bool> ClosingAsync(IProject project);
         Task ClosingCanceledAsync(IProject project);
         Task ClosedAsync(IProject project);
         Task<bool> RefreshingAsync(IProject project);
         Task RefreshingCanceledAsync(IProject project);
-        Task RefreshingFailedAsync(IProject project, Exception exception, IValidationContext validationContext);
+        Task RefreshingFailedAsync(IProject project, Exception? exception, IValidationContext validationContext);
         Task RefreshedAsync(IProject project);
         Task<bool> SavingAsync(IProject project);
         Task SavingCanceledAsync(IProject project);
-        Task SavingFailedAsync(IProject project, Exception exception, IValidationContext validationContext);
+        Task SavingFailedAsync(IProject project, Exception? exception, IValidationContext validationContext);
         Task SavedAsync(IProject project);
-        #endregion
     }
 }

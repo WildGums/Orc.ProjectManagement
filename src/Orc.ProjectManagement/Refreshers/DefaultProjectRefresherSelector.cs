@@ -1,14 +1,6 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="DefaultProjectRefresherSelector.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
     using System;
-    using Catel;
     using Catel.IoC;
     using Catel.Logging;
 
@@ -21,14 +13,14 @@ namespace Orc.ProjectManagement
 
         public DefaultProjectRefresherSelector(IServiceLocator serviceLocator, ITypeFactory typeFactory)
         {
-            Argument.IsNotNull(() => serviceLocator);
-            Argument.IsNotNull(() => typeFactory);
+            ArgumentNullException.ThrowIfNull(serviceLocator);
+            ArgumentNullException.ThrowIfNull(typeFactory);
 
             _serviceLocator = serviceLocator;
             _typeFactory = typeFactory;
         }
 
-        public IProjectRefresher GetProjectRefresher(string location)
+        public IProjectRefresher? GetProjectRefresher(string location)
         {
             var registrationInfo = _serviceLocator.GetRegistrationInfo(typeof (IProjectRefresher));
             if (registrationInfo is null)
@@ -41,7 +33,7 @@ namespace Orc.ProjectManagement
                 throw Log.ErrorAndCreateException<InvalidOperationException>("IProjectRefresher needs to be registered as transient because it needs to be created for every project location");               
             }
 
-            var projectRefresher = (IProjectRefresher)_typeFactory.CreateInstanceWithParametersAndAutoCompletion(registrationInfo.ImplementingType, location);
+            var projectRefresher = (IProjectRefresher)_typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion(registrationInfo.ImplementingType, location);
             return projectRefresher;
         }
     }

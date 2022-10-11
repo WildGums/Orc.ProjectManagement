@@ -1,17 +1,13 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="PersonProject.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement.Example.Models
+﻿namespace Orc.ProjectManagement.Example.Models
 {
     public class PersonProject : ProjectBase
     {
         public PersonProject(string title) 
             : base(title)
         {
+            FirstName = string.Empty;
+            MiddleName = string.Empty;
+            LastName = string.Empty;
         }
 
         public string FirstName { get; set; }
