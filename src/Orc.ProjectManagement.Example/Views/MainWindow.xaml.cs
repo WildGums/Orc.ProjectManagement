@@ -4,9 +4,6 @@
     using Catel.Windows;
     using Orchestra.Logging;
 
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml.
-    /// </summary>
     public partial class MainWindow : DataWindow
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();

@@ -3,16 +3,12 @@
     using System;
     using System.IO;
     using System.Threading.Tasks;
-    using Catel;
     using Catel.Fody;
     using Catel.Logging;
     using Catel.MVVM;
     using Catel.Services;
     using Models;
 
-    /// <summary>
-    /// MainWindow view model.
-    /// </summary>
     public class MainWindowViewModel : ViewModelBase
     {
         private const string TextFilter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
@@ -65,7 +61,7 @@
         [Expose("FirstName")]
         [Expose("MiddleName")]
         [Expose("LastName")]
-        public PersonProject Project { get; private set; }
+        public PersonProject? Project { get; private set; }
 
         protected override async Task InitializeAsync()
         {
