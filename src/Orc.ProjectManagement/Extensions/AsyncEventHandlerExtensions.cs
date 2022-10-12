@@ -10,7 +10,7 @@
     {
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-        public static async Task<bool> SafeInvokeWithTimeoutAsync<TEventArgs>(this AsyncEventHandler<TEventArgs> handler, string eventName, object sender, TEventArgs e, int timeout)
+        public static async Task<bool> SafeInvokeWithTimeoutAsync<TEventArgs>(this AsyncEventHandler<TEventArgs>? handler, string eventName, object sender, TEventArgs e, int timeout)
             where TEventArgs : EventArgs
         {
             if (handler is null)
@@ -43,7 +43,7 @@
             }
         }
 
-        private static async Task<bool> SafeInvokeAsync<TEventArgs>(AsyncEventHandler<TEventArgs> handler, object sender, TEventArgs e)
+        private static async Task<bool> SafeInvokeAsync<TEventArgs>(AsyncEventHandler<TEventArgs>? handler, object sender, TEventArgs e)
             where TEventArgs : EventArgs
         {
             if (handler is null)

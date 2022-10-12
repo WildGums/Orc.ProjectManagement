@@ -1,12 +1,6 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectWriterService.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
+    using System;
     using System.Threading.Tasks;
     using Catel;
     using Catel.Logging;
@@ -20,7 +14,7 @@ namespace Orc.ProjectManagement
         [Time]
         public async Task<bool> WriteAsync(IProject project, string location)
         {
-            Argument.IsNotNull(() => project);
+            ArgumentNullException.ThrowIfNull(project);
             Argument.IsNotNullOrWhitespace(() => location);
 
             Log.Debug("Writing all data to '{0}'", location);

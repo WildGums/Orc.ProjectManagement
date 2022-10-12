@@ -1,15 +1,7 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="PersonProjectWriter.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement.Example.Services
+﻿namespace Orc.ProjectManagement.Example.Services
 {
     using System.IO;
     using System.Threading.Tasks;
-    using Catel.Threading;
     using Models;
 
     public class PersonProjectWriter : ProjectWriterBase<PersonProject>
@@ -25,7 +17,7 @@ namespace Orc.ProjectManagement.Example.Services
                 }
             }
 
-            return TaskHelper<bool>.FromResult(true);
+            return Task.FromResult<bool>(true);
         }
     }
 }

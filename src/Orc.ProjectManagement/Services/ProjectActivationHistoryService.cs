@@ -1,28 +1,20 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectActivationHistoryService.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Catel;
 
     public class ProjectActivationHistoryService : IProjectActivationHistoryService
     {
-        #region Fields
         private readonly IList<IProject> _activationHistory = new List<IProject>();
         private IEnumerable<IProject> _projectsSource = Enumerable.Empty<IProject>();
         private readonly HashSet<string> _uniqueLocations = new HashSet<string>();
-        #endregion
 
-        #region Methods
         public void Remember(IProject project)
         {
-            if (project is null || _isHistoryUsageSuspended)
+            ArgumentNullException.ThrowIfNull(project);
+
+            if (_isHistoryUsageSuspended)
             {
                 return;
             }
@@ -37,17 +29,14 @@ namespace Orc.ProjectManagement
 
         public void Forget(IProject project)
         {
-            if (project is null)
-            {
-                return;
-            }
+            ArgumentNullException.ThrowIfNull(project);
 
             RemoveFromHistory(project);
 
             RenewHistory();
         }
 
-        public IProject GetLastActiveProject()
+        public IProject? GetLastActiveProject()
         {
             if (_isHistoryUsageSuspended)
             {
@@ -57,16 +46,16 @@ namespace Orc.ProjectManagement
             return _activationHistory.FirstOrDefault();
         }
 
-        public IEnumerable<IProject> GetActivationHistory()
+        public IProject[] GetActivationHistory()
         {
             RenewHistory();
 
-            return _activationHistory;
+            return _activationHistory.ToArray();
         }
 
         public void SetProjectsSource(IEnumerable<IProject> projects)
         {
-            Argument.IsNotNull(() => projects);
+            ArgumentNullException.ThrowIfNull(projects);
 
             _projectsSource = projects;
 
@@ -86,15 +75,11 @@ namespace Orc.ProjectManagement
 
             _isHistoryUsageSuspended = false;
         }
-        #endregion
 
         private void RemoveFromHistory(IProject project)
         {
-            if (project is null)
-            {
-                return;
-            }
-
+            ArgumentNullException.ThrowIfNull(project);
+            
             while (_activationHistory.Remove(project))
             {
                 // Continue

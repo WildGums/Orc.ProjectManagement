@@ -1,11 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectManager.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
     using System;
     using System.Collections.Concurrent;
@@ -25,7 +18,6 @@ namespace Orc.ProjectManagement
     {
         private const int DefaultTimeout = 3000;
 
-        #region Fields
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
         private readonly IProjectInitializer _projectInitializer;
@@ -47,21 +39,19 @@ namespace Orc.ProjectManagement
         private readonly HashSet<string> _savingProjects = new HashSet<string>();
 
         private readonly AsyncLock _synchronizedCommonAsyncLock = new AsyncLock();
-        #endregion
 
-        #region Constructors
         public ProjectManager(IProjectValidator projectValidator, IProjectUpgrader projectUpgrader, IProjectRefresherSelector projectRefresherSelector,
             IProjectSerializerSelector projectSerializerSelector, IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService,
             IProjectManagementInitializationService projectManagementInitializationService, IProjectStateService projectStateService)
         {
-            Argument.IsNotNull(() => projectValidator);
-            Argument.IsNotNull(() => projectUpgrader);
-            Argument.IsNotNull(() => projectRefresherSelector);
-            Argument.IsNotNull(() => projectSerializerSelector);
-            Argument.IsNotNull(() => projectInitializer);
-            Argument.IsNotNull(() => projectManagementConfigurationService);
-            Argument.IsNotNull(() => projectManagementInitializationService);
-            Argument.IsNotNull(() => projectStateService);
+            ArgumentNullException.ThrowIfNull(projectValidator);
+            ArgumentNullException.ThrowIfNull(projectUpgrader);
+            ArgumentNullException.ThrowIfNull(projectRefresherSelector);
+            ArgumentNullException.ThrowIfNull(projectSerializerSelector);
+            ArgumentNullException.ThrowIfNull(projectInitializer);
+            ArgumentNullException.ThrowIfNull(projectManagementConfigurationService);
+            ArgumentNullException.ThrowIfNull(projectManagementInitializationService);
+            ArgumentNullException.ThrowIfNull(projectStateService);
 
             _projectValidator = projectValidator;
             _projectUpgrader = projectUpgrader;
@@ -77,56 +67,48 @@ namespace Orc.ProjectManagement
 
             ProjectManagementType = projectManagementConfigurationService.GetProjectManagementType();
         }
-        #endregion
 
-        #region Properties
         public ProjectManagementType ProjectManagementType { get; private set; }
 
-        public virtual IEnumerable<IProject> Projects
+        public virtual IProject[] Projects
         {
-            get { return _projects.Select(x => x.Value); }
+            get { return _projects.Select(x => x.Value).ToArray(); }
         }
 
-        public virtual IProject ActiveProject { get; set; }
+        public virtual IProject? ActiveProject { get; set; }
 
         public bool IsLoading => _loadingProjects.Any();
-        #endregion
 
-        #region Methods
         void INeedCustomInitialization.Initialize()
         {
             _projectManagementInitializationService.Initialize(this);
         }
-        #endregion
 
-        #region Events
-        public event AsyncEventHandler<ProjectCancelEventArgs> ProjectLoadingAsync;
-        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectLoadingFailedAsync;
-        public event AsyncEventHandler<ProjectEventArgs> ProjectLoadingCanceledAsync;
-        public event AsyncEventHandler<ProjectEventArgs> ProjectLoadedAsync;
+        public event AsyncEventHandler<ProjectCancelEventArgs>? ProjectLoadingAsync;
+        public event AsyncEventHandler<ProjectErrorEventArgs>? ProjectLoadingFailedAsync;
+        public event AsyncEventHandler<ProjectLocationEventArgs>? ProjectLoadingCanceledAsync;
+        public event AsyncEventHandler<ProjectEventArgs>? ProjectLoadedAsync;
 
-        public event AsyncEventHandler<ProjectCancelEventArgs> ProjectSavingAsync;
-        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectSavingFailedAsync;
-        public event AsyncEventHandler<ProjectEventArgs> ProjectSavingCanceledAsync;
-        public event AsyncEventHandler<ProjectEventArgs> ProjectSavedAsync;
+        public event AsyncEventHandler<ProjectCancelEventArgs>? ProjectSavingAsync;
+        public event AsyncEventHandler<ProjectErrorEventArgs>? ProjectSavingFailedAsync;
+        public event AsyncEventHandler<ProjectEventArgs>? ProjectSavingCanceledAsync;
+        public event AsyncEventHandler<ProjectEventArgs>? ProjectSavedAsync;
 
-        public event AsyncEventHandler<ProjectEventArgs> ProjectRefreshRequiredAsync;
-        public event AsyncEventHandler<ProjectCancelEventArgs> ProjectRefreshingAsync;
-        public event AsyncEventHandler<ProjectEventArgs> ProjectRefreshedAsync;
-        public event AsyncEventHandler<ProjectEventArgs> ProjectRefreshingCanceledAsync;
-        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectRefreshingFailedAsync;
+        public event AsyncEventHandler<ProjectEventArgs>? ProjectRefreshRequiredAsync;
+        public event AsyncEventHandler<ProjectCancelEventArgs>? ProjectRefreshingAsync;
+        public event AsyncEventHandler<ProjectEventArgs>? ProjectRefreshedAsync;
+        public event AsyncEventHandler<ProjectRefreshErrorEventArgs>? ProjectRefreshingCanceledAsync;
+        public event AsyncEventHandler<ProjectErrorEventArgs>? ProjectRefreshingFailedAsync;
 
-        public event AsyncEventHandler<ProjectCancelEventArgs> ProjectClosingAsync;
-        public event AsyncEventHandler<ProjectEventArgs> ProjectClosingCanceledAsync;
-        public event AsyncEventHandler<ProjectEventArgs> ProjectClosedAsync;
+        public event AsyncEventHandler<ProjectCancelEventArgs>? ProjectClosingAsync;
+        public event AsyncEventHandler<ProjectEventArgs>? ProjectClosingCanceledAsync;
+        public event AsyncEventHandler<ProjectEventArgs>? ProjectClosedAsync;
 
-        public event AsyncEventHandler<ProjectUpdatingCancelEventArgs> ProjectActivationAsync;
-        public event AsyncEventHandler<ProjectUpdatedEventArgs> ProjectActivatedAsync;
-        public event AsyncEventHandler<ProjectEventArgs> ProjectActivationCanceledAsync;
-        public event AsyncEventHandler<ProjectErrorEventArgs> ProjectActivationFailedAsync;
-        #endregion
+        public event AsyncEventHandler<ProjectUpdatingCancelEventArgs>? ProjectActivationAsync;
+        public event AsyncEventHandler<ProjectUpdatedEventArgs>? ProjectActivatedAsync;
+        public event AsyncEventHandler<ProjectActivationEventArgs>? ProjectActivationCanceledAsync;
+        public event AsyncEventHandler<ProjectErrorEventArgs>? ProjectActivationFailedAsync;
 
-        #region IProjectManager Members
         [Time]
         public async Task InitializeAsync()
         {
@@ -146,14 +128,14 @@ namespace Orc.ProjectManagement
             var project = ActiveProject;
 
             return project is null
-                ? TaskHelper<bool>.FromResult(false)
+                ? Task.FromResult(false)
                 : RefreshAsync(project);
         }
 
         [Time]
         public Task<bool> RefreshAsync(IProject project)
         {
-            Argument.IsNotNull(() => project);
+            ArgumentNullException.ThrowIfNull(project);
 
             return SynchronizeProjectOperationAsync(project.Location, () => SyncedRefreshAsync(project));
         }
@@ -189,20 +171,20 @@ namespace Orc.ProjectManagement
             });
         }
 
-        public Task<bool> SaveAsync(string location = null)
+        public Task<bool> SaveAsync(string? location = null)
         {
             var project = ActiveProject;
             if (project is null)
             {
                 Log.Warning("Cannot save empty project");
-                return TaskHelper<bool>.FromResult(false);
+                return Task.FromResult(false);
             }
 
             return SaveAsync(project, location);
         }
 
         [Time]
-        public async Task<bool> SaveAsync(IProject project, string location = null)
+        public async Task<bool> SaveAsync(IProject project, string? location = null)
         {
             if (string.IsNullOrWhiteSpace(location))
             {
@@ -223,14 +205,14 @@ namespace Orc.ProjectManagement
             var project = ActiveProject;
 
             return project is null
-                ? TaskHelper<bool>.FromResult(false)
+                ? Task.FromResult(false)
                 : CloseAsync(project);
         }
 
         [Time]
         public Task<bool> CloseAsync(IProject project)
         {
-            Argument.IsNotNull(() => project);
+            ArgumentNullException.ThrowIfNull(project);
 
             var location = project.Location;
 
@@ -238,7 +220,7 @@ namespace Orc.ProjectManagement
         }
 
         [Time]
-        public async Task<bool> SetActiveProjectAsync(IProject project)
+        public async Task<bool> SetActiveProjectAsync(IProject? project)
         {
             using (await _commonAsyncLock.LockAsync())
             {
@@ -267,7 +249,7 @@ namespace Orc.ProjectManagement
                 _projectStateSetter.SetProjectActivating(project?.Location, true);
 
                 await ProjectActivationAsync
-                    .SafeInvokeWithTimeoutAsync(nameof(ProjectActivationAsync), this,eventArgs, DefaultTimeout)
+                    .SafeInvokeWithTimeoutAsync(nameof(ProjectActivationAsync), this, eventArgs, DefaultTimeout)
                     .ConfigureAwait(false);
 
                 if (eventArgs.Cancel)
@@ -279,13 +261,13 @@ namespace Orc.ProjectManagement
                     _projectStateSetter.SetProjectActivating(project?.Location, false);
 
                     await ProjectActivationCanceledAsync
-                        .SafeInvokeWithTimeoutAsync(nameof(ProjectActivationCanceledAsync), this, new ProjectEventArgs(project), DefaultTimeout)
+                        .SafeInvokeWithTimeoutAsync(nameof(ProjectActivationCanceledAsync), this, new ProjectActivationEventArgs(project), DefaultTimeout)
                         .ConfigureAwait(false);
 
                     return false;
                 }
 
-                Exception exception = null;
+                Exception? exception = null;
 
                 try
                 {
@@ -325,7 +307,7 @@ namespace Orc.ProjectManagement
             }
         }
 
-        protected virtual async Task<IProject> ReadProjectAsync(string location)
+        protected virtual async Task<IProject?> ReadProjectAsync(string location)
         {
             var projectReader = _projectSerializerSelector.GetReader(location);
             if (projectReader is null)
@@ -410,7 +392,7 @@ namespace Orc.ProjectManagement
 
         private async Task<OperationSynchronizationContext> InitializeSynchronizationContextAsync<T>(string projectLocation)
         {
-            AsyncLock asyncLock;
+            AsyncLock? asyncLock;
             int refCount;
 
             Log.Debug($"Initializing operation synchronization context for '{projectLocation}'");
@@ -435,18 +417,17 @@ namespace Orc.ProjectManagement
 
             Log.Debug($"Initialized operation synchronization context for '{projectLocation}' refCount = [{refCount}]");
 
-            return new OperationSynchronizationContext
-            {
-                AsyncLock = asyncLock,
-                RefCount = refCount
-            };
+            return new OperationSynchronizationContext(asyncLock, refCount);
         }
 
         private async Task<bool> SyncedRefreshAsync(IProject project)
         {
             var projectLocation = project.Location;
-
             var activeProjectLocation = this.GetActiveProjectLocation();
+            if (string.IsNullOrEmpty(activeProjectLocation))
+            {
+                return false;
+            }
 
             Log.Debug("Refreshing project from '{0}'", projectLocation);
 
@@ -458,8 +439,8 @@ namespace Orc.ProjectManagement
             await ProjectRefreshingAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshingAsync), this, cancelEventArgs, DefaultTimeout)
                 .ConfigureAwait(false);
 
-            Exception error = null;
-            IValidationContext validationContext = null;
+            Exception? error = null;
+            IValidationContext? validationContext = null;
 
             try
             {
@@ -467,7 +448,7 @@ namespace Orc.ProjectManagement
                 {
                     _projectStateSetter.SetProjectRefreshing(projectLocation, false, true);
 
-                    await ProjectRefreshingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshingCanceledAsync), this, new ProjectErrorEventArgs(project), DefaultTimeout)
+                    await ProjectRefreshingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshingCanceledAsync), this, new ProjectRefreshErrorEventArgs(project), DefaultTimeout)
                         .ConfigureAwait(false);
                     return false;
                 }
@@ -538,7 +519,7 @@ namespace Orc.ProjectManagement
             return false;
         }
 
-        private async Task<IProject> SyncedLoadProjectAsync(string location)
+        private async Task<IProject?> SyncedLoadProjectAsync(string location)
         {
             Argument.IsNotNullOrWhitespace("location", location);
 
@@ -549,7 +530,7 @@ namespace Orc.ProjectManagement
             }
 
             var projectLocation = location;
-            using (new DisposableToken(null, token => _loadingProjects.Add(projectLocation), token => _loadingProjects.Remove(projectLocation)))
+            using (new DisposableToken(location, token => _loadingProjects.Add(projectLocation), token => _loadingProjects.Remove(projectLocation)))
             {
                 Log.Debug($"Going to load project from '{location}', checking if an upgrade is required");
 
@@ -577,15 +558,14 @@ namespace Orc.ProjectManagement
 
                     _projectStateSetter.SetProjectLoading(location, false);
 
-                    await ProjectLoadingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectLoadingCanceledAsync), this, new ProjectEventArgs(location), DefaultTimeout)
+                    await ProjectLoadingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectLoadingCanceledAsync), this, new ProjectLocationEventArgs(location), DefaultTimeout)
                         .ConfigureAwait(false);
 
                     return null;
                 }
 
-                Exception error = null;
-
-                IValidationContext validationContext = null;
+                Exception? error = null;
+                IValidationContext? validationContext = null;
 
                 try
                 {
@@ -624,7 +604,7 @@ namespace Orc.ProjectManagement
                     Log.Warning(ex, "Failed to load project from '{0}'", location);
                 }
 
-                if (error is not null)
+                if (project is null || error is not null)
                 {
                     _projectStateSetter.SetProjectLoading(location, false);
 
@@ -634,7 +614,7 @@ namespace Orc.ProjectManagement
                     return null;
                 }
 
-                _projectStateSetter.SetProjectLoading(project?.Location, false);
+                _projectStateSetter.SetProjectLoading(location, false);
 
                 await ProjectLoadedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectLoadedAsync), this, new ProjectEventArgs(project), DefaultTimeout)
                     .ConfigureAwait(false);
@@ -647,14 +627,14 @@ namespace Orc.ProjectManagement
 
         private async Task<bool> SyncedSaveAsync(IProject project, string location)
         {
-            Argument.IsNotNull(() => project);
+            ArgumentNullException.ThrowIfNull(project);
 
             if (string.IsNullOrWhiteSpace(location))
             {
                 location = project.Location;
             }
 
-            using (new DisposableToken(null, token => _savingProjects.Add(location), token => _savingProjects.Remove(location)))
+            using (new DisposableToken(location, token => _savingProjects.Add(location), token => _savingProjects.Remove(location)))
             {
                 Log.Debug("Saving project '{0}' to '{1}'", project, location);
 
@@ -677,7 +657,7 @@ namespace Orc.ProjectManagement
                     return false;
                 }
 
-                Exception error = null;
+                Exception? error = null;
                 var success = true;
                 try
                 {
@@ -726,7 +706,7 @@ namespace Orc.ProjectManagement
 
         private async Task<bool> SyncedCloseAsync(IProject project)
         {
-            Argument.IsNotNull(() => project);
+            ArgumentNullException.ThrowIfNull(project);
 
             Log.Debug("Closing project '{0}'", project);
 
@@ -853,9 +833,14 @@ namespace Orc.ProjectManagement
             }
         }
 
-        private async void OnProjectRefresherUpdated(object sender, ProjectEventArgs e)
+        private async void OnProjectRefresherUpdated(object? sender, ProjectLocationEventArgs e)
         {
             var projectLocation = e.Location;
+            if (string.IsNullOrEmpty(projectLocation))
+            {
+                return;
+            }
+
             if (_loadingProjects.Contains(projectLocation) || _savingProjects.Contains(projectLocation))
             {
                 return;
@@ -872,13 +857,17 @@ namespace Orc.ProjectManagement
                 Log.Warning($"Project refresh required, but can't find project '{projectLocation}' in list of open projects");
             }
         }
-        #endregion
-
 
         private class OperationSynchronizationContext
         {
-            public AsyncLock AsyncLock { get; set; }
-            public int RefCount { get; set; }
+            public OperationSynchronizationContext(AsyncLock asyncLock, int refCount)
+            {
+                AsyncLock = asyncLock;
+                RefCount = refCount;
+            }
+
+            public AsyncLock AsyncLock { get; }
+            public int RefCount { get; }
         }
     }
 }

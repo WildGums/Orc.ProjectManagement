@@ -1,15 +1,7 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectValidatorBase.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
     using System.Threading.Tasks;
     using Catel.Data;
-    using Catel.Threading;
 
     public abstract class ProjectValidatorBase : IProjectValidator
     {
@@ -31,19 +23,19 @@ namespace Orc.ProjectManagement
 
         public virtual Task<bool> CanStartLoadingProjectAsync(string location)
         {
-            return TaskHelper<bool>.FromResult(true);
+            return Task.FromResult(true);
         }
 
         public virtual Task<IValidationContext> ValidateProjectBeforeLoadingAsync(string location)
         {
             var validationContext = new ValidationContext();
-            return TaskHelper<IValidationContext>.FromResult(validationContext);
+            return Task.FromResult<IValidationContext>(validationContext);
         }
 
         public virtual Task<IValidationContext> ValidateProjectAsync(IProject project)
         {
             var validationContext = new ValidationContext();
-            return TaskHelper<IValidationContext>.FromResult(validationContext);
+            return Task.FromResult<IValidationContext>(validationContext);
         }
     }
 }

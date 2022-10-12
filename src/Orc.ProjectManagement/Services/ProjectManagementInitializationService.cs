@@ -1,11 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectManagementInitializationService.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
     using System;
     using Catel;
@@ -22,9 +15,9 @@ namespace Orc.ProjectManagement
         public ProjectManagementInitializationService(IServiceLocator serviceLocator, IProjectManagementConfigurationService projectManagementConfigurationService,
             ITypeFactory typeFactory)
         {
-            Argument.IsNotNull(() => serviceLocator);
-            Argument.IsNotNull(() => projectManagementConfigurationService);
-            Argument.IsNotNull(() => typeFactory);
+            ArgumentNullException.ThrowIfNull(serviceLocator);
+            ArgumentNullException.ThrowIfNull(projectManagementConfigurationService);
+            ArgumentNullException.ThrowIfNull(typeFactory);
 
             ServiceLocator = serviceLocator;
             _projectManagementConfigurationService = projectManagementConfigurationService;
@@ -35,7 +28,7 @@ namespace Orc.ProjectManagement
 
         public virtual void Initialize(IProjectManager projectManager)
         {
-            Argument.IsNotNull(() => projectManager);
+            ArgumentNullException.ThrowIfNull(projectManager);
 
             var projectManagementType = _projectManagementConfigurationService.GetProjectManagementType();
 
@@ -52,13 +45,13 @@ namespace Orc.ProjectManagement
             {
                 case ProjectManagementType.SingleDocument:
                     // Note: don't register and instantiate because IProjectManager is not yet registered here
-                    var closeBeforeLoadProjectWatcher = _typeFactory.CreateInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWatcher>(projectManager);
+                    var closeBeforeLoadProjectWatcher = _typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWatcher>(projectManager);
                     serviceLocator.RegisterInstance(closeBeforeLoadProjectWatcher);
                     break;
 
                 case ProjectManagementType.MultipleDocuments:
                     // Note: don't register and instantiate because IProjectManager is not yet registered here
-                    var activationHistoryProjectWatcher = _typeFactory.CreateInstanceWithParametersAndAutoCompletion<ActivationHistoryProjectWatcher>(projectManager);
+                    var activationHistoryProjectWatcher = _typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion<ActivationHistoryProjectWatcher>(projectManager);
                     serviceLocator.RegisterInstance(activationHistoryProjectWatcher);
                     break;
 

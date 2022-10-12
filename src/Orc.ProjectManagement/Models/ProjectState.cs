@@ -1,24 +1,17 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectState.cs" company="WildGums">
-//   Copyright (c) 2008 - 2016 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
-    using Catel;
+    using System;
 
     public class ProjectState
     {
         public ProjectState()
         {
-            
+            Location = string.Empty;
         }
 
         public ProjectState(ProjectState projectState)
         {
-            Argument.IsNotNull(() => projectState);
+            ArgumentNullException.ThrowIfNull(projectState);
 
             Location = projectState.Location;
             IsLoading = projectState.IsLoading;

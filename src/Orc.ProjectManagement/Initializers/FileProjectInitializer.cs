@@ -1,16 +1,8 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectInitializer.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
+    using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Catel;
-    using Catel.Services;
 
     public class FileProjectInitializer : IProjectInitializer
     {
@@ -18,7 +10,7 @@ namespace Orc.ProjectManagement
 
         public FileProjectInitializer(IInitialProjectLocationService initialProjectLocationService)
         {
-            Argument.IsNotNull(() => initialProjectLocationService);
+            ArgumentNullException.ThrowIfNull(initialProjectLocationService);
 
             _initialProjectLocationService = initialProjectLocationService;
         }
@@ -33,7 +25,7 @@ namespace Orc.ProjectManagement
                 locations.Add(initialLocation);
             }
 
-            return locations;
+            return locations.ToArray();
         }
     }
 }

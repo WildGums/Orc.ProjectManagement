@@ -1,31 +1,20 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectRefresherBase.cs" company="WildGums">
-//   Copyright (c) 2008 - 2018 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
     using System;
     using System.Threading.Tasks;
     using Catel;
     using Catel.IoC;
     using Catel.Logging;
-    using Catel.Threading;
 
     public abstract class ProjectRefresherBase : IProjectRefresher
     {
-        #region Fields
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
         // Note: dirty solution, but IProjectRefresherSelector is injected into ICommandManager, 
         // so we cannot accept ICommandManager in there (circular reference)
-        private readonly Lazy<IProjectManager> _projectManager = new Lazy<IProjectManager>(() => ServiceLocator.Default.ResolveType<IProjectManager>());
+        private readonly Lazy<IProjectManager> _projectManager = new Lazy<IProjectManager>(() => ServiceLocator.Default.ResolveRequiredType<IProjectManager>());
         private bool _isSuspended;
-        #endregion
 
-        #region Constructors
         protected ProjectRefresherBase(string projectLocation)
             : this(projectLocation, projectLocation)
         {
@@ -39,9 +28,7 @@ namespace Orc.ProjectManagement
             ProjectLocation = projectLocation;
             Location = locationToWatch;
         }
-        #endregion
 
-        #region Properties
         protected IProjectManager ProjectManager => _projectManager.Value;
 
         public string ProjectLocation { get; }
@@ -52,12 +39,8 @@ namespace Orc.ProjectManagement
         public bool IsEnabled { get; set; }
 
         public bool IsSuspended => !IsEnabled || _isSuspended;
-        #endregion
 
-        #region Methods
-        #region Events
-        public event EventHandler<ProjectEventArgs> Updated;
-        #endregion
+        public event EventHandler<ProjectLocationEventArgs>? Updated;
 
         public void Subscribe()
         {
@@ -116,29 +99,28 @@ namespace Orc.ProjectManagement
         {
             _isSuspended = true;
 
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnProjectManagerSavedAsync(object sender, ProjectEventArgs e)
         {
             _isSuspended = false;
 
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnProjectManagerSavingCanceledAsync(object sender, ProjectEventArgs e)
         {
             _isSuspended = false;
 
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnProjectManagerSavingFailedAsync(object sender, ProjectErrorEventArgs e)
         {
             _isSuspended = false;
 
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
-        #endregion
     }
 }

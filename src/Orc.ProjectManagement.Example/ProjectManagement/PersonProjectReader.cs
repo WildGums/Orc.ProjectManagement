@@ -1,11 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="PersonProjectReader.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement.Example.Services
+﻿namespace Orc.ProjectManagement.Example.Services
 {
     using System.IO;
     using System.Threading.Tasks;
@@ -45,7 +38,7 @@ namespace Orc.ProjectManagement.Example.Services
                 }
             }
 
-            return TaskHelper<IProject>.FromResult((IProject)project);
+            return Task.FromResult<IProject>(project);
         }
     }
 }

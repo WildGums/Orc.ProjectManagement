@@ -1,13 +1,6 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="DefaultProjectSerializerSelector.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement.Serialization
+﻿namespace Orc.ProjectManagement.Serialization
 {
-    using Catel;
+    using System;
     using Catel.IoC;
 
     /// <summary>
@@ -19,19 +12,19 @@ namespace Orc.ProjectManagement.Serialization
 
         public DefaultProjectSerializerSelector(IServiceLocator serviceLocator)
         {
-            Argument.IsNotNull(() => serviceLocator);
+            ArgumentNullException.ThrowIfNull(serviceLocator);
 
             _serviceLocator = serviceLocator;
         }
 
         public IProjectReader GetReader(string location)
         {
-            return _serviceLocator.ResolveType<IProjectReader>();
+            return _serviceLocator.ResolveRequiredType<IProjectReader>();
         }
 
         public IProjectWriter GetWriter(string location)
         {
-            return _serviceLocator.ResolveType<IProjectWriter>();
+            return _serviceLocator.ResolveRequiredType<IProjectWriter>();
         }
     }
 }

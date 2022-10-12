@@ -19,7 +19,7 @@ namespace Orc.ProjectManagement.Tests
     {
         public static IProject CreateProject(this Factory factory, string location)
         {
-            Argument.IsNotNull(() => factory);
+            ArgumentNullException.ThrowIfNull(factory);
             Argument.IsNotNullOrEmpty(() => location);
 
             return new Project(location);
@@ -27,7 +27,7 @@ namespace Orc.ProjectManagement.Tests
 
         public static IProjectManager GetProjectManager(this Factory factory)
         {
-            Argument.IsNotNull(() => factory);
+            ArgumentNullException.ThrowIfNull(factory);
 
             var serviceLocator = factory.ServiceLocator;
             if (serviceLocator.IsTypeRegistered<IProjectManager>())
@@ -41,7 +41,7 @@ namespace Orc.ProjectManagement.Tests
 
         public static Mock<IProjectManager> MockProjectManager(this Factory factory)
         {
-            Argument.IsNotNull(() => factory);
+            ArgumentNullException.ThrowIfNull(factory);
 
             var mock = factory.ServiceLocator.ResolveMocked<IProjectManager>();
             return mock;
@@ -50,7 +50,7 @@ namespace Orc.ProjectManagement.Tests
 
         public static Factory SetupDefault(this Factory factory, ProjectManagementType projectManagementType = ProjectManagementType.SingleDocument)
         {
-            Argument.IsNotNull(() => factory);
+            ArgumentNullException.ThrowIfNull(factory);
 
             SetupRegistrations(factory, projectManagementType);
 
@@ -61,7 +61,7 @@ namespace Orc.ProjectManagement.Tests
 
         private static void SetupBehavior(Factory factory)
         {
-            Argument.IsNotNull(() => factory);
+            ArgumentNullException.ThrowIfNull(factory);
 
             var projectRefresher = factory.ServiceLocator.ResolveType<IProjectRefresher>();
             var mockOfProjectRefresher = Mock.Get(projectRefresher);
@@ -79,7 +79,7 @@ namespace Orc.ProjectManagement.Tests
 
         private static void SetupRegistrations(Factory factory, ProjectManagementType projectManagementType)
         {
-            Argument.IsNotNull(() => factory);
+            ArgumentNullException.ThrowIfNull(factory);
 
             switch (projectManagementType)
             {
@@ -122,7 +122,7 @@ namespace Orc.ProjectManagement.Tests
         private static void MockAndRegisterIfNotRegistered<T>(this Factory factory)
             where T : class
         {
-            Argument.IsNotNull(() => factory);
+            ArgumentNullException.ThrowIfNull(factory);
 
             var serviceLocator = factory.ServiceLocator;
             if (serviceLocator.IsTypeRegistered<T>())
@@ -139,7 +139,7 @@ namespace Orc.ProjectManagement.Tests
             where TService : class
             where TServiceImplementation : class, TService
         {
-            Argument.IsNotNull(() => factory);
+            ArgumentNullException.ThrowIfNull(factory);
 
             var serviceLocator = factory.ServiceLocator;
             if (serviceLocator.IsTypeRegistered<TService>())

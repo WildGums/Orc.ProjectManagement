@@ -1,28 +1,16 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="MainWindowViewModel.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement.Example.ViewModels
+﻿namespace Orc.ProjectManagement.Example.ViewModels
 {
     using System;
     using System.IO;
     using System.Threading.Tasks;
-    using Catel;
     using Catel.Fody;
     using Catel.Logging;
     using Catel.MVVM;
     using Catel.Services;
     using Models;
 
-    /// <summary>
-    /// MainWindow view model.
-    /// </summary>
     public class MainWindowViewModel : ViewModelBase
     {
-        #region Fields
         private const string TextFilter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
 
         private static readonly ILog Log = LogManager.GetCurrentClassLogger();
@@ -32,19 +20,17 @@ namespace Orc.ProjectManagement.Example.ViewModels
         private readonly IProcessService _processService;
         private readonly IProjectManager _projectManager;
         private readonly ISaveFileService _saveFileService;
-        #endregion
 
-        #region Constructors
         /// <summary>
         /// Initializes a new instance of the <see cref="MainWindowViewModel"/> class.
         /// </summary>
         public MainWindowViewModel(IProjectManager projectManager, IOpenFileService openFileService,
             ISaveFileService saveFileService, IProcessService processService, IMessageService messageService)
         {
-            Argument.IsNotNull(() => projectManager);
-            Argument.IsNotNull(() => openFileService);
-            Argument.IsNotNull(() => saveFileService);
-            Argument.IsNotNull(() => processService);
+            ArgumentNullException.ThrowIfNull(projectManager);
+            ArgumentNullException.ThrowIfNull(openFileService);
+            ArgumentNullException.ThrowIfNull(saveFileService);
+            ArgumentNullException.ThrowIfNull(processService);
 
             _projectManager = projectManager;
             _openFileService = openFileService;
@@ -61,9 +47,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
 
             Title = "Orc.ProjectManagement example";
         }
-        #endregion
 
-        #region Properties
         /// <summary>
         /// Gets the title of the view model.
         /// </summary>
@@ -77,10 +61,8 @@ namespace Orc.ProjectManagement.Example.ViewModels
         [Expose("FirstName")]
         [Expose("MiddleName")]
         [Expose("LastName")]
-        public PersonProject Project { get; private set; }
-        #endregion
+        public PersonProject? Project { get; private set; }
 
-        #region Methods
         protected override async Task InitializeAsync()
         {
             await base.InitializeAsync().ConfigureAwait(false);
@@ -106,9 +88,7 @@ namespace Orc.ProjectManagement.Example.ViewModels
         {
             Project = _projectManager.GetActiveProject<PersonProject>();
         }
-        #endregion
 
-        #region Commands
         public TaskCommand LoadProject { get; private set; }
 
         private async Task OnLoadProjectExecuteAsync()
@@ -192,6 +172,5 @@ namespace Orc.ProjectManagement.Example.ViewModels
         {
             _processService.StartProcess(_projectManager.ActiveProject.Location);
         }
-        #endregion
     }
 }

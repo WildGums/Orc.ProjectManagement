@@ -1,11 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="MockFactory.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement.Tests
+﻿namespace Orc.ProjectManagement.Tests
 {
     using System;
     using System.Collections.Generic;
@@ -20,7 +13,7 @@ namespace Orc.ProjectManagement.Tests
         #region Constructors
         private Factory(IServiceLocator serviceLocator)
         {
-            Argument.IsNotNull(() => serviceLocator);
+            ArgumentNullException.ThrowIfNull(serviceLocator);
 
             ServiceLocator = serviceLocator;
         }
@@ -57,8 +50,8 @@ namespace Orc.ProjectManagement.Tests
 
         private T CreateWithFactory<T>(Func<ConstructorInfo, object[], T> factory, Type type, params object[] args) where T : class
         {
-            Argument.IsNotNull(() => factory);
-            Argument.IsNotNull(() => type);
+            ArgumentNullException.ThrowIfNull(factory);
+            ArgumentNullException.ThrowIfNull(type);
 
             var constructors = FIlterConstructors(type, args);
 
@@ -83,7 +76,7 @@ namespace Orc.ProjectManagement.Tests
 
         private IEnumerable<object> PrepareParameters(ConstructorInfo constructor)
         {
-            Argument.IsNotNull(() => constructor);
+            ArgumentNullException.ThrowIfNull(constructor);
 
             var parameterInfos = constructor.GetParameters();
 
@@ -99,7 +92,7 @@ namespace Orc.ProjectManagement.Tests
 
         private static ConstructorInfo[] FIlterConstructors(Type type, params object[] args)
         {
-            Argument.IsNotNull(() => type);
+            ArgumentNullException.ThrowIfNull(type);
 
             var constructors = (from constructor in type.GetConstructors()
                                 let parameters = constructor.GetParameters()

@@ -1,16 +1,9 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectInitializer.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Threading.Tasks;
-    using Catel;
     using Catel.Configuration;
     using Catel.Logging;
 
@@ -23,8 +16,8 @@ namespace Orc.ProjectManagement
 
         public DirectoryProjectInitializer(IConfigurationService configurationService, IInitialProjectLocationService initialProjectLocationService)
         {
-            Argument.IsNotNull(() => configurationService);
-            Argument.IsNotNull(() => initialProjectLocationService);
+            ArgumentNullException.ThrowIfNull(configurationService);
+            ArgumentNullException.ThrowIfNull(initialProjectLocationService);
 
             _configurationService = configurationService;
             _initialProjectLocationService = initialProjectLocationService;
@@ -56,7 +49,7 @@ namespace Orc.ProjectManagement
             if (!Directory.Exists(fullPath))
             {
                 Log.Debug("Cannot use the data directory '{0}', it does not exist", fullPath);
-                return null;
+                return Array.Empty<string>();
             }
 
             locations.Add(fullPath);

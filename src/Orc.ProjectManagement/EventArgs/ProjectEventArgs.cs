@@ -1,34 +1,13 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectEventArgs.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement
 {
-    public class ProjectEventArgs : System.EventArgs
+    public class ProjectEventArgs : ProjectLocationEventArgs
     {
-        #region Constructors
         public ProjectEventArgs(IProject project)
+            : base(project.Location)
         {
             Project = project;
-
-            if (project is not null)
-            {
-                Location = project.Location;
-            }
         }
 
-        public ProjectEventArgs(string location)
-        {
-            Location = location;
-        }
-        #endregion
-
-        #region Properties
-        public string Location { get; private set; }
         public IProject Project { get; private set; }
-        #endregion
     }
 }

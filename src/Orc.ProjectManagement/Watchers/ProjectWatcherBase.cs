@@ -1,10 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectWatcherBase.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-#pragma warning disable AvoidAsyncVoid
+﻿#pragma warning disable AvoidAsyncVoid
 
 namespace Orc.ProjectManagement
 {
@@ -13,29 +7,22 @@ namespace Orc.ProjectManagement
     using System.Linq;
     using System.Reflection;
     using System.Threading.Tasks;
-    using Catel;
     using Catel.Data;
     using Catel.Reflection;
-    using Catel.Threading;
 
     public abstract class ProjectWatcherBase
     {
-        #region Fields
         private readonly IProjectManager _projectManager;
-        #endregion
 
-        #region Constructors
         protected ProjectWatcherBase(IProjectManager projectManager)
         {
-            Argument.IsNotNull(() => projectManager);
+            ArgumentNullException.ThrowIfNull(projectManager);
 
             _projectManager = projectManager;
 
             InitSubscriptions();
         }
-        #endregion
-
-        #region Properties
+ 
         protected IProjectManager ProjectManager
         {
             get { return _projectManager; }
@@ -50,7 +37,6 @@ namespace Orc.ProjectManagement
         protected bool IsSaving { get; private set; }
 
         protected bool IsClosing { get; private set; }
-        #endregion
 
         private void InitSubscriptions()
         {
@@ -97,12 +83,12 @@ namespace Orc.ProjectManagement
 
         private void SubscribeOnLoadingFailed()
         {
-            _projectManager.ProjectLoadingFailedAsync += async (sender, e) => await OnLoadingFailedInternalAsync(e.Location, e.Exception, e.ValidationContext).ConfigureAwait(false);
+            _projectManager.ProjectLoadingFailedAsync += async (sender, e) => await OnLoadingFailedInternalAsync(e.Location ?? string.Empty, e.Exception, e.ValidationContext).ConfigureAwait(false);
         }
 
         private void SubscribeOnLoadingCanceled()
         {
-            _projectManager.ProjectLoadingCanceledAsync += async (sender, e) => await OnLoadingCanceledInternalAsync(e.Location).ConfigureAwait(false);
+            _projectManager.ProjectLoadingCanceledAsync += async (sender, e) => await OnLoadingCanceledInternalAsync(e.Location ?? string.Empty).ConfigureAwait(false);
         }
 
         private void SubscribeOnLoaded()
@@ -122,7 +108,16 @@ namespace Orc.ProjectManagement
 
         private void SubscribeOnSavingFailed()
         {
-            _projectManager.ProjectSavingFailedAsync += async (sender, e) => await OnSavingFailedInternalAsync(e.Project, e.Exception).ConfigureAwait(false);
+            _projectManager.ProjectSavingFailedAsync += async (sender, e) =>
+            {
+                var project = e.Project;
+                if (project is null)
+                {
+                    throw new InvalidOperationException("Project should never be null on saving");
+                }
+
+                await OnSavingFailedInternalAsync(project, e.Exception).ConfigureAwait(false);
+            };
         }
 
         private void SubscribeOnSaved()
@@ -177,7 +172,16 @@ namespace Orc.ProjectManagement
 
         private void SubscribeOnRefreshingFailed()
         {
-            _projectManager.ProjectRefreshingFailedAsync += async (sender, e) => await OnRefreshingFailedInternalAsync(e.Project, e.Exception, e.ValidationContext).ConfigureAwait(false);
+            _projectManager.ProjectRefreshingFailedAsync += async (sender, e) =>
+            {
+                var project = e.Project;
+                if (project is null)
+                {
+                    return;
+                }
+
+                await OnRefreshingFailedInternalAsync(project, e.Exception, e.ValidationContext).ConfigureAwait(false);
+            };
         }
 
         private void SubscribeOnRefreshingCanceled()
@@ -199,19 +203,19 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnLoadingAsync(ProjectCancelEventArgs e)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
-        private Task OnLoadingFailedInternalAsync(string location, Exception exception, IValidationContext validationContext)
+        private Task OnLoadingFailedInternalAsync(string location, Exception? exception, IValidationContext validationContext)
         {
             IsLoading = false;
 
             return OnLoadingFailedAsync(location, exception, validationContext);
         }
 
-        protected virtual Task OnLoadingFailedAsync(string location, Exception exception, IValidationContext validationContext)
+        protected virtual Task OnLoadingFailedAsync(string location, Exception? exception, IValidationContext validationContext)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnLoadingCanceledInternalAsync(string location)
@@ -223,7 +227,7 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnLoadingCanceledAsync(string location)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnLoadedInternalAsync(IProject project)
@@ -235,7 +239,7 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnLoadedAsync(IProject project)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnSavingInternalAsync(ProjectCancelEventArgs e)
@@ -247,7 +251,7 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnSavingAsync(ProjectCancelEventArgs e)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnSavingCanceledInternalAsync(IProject project)
@@ -259,19 +263,19 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnSavingCanceledAsync(IProject project)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
-        private Task OnSavingFailedInternalAsync(IProject project, Exception exception)
+        private Task OnSavingFailedInternalAsync(IProject project, Exception? exception)
         {
             IsSaving = false;
 
             return OnSavingFailedAsync(project, exception);
         }
 
-        protected virtual Task OnSavingFailedAsync(IProject project, Exception exception)
+        protected virtual Task OnSavingFailedAsync(IProject project, Exception? exception)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnSavedInternalAsync(IProject project)
@@ -283,7 +287,7 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnSavedAsync(IProject project)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnClosingInternalAsync(ProjectCancelEventArgs e)
@@ -295,7 +299,7 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnClosingAsync(ProjectCancelEventArgs e)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnClosedInternalAsync(IProject project)
@@ -307,7 +311,7 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnClosedAsync(IProject project)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnClosingCanceledInternalAsync(IProject project)
@@ -319,43 +323,43 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnClosingCanceledAsync(IProject project)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
-        private Task OnActivatedInternalAsync(IProject oldProject, IProject newProject)
+        private Task OnActivatedInternalAsync(IProject? oldProject, IProject? newProject)
         {
             IsActivating = false;
 
             return OnActivatedAsync(oldProject, newProject);
         }
 
-        protected virtual Task OnActivatedAsync(IProject oldProject, IProject newProject)
+        protected virtual Task OnActivatedAsync(IProject? oldProject, IProject? newProject)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
-        private Task OnActivationFailedInternalAsync(IProject project, Exception exception)
+        private Task OnActivationFailedInternalAsync(IProject? project, Exception? exception)
         {
             IsActivating = false;
 
             return OnActivationFailedAsync(project, exception);
         }
 
-        protected virtual Task OnActivationFailedAsync(IProject project, Exception exception)
+        protected virtual Task OnActivationFailedAsync(IProject? project, Exception? exception)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
-        private Task OnActivationCanceledInternalAsync(IProject project)
+        private Task OnActivationCanceledInternalAsync(IProject? project)
         {
             IsActivating = false;
 
             return OnActivationCanceledAsync(project);
         }
 
-        protected virtual Task OnActivationCanceledAsync(IProject project)
+        protected virtual Task OnActivationCanceledAsync(IProject? project)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnActivationInternalAsync(ProjectUpdatingCancelEventArgs e)
@@ -367,7 +371,7 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnActivationAsync(ProjectUpdatingCancelEventArgs e)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnRefreshRequiredInternalAsync(ProjectEventArgs e)
@@ -377,7 +381,7 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnRefreshRequiredAsync(IProject project)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnRefreshedInternalAsync(IProject project)
@@ -389,19 +393,19 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnRefreshedAsync(IProject project)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
-        private Task OnRefreshingFailedInternalAsync(IProject project, Exception exception, IValidationContext validationContext)
+        private Task OnRefreshingFailedInternalAsync(IProject project, Exception? exception, IValidationContext validationContext)
         {
             IsRefreshing = false;
 
             return OnRefreshingFailedAsync(project, exception, validationContext);
         }
 
-        protected virtual Task OnRefreshingFailedAsync(IProject project, Exception exception, IValidationContext validationContext)
+        protected virtual Task OnRefreshingFailedAsync(IProject project, Exception? exception, IValidationContext validationContext)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         private Task OnRefreshingCanceledInternalAsync(IProject project)
@@ -413,7 +417,7 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnRefreshingCanceledAsync(IProject project)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
 
         protected virtual Task OnRefreshingInternalAsync(ProjectCancelEventArgs e)
@@ -425,7 +429,7 @@ namespace Orc.ProjectManagement
 
         protected virtual Task OnRefreshingAsync(ProjectCancelEventArgs e)
         {
-            return TaskHelper.Completed;
+            return Task.CompletedTask;
         }
     }
 }
