@@ -83,12 +83,12 @@ namespace Orc.ProjectManagement
 
         private void SubscribeOnLoadingFailed()
         {
-            _projectManager.ProjectLoadingFailedAsync += async (sender, e) => await OnLoadingFailedInternalAsync(e.Location, e.Exception, e.ValidationContext).ConfigureAwait(false);
+            _projectManager.ProjectLoadingFailedAsync += async (sender, e) => await OnLoadingFailedInternalAsync(e.Location ?? string.Empty, e.Exception, e.ValidationContext).ConfigureAwait(false);
         }
 
         private void SubscribeOnLoadingCanceled()
         {
-            _projectManager.ProjectLoadingCanceledAsync += async (sender, e) => await OnLoadingCanceledInternalAsync(e.Location).ConfigureAwait(false);
+            _projectManager.ProjectLoadingCanceledAsync += async (sender, e) => await OnLoadingCanceledInternalAsync(e.Location ?? string.Empty).ConfigureAwait(false);
         }
 
         private void SubscribeOnLoaded()
@@ -108,7 +108,16 @@ namespace Orc.ProjectManagement
 
         private void SubscribeOnSavingFailed()
         {
-            _projectManager.ProjectSavingFailedAsync += async (sender, e) => await OnSavingFailedInternalAsync(e.Project, e.Exception).ConfigureAwait(false);
+            _projectManager.ProjectSavingFailedAsync += async (sender, e) =>
+            {
+                var project = e.Project;
+                if (project is null)
+                {
+                    throw new InvalidOperationException("Project should never be null on saving");
+                }
+
+                await OnSavingFailedInternalAsync(project, e.Exception).ConfigureAwait(false);
+            };
         }
 
         private void SubscribeOnSaved()
@@ -163,7 +172,16 @@ namespace Orc.ProjectManagement
 
         private void SubscribeOnRefreshingFailed()
         {
-            _projectManager.ProjectRefreshingFailedAsync += async (sender, e) => await OnRefreshingFailedInternalAsync(e.Project, e.Exception, e.ValidationContext).ConfigureAwait(false);
+            _projectManager.ProjectRefreshingFailedAsync += async (sender, e) =>
+            {
+                var project = e.Project;
+                if (project is null)
+                {
+                    return;
+                }
+
+                await OnRefreshingFailedInternalAsync(project, e.Exception, e.ValidationContext).ConfigureAwait(false);
+            };
         }
 
         private void SubscribeOnRefreshingCanceled()
@@ -320,26 +338,26 @@ namespace Orc.ProjectManagement
             return Task.CompletedTask;
         }
 
-        private Task OnActivationFailedInternalAsync(IProject project, Exception? exception)
+        private Task OnActivationFailedInternalAsync(IProject? project, Exception? exception)
         {
             IsActivating = false;
 
             return OnActivationFailedAsync(project, exception);
         }
 
-        protected virtual Task OnActivationFailedAsync(IProject project, Exception? exception)
+        protected virtual Task OnActivationFailedAsync(IProject? project, Exception? exception)
         {
             return Task.CompletedTask;
         }
 
-        private Task OnActivationCanceledInternalAsync(IProject project)
+        private Task OnActivationCanceledInternalAsync(IProject? project)
         {
             IsActivating = false;
 
             return OnActivationCanceledAsync(project);
         }
 
-        protected virtual Task OnActivationCanceledAsync(IProject project)
+        protected virtual Task OnActivationCanceledAsync(IProject? project)
         {
             return Task.CompletedTask;
         }

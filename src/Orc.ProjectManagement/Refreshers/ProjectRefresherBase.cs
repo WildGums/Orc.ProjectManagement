@@ -40,7 +40,7 @@
 
         public bool IsSuspended => !IsEnabled || _isSuspended;
 
-        public event EventHandler<ProjectEventArgs>? Updated;
+        public event EventHandler<ProjectLocationEventArgs>? Updated;
 
         public void Subscribe()
         {

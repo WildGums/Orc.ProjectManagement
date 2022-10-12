@@ -2,7 +2,6 @@
 {
     using System.IO;
     using System.Threading.Tasks;
-    using Catel.Threading;
     using Models;
 
     public class PersonProjectWriter : ProjectWriterBase<PersonProject>
@@ -18,7 +17,7 @@
                 }
             }
 
-            return TaskHelper<bool>.FromResult(true);
+            return Task.FromResult<bool>(true);
         }
     }
 }

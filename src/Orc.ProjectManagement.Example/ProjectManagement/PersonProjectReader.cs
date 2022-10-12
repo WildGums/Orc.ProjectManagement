@@ -38,7 +38,7 @@
                 }
             }
 
-            return TaskHelper<IProject>.FromResult((IProject)project);
+            return Task.FromResult<IProject>(project);
         }
     }
 }

@@ -102,6 +102,12 @@
                 return;
             }
 
+            if (e.Location is null ||
+                e.Project is null)
+            {
+                return;
+            }
+
             e.Cancel = !await InvokeStartingActionsAsync(SavingSequence, _savingStacks, e.Location,
                 item => item.SavingAsync(e.Project));
         }
@@ -135,6 +141,11 @@
             await base.OnLoadingAsync(e);
 
             if (e.Cancel)
+            {
+                return;
+            }
+
+            if (e.Location is null)
             {
                 return;
             }
@@ -180,17 +191,27 @@
                 item => item.ActivationAsync(e.OldProject, e.NewProject, e.IsRefresh));
         }
 
-        protected sealed override async Task OnActivationCanceledAsync(IProject project)
+        protected sealed override async Task OnActivationCanceledAsync(IProject? project)
         {
             await base.OnActivationCanceledAsync(project);
 
+            if (project is null)
+            {
+                return;
+            }
+            
             await InvokeEndingActionsAsync(ActivationSequence, _activationStacks, project.Location,
                 item => item.ActivationCanceledAsync(project));
         }
 
-        protected sealed override async Task OnActivationFailedAsync(IProject project, Exception? exception)
+        protected sealed override async Task OnActivationFailedAsync(IProject? project, Exception? exception)
         {
             await base.OnActivationFailedAsync(project, exception);
+
+            if (project is null)
+            {
+                return;
+            }
 
             await InvokeEndingActionsAsync(ActivationSequence, _activationStacks, project.Location,
                 item => item.ActivationFailedAsync(project, exception, new ValidationContext()));
@@ -209,6 +230,12 @@
             await base.OnClosingAsync(e);
 
             if (e.Cancel)
+            {
+                return;
+            }
+
+            if (e.Location is null ||
+                e.Project is null)
             {
                 return;
             }
@@ -238,6 +265,12 @@
             await base.OnRefreshingAsync(e);
 
             if (e.Cancel)
+            {
+                return;
+            }
+
+            if (e.Location is null ||
+                e.Project is null)
             {
                 return;
             }

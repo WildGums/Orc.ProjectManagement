@@ -8,7 +8,7 @@
         bool IsSubscribed { get; }
         bool IsEnabled { get; set; }
 
-        event EventHandler<ProjectEventArgs>? Updated;
+        event EventHandler<ProjectLocationEventArgs>? Updated;
 
         void Subscribe();
         void Unsubscribe();

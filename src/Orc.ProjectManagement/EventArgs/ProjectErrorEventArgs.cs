@@ -3,15 +3,24 @@
     using System;
     using Catel.Data;
 
-    public class ProjectErrorEventArgs : ProjectEventArgs
+    public class ProjectErrorEventArgs : ProjectLocationEventArgs
     {
-        public ProjectErrorEventArgs(IProject project, Exception? exception = null, IValidationContext? validationContext = null)
-            : base(project)
+        public ProjectErrorEventArgs(string? location, Exception? exception = null, IValidationContext? validationContext = null)
+            : base(location)
         {
             Exception = exception;
             ValidationContext = validationContext ?? new ValidationContext();
         }
 
+        public ProjectErrorEventArgs(IProject? project, Exception? exception = null, IValidationContext? validationContext = null)
+            : base(project?.Location)
+        {
+            Project = project;
+            Exception = exception;
+            ValidationContext = validationContext ?? new ValidationContext();
+        }
+
+        public IProject? Project { get; set; }
         public Exception? Exception { get; private set; }
         public IValidationContext ValidationContext { get; private set; }
     }

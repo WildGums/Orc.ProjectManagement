@@ -15,7 +15,7 @@
 
         event AsyncEventHandler<ProjectCancelEventArgs>? ProjectLoadingAsync;
         event AsyncEventHandler<ProjectErrorEventArgs>? ProjectLoadingFailedAsync;
-        event AsyncEventHandler<ProjectEventArgs>? ProjectLoadingCanceledAsync;
+        event AsyncEventHandler<ProjectLocationEventArgs>? ProjectLoadingCanceledAsync;
         event AsyncEventHandler<ProjectEventArgs>? ProjectLoadedAsync;
 
         event AsyncEventHandler<ProjectCancelEventArgs>? ProjectSavingAsync;
@@ -26,7 +26,7 @@
         event AsyncEventHandler<ProjectEventArgs>? ProjectRefreshRequiredAsync;
         event AsyncEventHandler<ProjectCancelEventArgs>? ProjectRefreshingAsync;
         event AsyncEventHandler<ProjectEventArgs>? ProjectRefreshedAsync;
-        event AsyncEventHandler<ProjectEventArgs>? ProjectRefreshingCanceledAsync;
+        event AsyncEventHandler<ProjectRefreshErrorEventArgs>? ProjectRefreshingCanceledAsync;
         event AsyncEventHandler<ProjectErrorEventArgs>? ProjectRefreshingFailedAsync;
 
         event AsyncEventHandler<ProjectCancelEventArgs>? ProjectClosingAsync;
@@ -35,7 +35,7 @@
 
         event AsyncEventHandler<ProjectUpdatingCancelEventArgs>? ProjectActivationAsync;
         event AsyncEventHandler<ProjectUpdatedEventArgs>? ProjectActivatedAsync;
-        event AsyncEventHandler<ProjectEventArgs>? ProjectActivationCanceledAsync;
+        event AsyncEventHandler<ProjectActivationEventArgs>? ProjectActivationCanceledAsync;
         event AsyncEventHandler<ProjectErrorEventArgs>? ProjectActivationFailedAsync;
 
         Task InitializeAsync();

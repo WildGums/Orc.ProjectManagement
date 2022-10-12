@@ -86,7 +86,7 @@
 
         public event AsyncEventHandler<ProjectCancelEventArgs>? ProjectLoadingAsync;
         public event AsyncEventHandler<ProjectErrorEventArgs>? ProjectLoadingFailedAsync;
-        public event AsyncEventHandler<ProjectEventArgs>? ProjectLoadingCanceledAsync;
+        public event AsyncEventHandler<ProjectLocationEventArgs>? ProjectLoadingCanceledAsync;
         public event AsyncEventHandler<ProjectEventArgs>? ProjectLoadedAsync;
 
         public event AsyncEventHandler<ProjectCancelEventArgs>? ProjectSavingAsync;
@@ -97,7 +97,7 @@
         public event AsyncEventHandler<ProjectEventArgs>? ProjectRefreshRequiredAsync;
         public event AsyncEventHandler<ProjectCancelEventArgs>? ProjectRefreshingAsync;
         public event AsyncEventHandler<ProjectEventArgs>? ProjectRefreshedAsync;
-        public event AsyncEventHandler<ProjectEventArgs>? ProjectRefreshingCanceledAsync;
+        public event AsyncEventHandler<ProjectRefreshErrorEventArgs>? ProjectRefreshingCanceledAsync;
         public event AsyncEventHandler<ProjectErrorEventArgs>? ProjectRefreshingFailedAsync;
 
         public event AsyncEventHandler<ProjectCancelEventArgs>? ProjectClosingAsync;
@@ -106,7 +106,7 @@
 
         public event AsyncEventHandler<ProjectUpdatingCancelEventArgs>? ProjectActivationAsync;
         public event AsyncEventHandler<ProjectUpdatedEventArgs>? ProjectActivatedAsync;
-        public event AsyncEventHandler<ProjectEventArgs>? ProjectActivationCanceledAsync;
+        public event AsyncEventHandler<ProjectActivationEventArgs>? ProjectActivationCanceledAsync;
         public event AsyncEventHandler<ProjectErrorEventArgs>? ProjectActivationFailedAsync;
 
         [Time]
@@ -261,7 +261,7 @@
                     _projectStateSetter.SetProjectActivating(project?.Location, false);
 
                     await ProjectActivationCanceledAsync
-                        .SafeInvokeWithTimeoutAsync(nameof(ProjectActivationCanceledAsync), this, new ProjectEventArgs(project), DefaultTimeout)
+                        .SafeInvokeWithTimeoutAsync(nameof(ProjectActivationCanceledAsync), this, new ProjectActivationEventArgs(project), DefaultTimeout)
                         .ConfigureAwait(false);
 
                     return false;
@@ -448,7 +448,7 @@
                 {
                     _projectStateSetter.SetProjectRefreshing(projectLocation, false, true);
 
-                    await ProjectRefreshingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshingCanceledAsync), this, new ProjectErrorEventArgs(project), DefaultTimeout)
+                    await ProjectRefreshingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshingCanceledAsync), this, new ProjectRefreshErrorEventArgs(project), DefaultTimeout)
                         .ConfigureAwait(false);
                     return false;
                 }
@@ -558,7 +558,7 @@
 
                     _projectStateSetter.SetProjectLoading(location, false);
 
-                    await ProjectLoadingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectLoadingCanceledAsync), this, new ProjectEventArgs(location), DefaultTimeout)
+                    await ProjectLoadingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectLoadingCanceledAsync), this, new ProjectLocationEventArgs(location), DefaultTimeout)
                         .ConfigureAwait(false);
 
                     return null;
@@ -833,9 +833,13 @@
             }
         }
 
-        private async void OnProjectRefresherUpdated(object? sender, ProjectEventArgs e)
+        private async void OnProjectRefresherUpdated(object? sender, ProjectLocationEventArgs e)
         {
             var projectLocation = e.Location;
+            if (string.IsNullOrEmpty(projectLocation))
+            {
+                return;
+            }
 
             if (_loadingProjects.Contains(projectLocation) || _savingProjects.Contains(projectLocation))
             {

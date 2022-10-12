@@ -15,10 +15,15 @@
 
             _closeBeforeLoadProjectWorkflowItem = typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWorkflowItem>(projectManager);
         }
-        
+
         protected override async Task OnLoadingAsync(ProjectCancelEventArgs e)
         {
             if (e.Cancel)
+            {
+                return;
+            }
+
+            if (e.Location is null)
             {
                 return;
             }

@@ -1,14 +1,13 @@
 ﻿namespace Orc.ProjectManagement
 {
-    public class ProjectEventArgs : System.EventArgs
+    public class ProjectEventArgs : ProjectLocationEventArgs
     {
         public ProjectEventArgs(IProject project)
+            : base(project.Location)
         {
             Project = project;
-            Location = project.Location ?? string.Empty;
         }
 
-        public string Location { get; private set; }
         public IProject Project { get; private set; }
     }
 }

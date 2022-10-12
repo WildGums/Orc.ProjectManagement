@@ -1,11 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="IServiceLocatorExtensions.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement.Tests
+﻿namespace Orc.ProjectManagement.Tests
 {
     using Catel.IoC;
     using Moq;
