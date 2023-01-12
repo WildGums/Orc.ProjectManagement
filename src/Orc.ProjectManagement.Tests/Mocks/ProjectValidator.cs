@@ -1,11 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectValidator.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement.Test.Mocks
+﻿namespace Orc.ProjectManagement.Test.Mocks
 {
     using System;
     using System.Threading.Tasks;

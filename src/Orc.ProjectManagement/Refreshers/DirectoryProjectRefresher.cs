@@ -15,7 +15,7 @@
         private bool _includeSubDirectories;
 
         public DirectoryProjectRefresher(string projectLocation, string directoryToWatch)
-            : this(projectLocation, directoryToWatch, "") { }
+            : this(projectLocation, directoryToWatch, string.Empty) { }
 
         public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter)
         : this(projectLocation, directoryToWatch, fileFilter, false)

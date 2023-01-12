@@ -1,11 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectUpdatedEventArgsFacts.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
-
-
-namespace Orc.ProjectManagement.Test.EventArgs
+﻿namespace Orc.ProjectManagement.Test.EventArgs
 {
     using Mocks;
     using NUnit.Framework;

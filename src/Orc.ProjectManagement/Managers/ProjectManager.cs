@@ -327,7 +327,7 @@
             var projectWriter = _projectSerializerSelector.GetWriter(location);
             if (projectWriter is null)
             {
-                throw new NotSupportedException($"No project writer is found for location '{location}'");
+                throw Log.ErrorAndCreateException<NotSupportedException>($"No project writer is found for location '{location}'");
             }
 
             Log.Debug("Using project writer '{0}'", projectWriter.GetType().Name);
@@ -465,7 +465,7 @@
                     validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(projectLocation);
                     if (validationContext.HasErrors)
                     {
-                        throw new InvalidOperationException($"Project could not be loaded from '{projectLocation}', the validator returned errors");
+                        throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{projectLocation}', the validator returned errors");
                     }
                 }
 
@@ -476,7 +476,7 @@
                     validationContext = await _projectValidator.ValidateProjectAsync(loadedProject);
                     if (validationContext.HasErrors)
                     {
-                        throw new InvalidOperationException($"Project data was loaded from '{projectLocation}', but the validator returned errors");
+                        throw Log.ErrorAndCreateException<InvalidOperationException>($"Project data was loaded from '{projectLocation}', but the validator returned errors");
                     }
                 }
 
@@ -571,7 +571,7 @@
                 {
                     if (_projects.Count > 0 && ProjectManagementType == ProjectManagementType.SingleDocument)
                     {
-                        throw new SdiProjectManagementException("Cannot load project '{0}', currently in SDI mode", location);
+                        throw Log.ErrorAndCreateException(message => new SdiProjectManagementException(message, location), "Cannot load project '{0}', currently in SDI mode");
                     }
 
                     if (!await _projectValidator.CanStartLoadingProjectAsync(location))
@@ -579,13 +579,13 @@
                         validationContext = new ValidationContext();
                         validationContext.Add(BusinessRuleValidationResult.CreateError("Project validator informed that project could not be loaded"));
 
-                        throw new ProjectException(location, $"Cannot load project from '{location}'");
+                        throw Log.ErrorAndCreateException(message => new ProjectException(location, message), $"Cannot load project from '{location}'");
                     }
 
                     validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(location);
                     if (validationContext.HasErrors)
                     {
-                        throw new InvalidOperationException($"Project could not be loaded from '{location}', validator returned errors");
+                        throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}', validator returned errors");
                     }
 
                     project = await QuietlyLoadProjectAsync(location, true).ConfigureAwait(false);
@@ -593,7 +593,7 @@
                     validationContext = await _projectValidator.ValidateProjectAsync(project);
                     if (validationContext.HasErrors)
                     {
-                        throw new InvalidOperationException($"Project data was loaded from '{location}', but the validator returned errors");
+                        throw Log.ErrorAndCreateException<InvalidOperationException>($"Project data was loaded from '{location}', but the validator returned errors");
                     }
 
                     RegisterProject(project);
@@ -759,7 +759,7 @@
 
                 if (!await _projectValidator.CanStartLoadingProjectAsync(location))
                 {
-                    throw new ProjectException(location, $"Cannot load project from '{location}'");
+                    throw Log.ErrorAndCreateException(message => new ProjectException(location, message), $"Cannot load project from '{location}'");
                 }
             }
 
@@ -767,7 +767,7 @@
 
             if (project is null)
             {
-                throw new InvalidOperationException($"Project could not be loaded from '{location}'");
+                throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}'");
             }
 
             return project;

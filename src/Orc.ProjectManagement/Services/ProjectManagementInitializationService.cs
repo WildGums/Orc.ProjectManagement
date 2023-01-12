@@ -56,7 +56,7 @@
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(projectManagementType), projectManagementType, null);
+                    throw Log.ErrorAndCreateException(_ => new ArgumentOutOfRangeException(nameof(projectManagementType), projectManagementType, null), string.Empty);
             }
         }
     }
