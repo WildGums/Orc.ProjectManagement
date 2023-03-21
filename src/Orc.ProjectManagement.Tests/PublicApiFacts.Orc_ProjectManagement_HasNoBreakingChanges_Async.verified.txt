@@ -226,7 +226,6 @@ namespace Orc.ProjectManagement
         System.Threading.Tasks.Task<Catel.Data.IValidationContext> ValidateProjectAsync(Orc.ProjectManagement.IProject project);
         System.Threading.Tasks.Task<Catel.Data.IValidationContext> ValidateProjectBeforeLoadingAsync(string location);
     }
-    public static class IProjectValidatorExtensions { }
     public interface IProjectWriter
     {
         System.Threading.Tasks.Task<bool> WriteAsync(Orc.ProjectManagement.IProject project, string location);
@@ -266,12 +265,11 @@ namespace Orc.ProjectManagement
         public static readonly Catel.Data.IPropertyData CreatedOnProperty;
         public static readonly Catel.Data.IPropertyData IdProperty;
         public static readonly Catel.Data.IPropertyData LocationProperty;
-        public static readonly Catel.Data.IPropertyData TitleProperty;
         protected ProjectBase(string location) { }
         protected ProjectBase(string location, string title) { }
         public virtual System.DateTime CreatedOn { get; set; }
         public int Id { get; }
-        public string Title { get; }
+        public virtual string Title { get; }
         public virtual string Location { get; set; }
         public virtual void ClearIsDirty() { }
         public void MarkAsDirty() { }
@@ -306,7 +304,6 @@ namespace Orc.ProjectManagement
         public string? Location { get; }
         public Orc.ProjectManagement.IProject? Project { get; }
     }
-    public static class ProjectExtensions { }
     public class ProjectFileSystemEventArgs : Orc.ProjectManagement.ProjectLocationEventArgs
     {
         public ProjectFileSystemEventArgs(string location, params string[] fileNames) { }
@@ -431,7 +428,7 @@ namespace Orc.ProjectManagement
     {
         protected ProjectReaderBase() { }
         public System.Threading.Tasks.Task<Orc.ProjectManagement.IProject?> ReadAsync(string location) { }
-        protected abstract System.Threading.Tasks.Task<Orc.ProjectManagement.IProject> ReadFromLocationAsync(string location);
+        protected abstract System.Threading.Tasks.Task<Orc.ProjectManagement.IProject?> ReadFromLocationAsync(string location);
     }
     public class ProjectRefreshErrorEventArgs : Orc.ProjectManagement.ProjectEventArgs
     {

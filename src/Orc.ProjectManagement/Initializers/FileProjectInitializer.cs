@@ -1,31 +1,30 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+public class FileProjectInitializer : IProjectInitializer
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
+    private readonly IInitialProjectLocationService _initialProjectLocationService;
 
-    public class FileProjectInitializer : IProjectInitializer
+    public FileProjectInitializer(IInitialProjectLocationService initialProjectLocationService)
     {
-        private readonly IInitialProjectLocationService _initialProjectLocationService;
+        ArgumentNullException.ThrowIfNull(initialProjectLocationService);
 
-        public FileProjectInitializer(IInitialProjectLocationService initialProjectLocationService)
+        _initialProjectLocationService = initialProjectLocationService;
+    }
+
+    public virtual async Task<IEnumerable<string>> GetInitialLocationsAsync()
+    {
+        var locations = new List<string>();
+
+        var initialLocation = await _initialProjectLocationService.GetInitialProjectLocationAsync();
+        if (!string.IsNullOrWhiteSpace(initialLocation))
         {
-            ArgumentNullException.ThrowIfNull(initialProjectLocationService);
-
-            _initialProjectLocationService = initialProjectLocationService;
+            locations.Add(initialLocation);
         }
 
-        public virtual async Task<IEnumerable<string>> GetInitialLocationsAsync()
-        {
-            var locations = new List<string>();
-
-            var initialLocation = await _initialProjectLocationService.GetInitialProjectLocationAsync();
-            if (!string.IsNullOrWhiteSpace(initialLocation))
-            {
-                locations.Add(initialLocation);
-            }
-
-            return locations.ToArray();
-        }
+        return locations.ToArray();
     }
 }

@@ -1,16 +1,15 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+using System;
+using System.Threading.Tasks;
+using Catel.Logging;
+
+public class InitialProjectLocationService : IInitialProjectLocationService
 {
-    using System;
-    using System.Threading.Tasks;
-    using Catel.Logging;
+    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-    public class InitialProjectLocationService : IInitialProjectLocationService
+    public virtual async Task<string> GetInitialProjectLocationAsync()
     {
-        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
-
-        public virtual async Task<string> GetInitialProjectLocationAsync()
-        {
-            throw Log.ErrorAndCreateException<NotImplementedException>($"To use the initial project location service, implement it yourself, for example by returning the first argument from the command line arguments");
-        }
+        throw Log.ErrorAndCreateException<NotImplementedException>($"To use the initial project location service, implement it yourself, for example by returning the first argument from the command line arguments");
     }
 }

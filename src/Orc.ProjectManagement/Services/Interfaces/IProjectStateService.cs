@@ -1,14 +1,13 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+using System;
+
+public interface IProjectStateService
 {
-    using System;
+    bool IsRefreshingActiveProject { get; }
 
-    public interface IProjectStateService
-    {
-        bool IsRefreshingActiveProject { get; }
+    event EventHandler<EventArgs>? IsRefreshingActiveProjectUpdated;
+    event EventHandler<ProjectStateEventArgs>? ProjectStateUpdated;
 
-        event EventHandler<EventArgs>? IsRefreshingActiveProjectUpdated;
-        event EventHandler<ProjectStateEventArgs>? ProjectStateUpdated;
-
-        ProjectState GetProjectState(IProject project);
-    }
+    ProjectState GetProjectState(IProject project);
 }

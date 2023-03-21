@@ -1,36 +1,35 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+
+public class CloseBeforeLoadProjectWorkflowItem : ProjectManagerWorkflowItemBase
 {
-    using System;
-    using System.Linq;
-    using System.Threading.Tasks;
+    private readonly IProjectManager _projectManager;
 
-    public class CloseBeforeLoadProjectWorkflowItem : ProjectManagerWorkflowItemBase
+    public CloseBeforeLoadProjectWorkflowItem(IProjectManager projectManager)
     {
-        private readonly IProjectManager _projectManager;
+        ArgumentNullException.ThrowIfNull(projectManager);
 
-        public CloseBeforeLoadProjectWorkflowItem(IProjectManager projectManager)
+        _projectManager = projectManager;
+    }
+
+    public override async Task<bool> LoadingAsync(string location)
+    {
+        if (!await base.LoadingAsync(location))
         {
-            ArgumentNullException.ThrowIfNull(projectManager);
-
-            _projectManager = projectManager;
+            return false;
         }
 
-        public override async Task<bool> LoadingAsync(string location)
+        foreach (var project in _projectManager.Projects.ToList())
         {
-            if (!await base.LoadingAsync(location))
+            if (!await _projectManager.CloseAsync(project))
             {
                 return false;
             }
-
-            foreach (var project in _projectManager.Projects.ToList())
-            {
-                if (!await _projectManager.CloseAsync(project))
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
+
+        return true;
     }
 }

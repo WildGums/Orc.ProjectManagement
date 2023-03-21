@@ -1,41 +1,40 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+using System.Threading.Tasks;
+using Catel.Data;
+
+public abstract class ProjectValidatorBase : IProjectValidator
 {
-    using System.Threading.Tasks;
-    using Catel.Data;
-
-    public abstract class ProjectValidatorBase : IProjectValidator
+    public virtual bool ValidateLocationOnRefresh
     {
-        public virtual bool ValidateLocationOnRefresh
+        get
         {
-            get
-            {
-                return true;
-            }
+            return true;
         }
+    }
 
-        public virtual bool ValidateProjectOnRefresh
+    public virtual bool ValidateProjectOnRefresh
+    {
+        get
         {
-            get
-            {
-                return true;
-            }
+            return true;
         }
+    }
 
-        public virtual Task<bool> CanStartLoadingProjectAsync(string location)
-        {
-            return Task.FromResult(true);
-        }
+    public virtual Task<bool> CanStartLoadingProjectAsync(string location)
+    {
+        return Task.FromResult(true);
+    }
 
-        public virtual Task<IValidationContext> ValidateProjectBeforeLoadingAsync(string location)
-        {
-            var validationContext = new ValidationContext();
-            return Task.FromResult<IValidationContext>(validationContext);
-        }
+    public virtual Task<IValidationContext> ValidateProjectBeforeLoadingAsync(string location)
+    {
+        var validationContext = new ValidationContext();
+        return Task.FromResult<IValidationContext>(validationContext);
+    }
 
-        public virtual Task<IValidationContext> ValidateProjectAsync(IProject project)
-        {
-            var validationContext = new ValidationContext();
-            return Task.FromResult<IValidationContext>(validationContext);
-        }
+    public virtual Task<IValidationContext> ValidateProjectAsync(IProject project)
+    {
+        var validationContext = new ValidationContext();
+        return Task.FromResult<IValidationContext>(validationContext);
     }
 }

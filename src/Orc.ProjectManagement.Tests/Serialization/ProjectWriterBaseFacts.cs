@@ -1,13 +1,12 @@
-﻿namespace Orc.ProjectManagement.Test.Serialization
-{
-    using NUnit.Framework;
+﻿namespace Orc.ProjectManagement.Test.Serialization;
 
-    public class ProjectWriterBaseFacts
+using NUnit.Framework;
+
+public class ProjectWriterBaseFacts
+{
+    [TestFixture]
+    public class TheWriteMethod
     {
-        [TestFixture]
-        public class TheWriteMethod
-        {
-            // TODO: Write test to check if location is reset, etc
-        }
+        // TODO: Write test to check if location is reset, etc
     }
 }

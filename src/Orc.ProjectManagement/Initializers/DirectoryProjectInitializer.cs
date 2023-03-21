@@ -1,60 +1,59 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using Catel.Configuration;
+using Catel.Logging;
+
+public class DirectoryProjectInitializer : IProjectInitializer
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Threading.Tasks;
-    using Catel.Configuration;
-    using Catel.Logging;
+    private readonly IInitialProjectLocationService _initialProjectLocationService;
+    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-    public class DirectoryProjectInitializer : IProjectInitializer
+    private readonly IConfigurationService _configurationService;
+
+    public DirectoryProjectInitializer(IConfigurationService configurationService, IInitialProjectLocationService initialProjectLocationService)
     {
-        private readonly IInitialProjectLocationService _initialProjectLocationService;
-        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+        ArgumentNullException.ThrowIfNull(configurationService);
+        ArgumentNullException.ThrowIfNull(initialProjectLocationService);
 
-        private readonly IConfigurationService _configurationService;
+        _configurationService = configurationService;
+        _initialProjectLocationService = initialProjectLocationService;
+    }
 
-        public DirectoryProjectInitializer(IConfigurationService configurationService, IInitialProjectLocationService initialProjectLocationService)
+    public virtual async Task<IEnumerable<string>> GetInitialLocationsAsync()
+    {
+        var locations = new List<string>();
+        var dataDirectory = _configurationService.GetRoamingValue<string>("DataLocation");
+        if (string.IsNullOrWhiteSpace(dataDirectory))
         {
-            ArgumentNullException.ThrowIfNull(configurationService);
-            ArgumentNullException.ThrowIfNull(initialProjectLocationService);
+            dataDirectory = Path.Combine(Catel.IO.Path.GetApplicationDataDirectory(), "data");
 
-            _configurationService = configurationService;
-            _initialProjectLocationService = initialProjectLocationService;
+            Log.Debug("DataLocation is empty in configuration, determining the data directory automatically to '{0}'", dataDirectory);
         }
 
-        public virtual async Task<IEnumerable<string>> GetInitialLocationsAsync()
+        var initialLocation = await _initialProjectLocationService.GetInitialProjectLocationAsync();
+        if (!string.IsNullOrWhiteSpace(initialLocation))
         {
-            var locations = new List<string>();
-            var dataDirectory = _configurationService.GetRoamingValue<string>("DataLocation");
-            if (string.IsNullOrWhiteSpace(dataDirectory))
-            {
-                dataDirectory = Path.Combine(Catel.IO.Path.GetApplicationDataDirectory(), "data");
+            dataDirectory = initialLocation;
+        }
 
-                Log.Debug("DataLocation is empty in configuration, determining the data directory automatically to '{0}'", dataDirectory);
-            }
-
-            var initialLocation = await _initialProjectLocationService.GetInitialProjectLocationAsync();
-            if (!string.IsNullOrWhiteSpace(initialLocation))
-            {
-                dataDirectory = initialLocation;
-            }
-
-            if (string.IsNullOrWhiteSpace(initialLocation))
-            {
-                return locations;
-            }
-
-            var fullPath = Path.GetFullPath(dataDirectory);
-            if (!Directory.Exists(fullPath))
-            {
-                Log.Debug("Cannot use the data directory '{0}', it does not exist", fullPath);
-                return Array.Empty<string>();
-            }
-
-            locations.Add(fullPath);
-
+        if (string.IsNullOrWhiteSpace(initialLocation))
+        {
             return locations;
         }
+
+        var fullPath = Path.GetFullPath(dataDirectory);
+        if (!Directory.Exists(fullPath))
+        {
+            Log.Debug("Cannot use the data directory '{0}', it does not exist", fullPath);
+            return Array.Empty<string>();
+        }
+
+        locations.Add(fullPath);
+
+        return locations;
     }
 }

@@ -1,13 +1,12 @@
-﻿namespace Orc.ProjectManagement
-{
-    public class ProjectFileSystemEventArgs : ProjectLocationEventArgs
-    {
-        public ProjectFileSystemEventArgs(string location, params string[] fileNames)
-            : base(location)
-        {
-            FileNames = fileNames;
-        }
+﻿namespace Orc.ProjectManagement;
 
-        public string[] FileNames { get; }
+public class ProjectFileSystemEventArgs : ProjectLocationEventArgs
+{
+    public ProjectFileSystemEventArgs(string location, params string[] fileNames)
+        : base(location)
+    {
+        FileNames = fileNames;
     }
+
+    public string[] FileNames { get; }
 }

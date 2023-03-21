@@ -1,12 +1,11 @@
-﻿namespace Orc.ProjectManagement
-{
-    public class ProjectLocationEventArgs : System.EventArgs
-    {
-        public ProjectLocationEventArgs(string? location)
-        {
-            Location = location;
-        }
+﻿namespace Orc.ProjectManagement;
 
-        public string? Location { get; private set; }
+public class ProjectLocationEventArgs : System.EventArgs
+{
+    public ProjectLocationEventArgs(string? location)
+    {
+        Location = location;
     }
+
+    public string? Location { get; }
 }
