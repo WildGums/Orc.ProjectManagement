@@ -1,21 +1,20 @@
-﻿namespace Orc.ProjectManagement.Example.Views
+﻿namespace Orc.ProjectManagement.Example.Views;
+
+using Catel.Logging;
+using Catel.Windows;
+using Orchestra.Logging;
+
+public partial class MainWindow : DataWindow
 {
-    using Catel.Logging;
-    using Catel.Windows;
-    using Orchestra.Logging;
+    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-    public partial class MainWindow : DataWindow
+    public MainWindow()
+        : base(DataWindowMode.Custom)
     {
-        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+        InitializeComponent();
 
-        public MainWindow()
-            : base(DataWindowMode.Custom)
-        {
-            InitializeComponent();
+        LogManager.AddListener(new TextBoxLogListener(outputTextBox));
 
-            LogManager.AddListener(new TextBoxLogListener(outputTextBox));
-
-            Log.Info("Welcome to the example of Orc.ProjectManagement. Use any of the buttons above to control the project. Log messages will appear here");
-        }
+        Log.Info("Welcome to the example of Orc.ProjectManagement. Use any of the buttons above to control the project. Log messages will appear here");
     }
 }

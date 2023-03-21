@@ -1,10 +1,9 @@
-﻿namespace Orc.ProjectManagement
-{
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
+﻿namespace Orc.ProjectManagement;
 
-    public interface IProjectInitializer
-    {
-        Task<IEnumerable<string>> GetInitialLocationsAsync();
-    }
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+public interface IProjectInitializer
+{
+    Task<IEnumerable<string>> GetInitialLocationsAsync();
 }

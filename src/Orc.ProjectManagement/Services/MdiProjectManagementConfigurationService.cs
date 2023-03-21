@@ -1,10 +1,9 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+public class MdiProjectManagementConfigurationService : ProjectManagementConfigurationService
 {
-    public class MdiProjectManagementConfigurationService : ProjectManagementConfigurationService
+    public override ProjectManagementType GetProjectManagementType()
     {
-        public override ProjectManagementType GetProjectManagementType()
-        {
-            return ProjectManagementType.MultipleDocuments;
-        }
+        return ProjectManagementType.MultipleDocuments;
     }
 }

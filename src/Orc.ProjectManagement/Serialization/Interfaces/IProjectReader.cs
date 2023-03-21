@@ -1,9 +1,8 @@
-﻿namespace Orc.ProjectManagement
-{
-    using System.Threading.Tasks;
+﻿namespace Orc.ProjectManagement;
 
-    public interface IProjectReader
-    {
-        Task<IProject?> ReadAsync(string location);
-    }
+using System.Threading.Tasks;
+
+public interface IProjectReader
+{
+    Task<IProject?> ReadAsync(string location);
 }

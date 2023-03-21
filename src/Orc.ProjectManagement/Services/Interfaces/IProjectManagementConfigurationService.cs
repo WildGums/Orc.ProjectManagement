@@ -1,7 +1,6 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+public interface IProjectManagementConfigurationService
 {
-    public interface IProjectManagementConfigurationService
-    {
-        ProjectManagementType GetProjectManagementType();
-    }
+    ProjectManagementType GetProjectManagementType();
 }

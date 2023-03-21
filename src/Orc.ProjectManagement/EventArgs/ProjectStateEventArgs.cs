@@ -1,16 +1,15 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+using System;
+
+public class ProjectStateEventArgs : EventArgs
 {
-    using System;
-
-    public class ProjectStateEventArgs : EventArgs
+    public ProjectStateEventArgs(ProjectState projectState)
     {
-        public ProjectStateEventArgs(ProjectState projectState)
-        {
-            ArgumentNullException.ThrowIfNull(projectState);
+        ArgumentNullException.ThrowIfNull(projectState);
 
-            ProjectState = projectState;
-        }
-
-        public ProjectState ProjectState { get; private set; }
+        ProjectState = projectState;
     }
+
+    public ProjectState ProjectState { get; }
 }

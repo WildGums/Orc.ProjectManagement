@@ -1,7 +1,6 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+public interface IProjectManagementInitializationService
 {
-    public interface IProjectManagementInitializationService
-    {
-        void Initialize(IProjectManager projectManager);
-    }
+    void Initialize(IProjectManager projectManager);
 }

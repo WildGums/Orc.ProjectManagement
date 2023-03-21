@@ -1,16 +1,15 @@
-﻿namespace Orc.ProjectManagement.Tests
+﻿namespace Orc.ProjectManagement.Tests;
+
+using Catel.IoC;
+using Moq;
+
+internal static class IServiceLocatorExtensions
 {
-    using Catel.IoC;
-    using Moq;
-
-    internal static class IServiceLocatorExtensions
+    public static Mock<T> ResolveMocked<T>(this IServiceLocator serviceLocator) 
+        where T : class
     {
-        public static Mock<T> ResolveMocked<T>(this IServiceLocator serviceLocator) 
-            where T : class
-        {
-            var instance = serviceLocator.ResolveType<T>();
+        var instance = serviceLocator.ResolveType<T>();
 
-            return Mock.Get(instance);
-        }
+        return Mock.Get(instance);
     }
 }

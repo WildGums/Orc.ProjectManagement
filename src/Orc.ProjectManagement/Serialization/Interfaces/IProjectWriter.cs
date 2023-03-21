@@ -1,9 +1,8 @@
-﻿namespace Orc.ProjectManagement
-{
-    using System.Threading.Tasks;
+﻿namespace Orc.ProjectManagement;
 
-    public interface IProjectWriter
-    {
-        Task<bool> WriteAsync(IProject project, string location);
-    }
+using System.Threading.Tasks;
+
+public interface IProjectWriter
+{
+    Task<bool> WriteAsync(IProject project, string location);
 }

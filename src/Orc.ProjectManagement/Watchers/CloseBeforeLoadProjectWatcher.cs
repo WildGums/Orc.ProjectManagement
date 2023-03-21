@@ -1,34 +1,33 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+using System;
+using System.Threading.Tasks;
+using Catel.IoC;
+
+public class CloseBeforeLoadProjectWatcher : ProjectWatcherBase
 {
-    using System;
-    using System.Threading.Tasks;
-    using Catel.IoC;
+    private readonly CloseBeforeLoadProjectWorkflowItem _closeBeforeLoadProjectWorkflowItem;
 
-    public class CloseBeforeLoadProjectWatcher : ProjectWatcherBase
+    public CloseBeforeLoadProjectWatcher(IProjectManager projectManager, ITypeFactory typeFactory)
+        : base(projectManager)
     {
-        private readonly CloseBeforeLoadProjectWorkflowItem _closeBeforeLoadProjectWorkflowItem;
+        ArgumentNullException.ThrowIfNull(typeFactory);
 
-        public CloseBeforeLoadProjectWatcher(IProjectManager projectManager, ITypeFactory typeFactory)
-            : base(projectManager)
+        _closeBeforeLoadProjectWorkflowItem = typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWorkflowItem>(projectManager);
+    }
+
+    protected override async Task OnLoadingAsync(ProjectCancelEventArgs e)
+    {
+        if (e.Cancel)
         {
-            ArgumentNullException.ThrowIfNull(typeFactory);
-
-            _closeBeforeLoadProjectWorkflowItem = typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWorkflowItem>(projectManager);
+            return;
         }
 
-        protected override async Task OnLoadingAsync(ProjectCancelEventArgs e)
+        if (e.Location is null)
         {
-            if (e.Cancel)
-            {
-                return;
-            }
-
-            if (e.Location is null)
-            {
-                return;
-            }
-
-            e.Cancel = !await _closeBeforeLoadProjectWorkflowItem.LoadingAsync(e.Location);
+            return;
         }
+
+        e.Cancel = !await _closeBeforeLoadProjectWorkflowItem.LoadingAsync(e.Location);
     }
 }

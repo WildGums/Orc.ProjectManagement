@@ -1,7 +1,6 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+public interface IProjectRefresherSelector
 {
-    public interface IProjectRefresherSelector
-    {
-        IProjectRefresher? GetProjectRefresher(string location);
-    }
+    IProjectRefresher? GetProjectRefresher(string location);
 }
