@@ -1,7 +1,6 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+public abstract class ProjectManagementConfigurationService : IProjectManagementConfigurationService
 {
-    public abstract class ProjectManagementConfigurationService : IProjectManagementConfigurationService
-    {
-        public abstract ProjectManagementType GetProjectManagementType();
-    }
+    public abstract ProjectManagementType GetProjectManagementType();
 }

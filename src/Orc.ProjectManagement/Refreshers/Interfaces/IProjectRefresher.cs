@@ -1,16 +1,15 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+using System;
+
+public interface IProjectRefresher
 {
-    using System;
+    string Location { get; }
+    bool IsSubscribed { get; }
+    bool IsEnabled { get; set; }
 
-    public interface IProjectRefresher
-    {
-        string Location { get; }
-        bool IsSubscribed { get; }
-        bool IsEnabled { get; set; }
+    event EventHandler<ProjectLocationEventArgs>? Updated;
 
-        event EventHandler<ProjectLocationEventArgs>? Updated;
-
-        void Subscribe();
-        void Unsubscribe();
-    }
+    void Subscribe();
+    void Unsubscribe();
 }

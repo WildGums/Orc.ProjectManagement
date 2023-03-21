@@ -1,13 +1,12 @@
-﻿namespace Orc.ProjectManagement
-{
-    using System.IO;
-    using System.Threading.Tasks;
+﻿namespace Orc.ProjectManagement;
 
-    public class DirectoryExistsProjectValidator : ProjectValidatorBase
+using System.IO;
+using System.Threading.Tasks;
+
+public class DirectoryExistsProjectValidator : ProjectValidatorBase
+{
+    public override async Task<bool> CanStartLoadingProjectAsync(string location)
     {
-        public override async Task<bool> CanStartLoadingProjectAsync(string location)
-        {
-            return Directory.Exists(location);
-        }
+        return Directory.Exists(location);
     }
 }

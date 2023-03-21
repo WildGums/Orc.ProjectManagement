@@ -1,9 +1,8 @@
-﻿namespace Orc.ProjectManagement
-{
-    using System.Threading.Tasks;
+﻿namespace Orc.ProjectManagement;
 
-    public interface IInitialProjectLocationService
-    {
-        Task<string> GetInitialProjectLocationAsync();
-    }
+using System.Threading.Tasks;
+
+public interface IInitialProjectLocationService
+{
+    Task<string> GetInitialProjectLocationAsync();
 }

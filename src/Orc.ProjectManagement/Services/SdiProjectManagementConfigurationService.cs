@@ -1,10 +1,9 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+public class SdiProjectManagementConfigurationService : ProjectManagementConfigurationService
 {
-    public class SdiProjectManagementConfigurationService : ProjectManagementConfigurationService
+    public override ProjectManagementType GetProjectManagementType()
     {
-        public override ProjectManagementType GetProjectManagementType()
-        {
-            return ProjectManagementType.SingleDocument;
-        }
+        return ProjectManagementType.SingleDocument;
     }
 }

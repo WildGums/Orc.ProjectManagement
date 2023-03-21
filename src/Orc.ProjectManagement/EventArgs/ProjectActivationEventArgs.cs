@@ -1,13 +1,12 @@
-﻿namespace Orc.ProjectManagement
-{
-    public class ProjectActivationEventArgs : ProjectLocationEventArgs
-    {
-        public ProjectActivationEventArgs(IProject? project)
-            : base(project?.Location)
-        {
-            Project = project;
-        }
+﻿namespace Orc.ProjectManagement;
 
-        public IProject? Project { get; private set; }
+public class ProjectActivationEventArgs : ProjectLocationEventArgs
+{
+    public ProjectActivationEventArgs(IProject? project)
+        : base(project?.Location)
+    {
+        Project = project;
     }
+
+    public IProject? Project { get; }
 }

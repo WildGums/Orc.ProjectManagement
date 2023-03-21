@@ -1,30 +1,29 @@
-﻿namespace Orc.ProjectManagement.Serialization
+﻿namespace Orc.ProjectManagement.Serialization;
+
+using System;
+using Catel.IoC;
+
+/// <summary>
+/// The default project serializer selector which uses the service locator.
+/// </summary>
+public class DefaultProjectSerializerSelector : IProjectSerializerSelector
 {
-    using System;
-    using Catel.IoC;
+    private readonly IServiceLocator _serviceLocator;
 
-    /// <summary>
-    /// The default project serializer selector which uses the service locator.
-    /// </summary>
-    public class DefaultProjectSerializerSelector : IProjectSerializerSelector
+    public DefaultProjectSerializerSelector(IServiceLocator serviceLocator)
     {
-        private readonly IServiceLocator _serviceLocator;
+        ArgumentNullException.ThrowIfNull(serviceLocator);
 
-        public DefaultProjectSerializerSelector(IServiceLocator serviceLocator)
-        {
-            ArgumentNullException.ThrowIfNull(serviceLocator);
+        _serviceLocator = serviceLocator;
+    }
 
-            _serviceLocator = serviceLocator;
-        }
+    public IProjectReader GetReader(string location)
+    {
+        return _serviceLocator.ResolveRequiredType<IProjectReader>();
+    }
 
-        public IProjectReader GetReader(string location)
-        {
-            return _serviceLocator.ResolveRequiredType<IProjectReader>();
-        }
-
-        public IProjectWriter GetWriter(string location)
-        {
-            return _serviceLocator.ResolveRequiredType<IProjectWriter>();
-        }
+    public IProjectWriter GetWriter(string location)
+    {
+        return _serviceLocator.ResolveRequiredType<IProjectWriter>();
     }
 }

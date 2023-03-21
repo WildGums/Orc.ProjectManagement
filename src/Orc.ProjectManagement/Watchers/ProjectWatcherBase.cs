@@ -1,435 +1,434 @@
 ﻿#pragma warning disable AvoidAsyncVoid
 
-namespace Orc.ProjectManagement
+namespace Orc.ProjectManagement;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
+using Catel.Data;
+using Catel.Reflection;
+
+public abstract class ProjectWatcherBase
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Reflection;
-    using System.Threading.Tasks;
-    using Catel.Data;
-    using Catel.Reflection;
+    private readonly IProjectManager _projectManager;
 
-    public abstract class ProjectWatcherBase
+    protected ProjectWatcherBase(IProjectManager projectManager)
     {
-        private readonly IProjectManager _projectManager;
+        ArgumentNullException.ThrowIfNull(projectManager);
 
-        protected ProjectWatcherBase(IProjectManager projectManager)
-        {
-            ArgumentNullException.ThrowIfNull(projectManager);
+        _projectManager = projectManager;
 
-            _projectManager = projectManager;
-
-            InitSubscriptions();
-        }
+        InitSubscriptions();
+    }
  
-        protected IProjectManager ProjectManager
+    protected IProjectManager ProjectManager
+    {
+        get { return _projectManager; }
+    }
+
+    protected bool IsRefreshing { get; private set; }
+
+    protected bool IsActivating { get; private set; }
+
+    protected bool IsLoading { get; private set; }
+
+    protected bool IsSaving { get; private set; }
+
+    protected bool IsClosing { get; private set; }
+
+    private void InitSubscriptions()
+    {
+        var type = GetType();
+
+        var baseType = typeof(ProjectWatcherBase);
+
+        // Only subscribe to methods that are actually used
+        var overriddenMethods = (from method in type.GetMethodsEx(BindingFlags.NonPublic | BindingFlags.Instance)
+            where method.GetBaseDefinition().DeclaringType != method.DeclaringType
+            select method).ToList();
+
+        var allSubscribeMethods = (from method in baseType.GetMethodsEx(BindingFlags.NonPublic | BindingFlags.Instance)
+            where method.Name.StartsWith("Subscribe")
+            select method).ToList();
+
+        var subscribeMethods = new List<MethodInfo>();
+
+        foreach (var overriddenMethod in overriddenMethods)
         {
-            get { return _projectManager; }
-        }
+            var methodName = overriddenMethod.Name.Replace("Async", string.Empty);
+            var syncSubscribeMethod = $"Subscribe{methodName}";
+            var asyncSubscribeMethod = $"{syncSubscribeMethod}Async";
 
-        protected bool IsRefreshing { get; private set; }
-
-        protected bool IsActivating { get; private set; }
-
-        protected bool IsLoading { get; private set; }
-
-        protected bool IsSaving { get; private set; }
-
-        protected bool IsClosing { get; private set; }
-
-        private void InitSubscriptions()
-        {
-            var type = GetType();
-
-            var baseType = typeof(ProjectWatcherBase);
-
-            // Only subscribe to methods that are actually used
-            var overriddenMethods = (from method in type.GetMethodsEx(BindingFlags.NonPublic | BindingFlags.Instance)
-                                     where method.GetBaseDefinition().DeclaringType != method.DeclaringType
-                                     select method).ToList();
-
-            var allSubscribeMethods = (from method in baseType.GetMethodsEx(BindingFlags.NonPublic | BindingFlags.Instance)
-                                       where method.Name.StartsWith("Subscribe")
-                                       select method).ToList();
-
-            var subscribeMethods = new List<MethodInfo>();
-
-            foreach (var overriddenMethod in overriddenMethods)
+            var subscribeMethod = (from x in allSubscribeMethods
+                where string.Equals(syncSubscribeMethod, x.Name) || string.Equals(asyncSubscribeMethod, x.Name)
+                select x).FirstOrDefault();
+            if (subscribeMethod is not null)
             {
-                var methodName = overriddenMethod.Name.Replace("Async", string.Empty);
-                var syncSubscribeMethod = $"Subscribe{methodName}";
-                var asyncSubscribeMethod = $"{syncSubscribeMethod}Async";
-
-                var subscribeMethod = (from x in allSubscribeMethods
-                                       where string.Equals(syncSubscribeMethod, x.Name) || string.Equals(asyncSubscribeMethod, x.Name)
-                                       select x).FirstOrDefault();
-                if (subscribeMethod is not null)
-                {
-                    subscribeMethods.Add(subscribeMethod);
-                }
-            }
-
-            foreach (var subscribeMethod in subscribeMethods)
-            {
-                subscribeMethod.Invoke(this, new object[0]);
+                subscribeMethods.Add(subscribeMethod);
             }
         }
 
-        private void SubscribeOnLoading()
+        foreach (var subscribeMethod in subscribeMethods)
         {
-            _projectManager.ProjectLoadingAsync += async (sender, e) => await OnLoadingInternalAsync(e).ConfigureAwait(false);
+            subscribeMethod.Invoke(this, new object[0]);
         }
+    }
 
-        private void SubscribeOnLoadingFailed()
-        {
-            _projectManager.ProjectLoadingFailedAsync += async (sender, e) => await OnLoadingFailedInternalAsync(e.Location ?? string.Empty, e.Exception, e.ValidationContext).ConfigureAwait(false);
-        }
+    private void SubscribeOnLoading()
+    {
+        _projectManager.ProjectLoadingAsync += async (sender, e) => await OnLoadingInternalAsync(e).ConfigureAwait(false);
+    }
 
-        private void SubscribeOnLoadingCanceled()
-        {
-            _projectManager.ProjectLoadingCanceledAsync += async (sender, e) => await OnLoadingCanceledInternalAsync(e.Location ?? string.Empty).ConfigureAwait(false);
-        }
+    private void SubscribeOnLoadingFailed()
+    {
+        _projectManager.ProjectLoadingFailedAsync += async (sender, e) => await OnLoadingFailedInternalAsync(e.Location ?? string.Empty, e.Exception, e.ValidationContext).ConfigureAwait(false);
+    }
 
-        private void SubscribeOnLoaded()
-        {
-            _projectManager.ProjectLoadedAsync += async (sender, e) => await OnLoadedInternalAsync(e.Project).ConfigureAwait(false);
-        }
+    private void SubscribeOnLoadingCanceled()
+    {
+        _projectManager.ProjectLoadingCanceledAsync += async (sender, e) => await OnLoadingCanceledInternalAsync(e.Location ?? string.Empty).ConfigureAwait(false);
+    }
 
-        private void SubscribeOnSaving()
-        {
-            _projectManager.ProjectSavingAsync += async (sender, e) => await OnSavingInternalAsync(e).ConfigureAwait(false);
-        }
+    private void SubscribeOnLoaded()
+    {
+        _projectManager.ProjectLoadedAsync += async (sender, e) => await OnLoadedInternalAsync(e.Project).ConfigureAwait(false);
+    }
 
-        private void SubscribeOnSavingCanceled()
-        {
-            _projectManager.ProjectSavingCanceledAsync += async (sender, e) => await OnSavingCanceledInternalAsync(e.Project).ConfigureAwait(false);
-        }
+    private void SubscribeOnSaving()
+    {
+        _projectManager.ProjectSavingAsync += async (sender, e) => await OnSavingInternalAsync(e).ConfigureAwait(false);
+    }
 
-        private void SubscribeOnSavingFailed()
+    private void SubscribeOnSavingCanceled()
+    {
+        _projectManager.ProjectSavingCanceledAsync += async (sender, e) => await OnSavingCanceledInternalAsync(e.Project).ConfigureAwait(false);
+    }
+
+    private void SubscribeOnSavingFailed()
+    {
+        _projectManager.ProjectSavingFailedAsync += async (sender, e) =>
         {
-            _projectManager.ProjectSavingFailedAsync += async (sender, e) =>
+            var project = e.Project;
+            if (project is null)
             {
-                var project = e.Project;
-                if (project is null)
-                {
-                    throw new InvalidOperationException("Project should never be null on saving");
-                }
+                throw new InvalidOperationException("Project should never be null on saving");
+            }
 
-                await OnSavingFailedInternalAsync(project, e.Exception).ConfigureAwait(false);
-            };
-        }
+            await OnSavingFailedInternalAsync(project, e.Exception).ConfigureAwait(false);
+        };
+    }
 
-        private void SubscribeOnSaved()
+    private void SubscribeOnSaved()
+    {
+        _projectManager.ProjectSavedAsync += async (sender, e) => await OnSavedInternalAsync(e.Project).ConfigureAwait(false);
+    }
+
+    private void SubscribeOnClosing()
+    {
+        _projectManager.ProjectClosingAsync += async (sender, e) => await OnClosingInternalAsync(e).ConfigureAwait(false);
+    }
+
+    private void SubscribeOnClosed()
+    {
+        _projectManager.ProjectClosedAsync += async (sender, e) => await OnClosedInternalAsync(e.Project).ConfigureAwait(false);
+    }
+
+    private void SubscribeOnClosingCanceled()
+    {
+        _projectManager.ProjectClosingCanceledAsync += async (sender, e) => await OnClosingCanceledInternalAsync(e.Project).ConfigureAwait(false);
+    }
+
+    private void SubscribeOnActivated()
+    {
+        _projectManager.ProjectActivatedAsync += async (sender, e) => await OnActivatedInternalAsync(e.OldProject, e.NewProject).ConfigureAwait(false);
+    }
+
+    private void SubscribeOnActivationFailed()
+    {
+        _projectManager.ProjectActivationFailedAsync += async (sender, e) => await OnActivationFailedInternalAsync(e.Project, e.Exception).ConfigureAwait(false);
+    }
+
+    private void SubscribeOnActivationCanceled()
+    {
+        _projectManager.ProjectActivationCanceledAsync += async (sender, e) => await OnActivationCanceledInternalAsync(e.Project).ConfigureAwait(false);
+    }
+
+    private void SubscribeOnActivation()
+    {
+        _projectManager.ProjectActivationAsync += async (sender, e) => await OnActivationInternalAsync(e).ConfigureAwait(false);
+    }
+
+    private void SubscribeOnRefreshRequired()
+    {
+        _projectManager.ProjectRefreshRequiredAsync += async (sender, e) => await OnRefreshRequiredInternalAsync(e).ConfigureAwait(false);
+    }
+
+    private void SubscribeOnRefreshed()
+    {
+        _projectManager.ProjectRefreshedAsync += async (sender, e) => await OnRefreshedInternalAsync(e.Project).ConfigureAwait(false);
+    }
+
+    private void SubscribeOnRefreshingFailed()
+    {
+        _projectManager.ProjectRefreshingFailedAsync += async (sender, e) =>
         {
-            _projectManager.ProjectSavedAsync += async (sender, e) => await OnSavedInternalAsync(e.Project).ConfigureAwait(false);
-        }
-
-        private void SubscribeOnClosing()
-        {
-            _projectManager.ProjectClosingAsync += async (sender, e) => await OnClosingInternalAsync(e).ConfigureAwait(false);
-        }
-
-        private void SubscribeOnClosed()
-        {
-            _projectManager.ProjectClosedAsync += async (sender, e) => await OnClosedInternalAsync(e.Project).ConfigureAwait(false);
-        }
-
-        private void SubscribeOnClosingCanceled()
-        {
-            _projectManager.ProjectClosingCanceledAsync += async (sender, e) => await OnClosingCanceledInternalAsync(e.Project).ConfigureAwait(false);
-        }
-
-        private void SubscribeOnActivated()
-        {
-            _projectManager.ProjectActivatedAsync += async (sender, e) => await OnActivatedInternalAsync(e.OldProject, e.NewProject).ConfigureAwait(false);
-        }
-
-        private void SubscribeOnActivationFailed()
-        {
-            _projectManager.ProjectActivationFailedAsync += async (sender, e) => await OnActivationFailedInternalAsync(e.Project, e.Exception).ConfigureAwait(false);
-        }
-
-        private void SubscribeOnActivationCanceled()
-        {
-            _projectManager.ProjectActivationCanceledAsync += async (sender, e) => await OnActivationCanceledInternalAsync(e.Project).ConfigureAwait(false);
-        }
-
-        private void SubscribeOnActivation()
-        {
-            _projectManager.ProjectActivationAsync += async (sender, e) => await OnActivationInternalAsync(e).ConfigureAwait(false);
-        }
-
-        private void SubscribeOnRefreshRequired()
-        {
-            _projectManager.ProjectRefreshRequiredAsync += async (sender, e) => await OnRefreshRequiredInternalAsync(e).ConfigureAwait(false);
-        }
-
-        private void SubscribeOnRefreshed()
-        {
-            _projectManager.ProjectRefreshedAsync += async (sender, e) => await OnRefreshedInternalAsync(e.Project).ConfigureAwait(false);
-        }
-
-        private void SubscribeOnRefreshingFailed()
-        {
-            _projectManager.ProjectRefreshingFailedAsync += async (sender, e) =>
+            var project = e.Project;
+            if (project is null)
             {
-                var project = e.Project;
-                if (project is null)
-                {
-                    return;
-                }
+                return;
+            }
 
-                await OnRefreshingFailedInternalAsync(project, e.Exception, e.ValidationContext).ConfigureAwait(false);
-            };
-        }
+            await OnRefreshingFailedInternalAsync(project, e.Exception, e.ValidationContext).ConfigureAwait(false);
+        };
+    }
 
-        private void SubscribeOnRefreshingCanceled()
-        {
-            _projectManager.ProjectRefreshingCanceledAsync += async (sender, e) => await OnRefreshingCanceledInternalAsync(e.Project).ConfigureAwait(false);
-        }
+    private void SubscribeOnRefreshingCanceled()
+    {
+        _projectManager.ProjectRefreshingCanceledAsync += async (sender, e) => await OnRefreshingCanceledInternalAsync(e.Project).ConfigureAwait(false);
+    }
 
-        private void SubscribeOnRefreshing()
-        {
-            _projectManager.ProjectRefreshingAsync += async (sender, e) => await OnRefreshingInternalAsync(e).ConfigureAwait(false);
-        }
+    private void SubscribeOnRefreshing()
+    {
+        _projectManager.ProjectRefreshingAsync += async (sender, e) => await OnRefreshingInternalAsync(e).ConfigureAwait(false);
+    }
 
-        private Task OnLoadingInternalAsync(ProjectCancelEventArgs e)
-        {
-            IsLoading = true;
+    private Task OnLoadingInternalAsync(ProjectCancelEventArgs e)
+    {
+        IsLoading = true;
 
-            return OnLoadingAsync(e);
-        }
+        return OnLoadingAsync(e);
+    }
 
-        protected virtual Task OnLoadingAsync(ProjectCancelEventArgs e)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnLoadingAsync(ProjectCancelEventArgs e)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnLoadingFailedInternalAsync(string location, Exception? exception, IValidationContext validationContext)
-        {
-            IsLoading = false;
+    private Task OnLoadingFailedInternalAsync(string location, Exception? exception, IValidationContext validationContext)
+    {
+        IsLoading = false;
 
-            return OnLoadingFailedAsync(location, exception, validationContext);
-        }
+        return OnLoadingFailedAsync(location, exception, validationContext);
+    }
 
-        protected virtual Task OnLoadingFailedAsync(string location, Exception? exception, IValidationContext validationContext)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnLoadingFailedAsync(string location, Exception? exception, IValidationContext validationContext)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnLoadingCanceledInternalAsync(string location)
-        {
-            IsLoading = false;
+    private Task OnLoadingCanceledInternalAsync(string location)
+    {
+        IsLoading = false;
 
-            return OnLoadingCanceledAsync(location);
-        }
+        return OnLoadingCanceledAsync(location);
+    }
 
-        protected virtual Task OnLoadingCanceledAsync(string location)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnLoadingCanceledAsync(string location)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnLoadedInternalAsync(IProject project)
-        {
-            IsLoading = false;
+    private Task OnLoadedInternalAsync(IProject project)
+    {
+        IsLoading = false;
 
-            return OnLoadedAsync(project);
-        }
+        return OnLoadedAsync(project);
+    }
 
-        protected virtual Task OnLoadedAsync(IProject project)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnLoadedAsync(IProject project)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnSavingInternalAsync(ProjectCancelEventArgs e)
-        {
-            IsSaving = true;
+    private Task OnSavingInternalAsync(ProjectCancelEventArgs e)
+    {
+        IsSaving = true;
 
-            return OnSavingAsync(e);
-        }
+        return OnSavingAsync(e);
+    }
 
-        protected virtual Task OnSavingAsync(ProjectCancelEventArgs e)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnSavingAsync(ProjectCancelEventArgs e)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnSavingCanceledInternalAsync(IProject project)
-        {
-            IsSaving = false;
+    private Task OnSavingCanceledInternalAsync(IProject project)
+    {
+        IsSaving = false;
 
-            return OnSavingCanceledAsync(project);
-        }
+        return OnSavingCanceledAsync(project);
+    }
 
-        protected virtual Task OnSavingCanceledAsync(IProject project)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnSavingCanceledAsync(IProject project)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnSavingFailedInternalAsync(IProject project, Exception? exception)
-        {
-            IsSaving = false;
+    private Task OnSavingFailedInternalAsync(IProject project, Exception? exception)
+    {
+        IsSaving = false;
 
-            return OnSavingFailedAsync(project, exception);
-        }
+        return OnSavingFailedAsync(project, exception);
+    }
 
-        protected virtual Task OnSavingFailedAsync(IProject project, Exception? exception)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnSavingFailedAsync(IProject project, Exception? exception)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnSavedInternalAsync(IProject project)
-        {
-            IsSaving = false;
+    private Task OnSavedInternalAsync(IProject project)
+    {
+        IsSaving = false;
 
-            return OnSavedAsync(project);
-        }
+        return OnSavedAsync(project);
+    }
 
-        protected virtual Task OnSavedAsync(IProject project)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnSavedAsync(IProject project)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnClosingInternalAsync(ProjectCancelEventArgs e)
-        {
-            IsClosing = true;
+    private Task OnClosingInternalAsync(ProjectCancelEventArgs e)
+    {
+        IsClosing = true;
 
-            return OnClosingAsync(e);
-        }
+        return OnClosingAsync(e);
+    }
 
-        protected virtual Task OnClosingAsync(ProjectCancelEventArgs e)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnClosingAsync(ProjectCancelEventArgs e)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnClosedInternalAsync(IProject project)
-        {
-            IsClosing = false;
+    private Task OnClosedInternalAsync(IProject project)
+    {
+        IsClosing = false;
 
-            return OnClosedAsync(project);
-        }
+        return OnClosedAsync(project);
+    }
 
-        protected virtual Task OnClosedAsync(IProject project)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnClosedAsync(IProject project)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnClosingCanceledInternalAsync(IProject project)
-        {
-            IsClosing = false;
+    private Task OnClosingCanceledInternalAsync(IProject project)
+    {
+        IsClosing = false;
 
-            return OnClosingCanceledAsync(project);
-        }
+        return OnClosingCanceledAsync(project);
+    }
 
-        protected virtual Task OnClosingCanceledAsync(IProject project)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnClosingCanceledAsync(IProject project)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnActivatedInternalAsync(IProject? oldProject, IProject? newProject)
-        {
-            IsActivating = false;
+    private Task OnActivatedInternalAsync(IProject? oldProject, IProject? newProject)
+    {
+        IsActivating = false;
 
-            return OnActivatedAsync(oldProject, newProject);
-        }
+        return OnActivatedAsync(oldProject, newProject);
+    }
 
-        protected virtual Task OnActivatedAsync(IProject? oldProject, IProject? newProject)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnActivatedAsync(IProject? oldProject, IProject? newProject)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnActivationFailedInternalAsync(IProject? project, Exception? exception)
-        {
-            IsActivating = false;
+    private Task OnActivationFailedInternalAsync(IProject? project, Exception? exception)
+    {
+        IsActivating = false;
 
-            return OnActivationFailedAsync(project, exception);
-        }
+        return OnActivationFailedAsync(project, exception);
+    }
 
-        protected virtual Task OnActivationFailedAsync(IProject? project, Exception? exception)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnActivationFailedAsync(IProject? project, Exception? exception)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnActivationCanceledInternalAsync(IProject? project)
-        {
-            IsActivating = false;
+    private Task OnActivationCanceledInternalAsync(IProject? project)
+    {
+        IsActivating = false;
 
-            return OnActivationCanceledAsync(project);
-        }
+        return OnActivationCanceledAsync(project);
+    }
 
-        protected virtual Task OnActivationCanceledAsync(IProject? project)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnActivationCanceledAsync(IProject? project)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnActivationInternalAsync(ProjectUpdatingCancelEventArgs e)
-        {
-            IsActivating = true;
+    private Task OnActivationInternalAsync(ProjectUpdatingCancelEventArgs e)
+    {
+        IsActivating = true;
 
-            return OnActivationAsync(e);
-        }
+        return OnActivationAsync(e);
+    }
 
-        protected virtual Task OnActivationAsync(ProjectUpdatingCancelEventArgs e)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnActivationAsync(ProjectUpdatingCancelEventArgs e)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnRefreshRequiredInternalAsync(ProjectEventArgs e)
-        {
-            return OnRefreshRequiredAsync(e.Project);
-        }
+    private Task OnRefreshRequiredInternalAsync(ProjectEventArgs e)
+    {
+        return OnRefreshRequiredAsync(e.Project);
+    }
 
-        protected virtual Task OnRefreshRequiredAsync(IProject project)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnRefreshRequiredAsync(IProject project)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnRefreshedInternalAsync(IProject project)
-        {
-            IsRefreshing = false;
+    private Task OnRefreshedInternalAsync(IProject project)
+    {
+        IsRefreshing = false;
 
-            return OnRefreshedAsync(project);
-        }
+        return OnRefreshedAsync(project);
+    }
 
-        protected virtual Task OnRefreshedAsync(IProject project)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnRefreshedAsync(IProject project)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnRefreshingFailedInternalAsync(IProject project, Exception? exception, IValidationContext validationContext)
-        {
-            IsRefreshing = false;
+    private Task OnRefreshingFailedInternalAsync(IProject project, Exception? exception, IValidationContext validationContext)
+    {
+        IsRefreshing = false;
 
-            return OnRefreshingFailedAsync(project, exception, validationContext);
-        }
+        return OnRefreshingFailedAsync(project, exception, validationContext);
+    }
 
-        protected virtual Task OnRefreshingFailedAsync(IProject project, Exception? exception, IValidationContext validationContext)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnRefreshingFailedAsync(IProject project, Exception? exception, IValidationContext validationContext)
+    {
+        return Task.CompletedTask;
+    }
 
-        private Task OnRefreshingCanceledInternalAsync(IProject project)
-        {
-            IsRefreshing = false;
+    private Task OnRefreshingCanceledInternalAsync(IProject project)
+    {
+        IsRefreshing = false;
 
-            return OnRefreshingCanceledAsync(project);
-        }
+        return OnRefreshingCanceledAsync(project);
+    }
 
-        protected virtual Task OnRefreshingCanceledAsync(IProject project)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnRefreshingCanceledAsync(IProject project)
+    {
+        return Task.CompletedTask;
+    }
 
-        protected virtual Task OnRefreshingInternalAsync(ProjectCancelEventArgs e)
-        {
-            IsRefreshing = true;
+    protected virtual Task OnRefreshingInternalAsync(ProjectCancelEventArgs e)
+    {
+        IsRefreshing = true;
 
-            return OnRefreshingAsync(e);
-        }
+        return OnRefreshingAsync(e);
+    }
 
-        protected virtual Task OnRefreshingAsync(ProjectCancelEventArgs e)
-        {
-            return Task.CompletedTask;
-        }
+    protected virtual Task OnRefreshingAsync(ProjectCancelEventArgs e)
+    {
+        return Task.CompletedTask;
     }
 }
