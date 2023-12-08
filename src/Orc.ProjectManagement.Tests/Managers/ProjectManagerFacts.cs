@@ -24,7 +24,7 @@ public class ProjectManagerFacts
 
             await projectManager.LoadAsync("dummyLocation");
 
-            Assert.IsTrue(eventRaised);
+            Assert.That(eventRaised, Is.True);
         }
 
         [TestCase]
@@ -38,7 +38,7 @@ public class ProjectManagerFacts
 
             await projectManager.LoadAsync("cannotload");
 
-            Assert.IsTrue(eventRaised);
+            Assert.That(eventRaised, Is.True);
         }
 
         [TestCase]
@@ -53,7 +53,7 @@ public class ProjectManagerFacts
 
             await projectManager.LoadAsync("dummyLocation");
 
-            Assert.IsTrue(eventRaised);
+            Assert.That(eventRaised, Is.True);
         }
 
         [TestCase]
@@ -68,7 +68,7 @@ public class ProjectManagerFacts
 
             await projectManager.LoadAsync("dummyLocation");
 
-            Assert.IsFalse(eventRaised);
+            Assert.That(eventRaised, Is.False);
         }
 
         [TestCase]
@@ -82,7 +82,7 @@ public class ProjectManagerFacts
 
             await projectManager.LoadAsync("dummyLocation");
 
-            Assert.IsTrue(eventRaised);
+            Assert.That(eventRaised, Is.True);
         }
 
         //[TestCase]
@@ -134,7 +134,7 @@ public class ProjectManagerFacts
 
             await projectManager.LoadInactiveAsync("dummyLocation");
 
-            Assert.IsTrue(eventRaised);
+            Assert.That(eventRaised, Is.True);
         }
 
         [TestCase]
@@ -148,7 +148,7 @@ public class ProjectManagerFacts
 
             await projectManager.LoadInactiveAsync("cannotload");
 
-            Assert.IsTrue(eventRaised);
+            Assert.That(eventRaised, Is.True);
         }
 
         [TestCase]
@@ -163,7 +163,7 @@ public class ProjectManagerFacts
 
             await projectManager.LoadInactiveAsync("dummyLocation");
 
-            Assert.IsTrue(eventRaised);
+            Assert.That(eventRaised, Is.True);
         }
 
         [TestCase]
@@ -178,7 +178,7 @@ public class ProjectManagerFacts
 
             await projectManager.LoadInactiveAsync("dummyLocation");
 
-            Assert.IsFalse(eventRaised);
+            Assert.That(eventRaised, Is.False);
         }
 
         [TestCase]
@@ -192,7 +192,7 @@ public class ProjectManagerFacts
 
             await projectManager.LoadInactiveAsync("dummyLocation");
 
-            Assert.IsTrue(eventRaised);
+            Assert.That(eventRaised, Is.True);
         }
 
         //[TestCase]
@@ -217,11 +217,11 @@ public class ProjectManagerFacts
             var factory = Factory.Create().SetupDefault();
             var projectManager = factory.GetProjectManager();
 
-            Assert.IsNull(projectManager.ActiveProject);
+            Assert.That(projectManager.ActiveProject, Is.Null);
 
             await projectManager.RefreshAsync();
 
-            Assert.IsNull(projectManager.ActiveProject);
+            Assert.That(projectManager.ActiveProject, Is.Null);
         }
 
         [TestCase]
@@ -237,7 +237,7 @@ public class ProjectManagerFacts
 
             await projectManager.RefreshAsync();
 
-            Assert.IsTrue(eventRaised);
+            Assert.That(eventRaised, Is.True);
         }
     }
 
@@ -252,11 +252,11 @@ public class ProjectManagerFacts
 
             await projectManager.LoadAsync("dummyLocation");
 
-            Assert.AreEqual("dummyLocation", projectManager.ActiveProject.Location);
+            Assert.That(projectManager.ActiveProject.Location, Is.EqualTo("dummyLocation"));
 
             await projectManager.SaveAsync(newLocation);
 
-            Assert.AreEqual(newLocation, projectManager.ActiveProject.Location);
+            Assert.That(projectManager.ActiveProject.Location, Is.EqualTo(newLocation));
         }
 
         [TestCase]
@@ -272,7 +272,7 @@ public class ProjectManagerFacts
 
             await projectManager.SaveAsync();
 
-            Assert.IsTrue(eventRaised);
+            Assert.That(eventRaised, Is.True);
         }
 
         [TestCase]
@@ -288,7 +288,7 @@ public class ProjectManagerFacts
 
             await projectManager.SaveAsync();
 
-            Assert.IsTrue(eventRaised);
+            Assert.That(eventRaised, Is.True);
         }
     }
 
@@ -303,11 +303,11 @@ public class ProjectManagerFacts
 
             await projectManager.LoadAsync("dummyLocation");
 
-            Assert.IsNotNull(projectManager.ActiveProject);
+            Assert.That(projectManager.ActiveProject, Is.Not.Null);
 
             await projectManager.CloseAsync();
 
-            Assert.IsNull(projectManager.ActiveProject);
+            Assert.That(projectManager.ActiveProject, Is.Null);
         }
 
         [TestCase]
@@ -318,11 +318,11 @@ public class ProjectManagerFacts
 
             await projectManager.LoadAsync("dummyLocation");
 
-            Assert.AreEqual("dummyLocation", projectManager.ActiveProject.Location);
+            Assert.That(projectManager.ActiveProject.Location, Is.EqualTo("dummyLocation"));
 
             await projectManager.CloseAsync();
 
-            Assert.AreEqual(null, projectManager.ActiveProject);
+            Assert.That(projectManager.ActiveProject, Is.EqualTo(null));
         }
 
         [TestCase]
@@ -338,7 +338,7 @@ public class ProjectManagerFacts
 
             await projectManager.CloseAsync();
 
-            Assert.IsTrue(eventRaised);
+            Assert.That(eventRaised, Is.True);
         }
 
         [TestCase]
@@ -354,7 +354,7 @@ public class ProjectManagerFacts
 
             await projectManager.CloseAsync();
 
-            Assert.IsTrue(eventRaised);
+            Assert.That(eventRaised, Is.True);
         }
 
         [TestCase(Reason = "ORCOMP-147")]
@@ -375,9 +375,9 @@ public class ProjectManagerFacts
 
             await projectManager.CloseAsync();
 
-            Assert.AreEqual(1, eventCount);
-            Assert.AreEqual(1, projects.Count);
-            Assert.IsNull(projects[0]);
+            Assert.That(eventCount, Is.EqualTo(1));
+            Assert.That(projects.Count, Is.EqualTo(1));
+            Assert.That(projects[0], Is.Null);
         }
     }
 
@@ -398,8 +398,8 @@ public class ProjectManagerFacts
             await projectManager.LoadAsync(newLocation);
             var activeProject = projectManager.ActiveProject;
 
-            Assert.AreNotEqual(initialActiveProject?.Location, activeProject?.Location);
-            Assert.AreEqual(activeProject.Location, newProject.Location);
+            Assert.That(activeProject?.Location, Is.Not.EqualTo(initialActiveProject?.Location));
+            Assert.That(newProject.Location, Is.EqualTo(activeProject.Location));
         }
 
         [TestCase("dummyLocation")]
@@ -416,7 +416,7 @@ public class ProjectManagerFacts
             await projectManager.LoadAsync(newLocation);
             await projectManager.SetActiveProjectAsync(newProject);
 
-            Assert.AreEqual(newProject.Location, projectFromEvent.Location);
+            Assert.That(projectFromEvent.Location, Is.EqualTo(newProject.Location));
         }
 
         [TestCase("dummyLocation")]
@@ -435,7 +435,7 @@ public class ProjectManagerFacts
 
             await Task.Delay(50);
 
-            Assert.AreEqual(newProject.Location, projectFromEvent.Location);
+            Assert.That(projectFromEvent.Location, Is.EqualTo(newProject.Location));
         }
 
         //[TestCase("dummyLocation")]
