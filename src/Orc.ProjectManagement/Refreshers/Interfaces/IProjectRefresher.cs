@@ -1,27 +1,15 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="IProjectRefresher.cs" company="WildGums">
-//   Copyright (c) 2008 - 2018 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System;
 
-namespace Orc.ProjectManagement
+public interface IProjectRefresher
 {
-    using System;
+    string Location { get; }
+    bool IsSubscribed { get; }
+    bool IsEnabled { get; set; }
 
-    public interface IProjectRefresher
-    {
-        #region Properties
-        string Location { get; }
-        bool IsSubscribed { get; }
-        bool IsEnabled { get; set; }
-        #endregion
+    event EventHandler<ProjectLocationEventArgs>? Updated;
 
-        #region Methods
-        event EventHandler<ProjectEventArgs> Updated;
-
-        void Subscribe();
-        void Unsubscribe();
-        #endregion
-    }
+    void Subscribe();
+    void Unsubscribe();
 }

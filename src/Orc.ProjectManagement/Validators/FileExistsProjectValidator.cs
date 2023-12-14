@@ -1,24 +1,13 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="FileExistsProjectValidator.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System.IO;
+using System.Threading.Tasks;
 
-namespace Orc.ProjectManagement
+public class FileExistsProjectValidator : ProjectValidatorBase
 {
-    using System.IO;
-    using System.Threading.Tasks;
-    using Catel.Threading;
-
-    public class FileExistsProjectValidator : ProjectValidatorBase
+    public override Task<bool> CanStartLoadingProjectAsync(string location)
     {
-        #region IProjectValidator Members
-        public override Task<bool> CanStartLoadingProjectAsync(string location)
-        {
-            var canStart = File.Exists(location);
-            return TaskHelper<bool>.FromResult(canStart);
-        }
-        #endregion
+        var canStart = File.Exists(location);
+        return Task.FromResult(canStart);
     }
 }

@@ -1,127 +1,111 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectActivationHistoryService.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace Orc.ProjectManagement
+public class ProjectActivationHistoryService : IProjectActivationHistoryService
 {
-    using System.Collections.Generic;
-    using System.Linq;
-    using Catel;
+    private readonly IList<IProject> _activationHistory = new List<IProject>();
+    private IEnumerable<IProject> _projectsSource = Enumerable.Empty<IProject>();
+    private readonly HashSet<string> _uniqueLocations = new HashSet<string>();
 
-    public class ProjectActivationHistoryService : IProjectActivationHistoryService
+    public void Remember(IProject project)
     {
-        #region Fields
-        private readonly IList<IProject> _activationHistory = new List<IProject>();
-        private IEnumerable<IProject> _projectsSource = Enumerable.Empty<IProject>();
-        private readonly HashSet<string> _uniqueLocations = new HashSet<string>();
-        #endregion
+        ArgumentNullException.ThrowIfNull(project);
 
-        #region Methods
-        public void Remember(IProject project)
+        if (_isHistoryUsageSuspended)
         {
-            if (project is null || _isHistoryUsageSuspended)
-            {
-                return;
-            }
-
-            RemoveFromHistory(project);
-
-            _activationHistory.Insert(0, project);
-            _uniqueLocations.Add(project.Location);
-
-            RenewHistory();
+            return;
         }
 
-        public void Forget(IProject project)
+        RemoveFromHistory(project);
+
+        _activationHistory.Insert(0, project);
+        _uniqueLocations.Add(project.Location);
+
+        RenewHistory();
+    }
+
+    public void Forget(IProject project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        RemoveFromHistory(project);
+
+        RenewHistory();
+    }
+
+    public IProject? GetLastActiveProject()
+    {
+        if (_isHistoryUsageSuspended)
         {
-            if (project is null)
-            {
-                return;
-            }
-
-            RemoveFromHistory(project);
-
-            RenewHistory();
+            return null;
         }
 
-        public IProject GetLastActiveProject()
-        {
-            if (_isHistoryUsageSuspended)
-            {
-                return null;
-            }
+        return _activationHistory.FirstOrDefault();
+    }
 
-            return _activationHistory.FirstOrDefault();
-        }
+    public IProject[] GetActivationHistory()
+    {
+        RenewHistory();
 
-        public IEnumerable<IProject> GetActivationHistory()
-        {
-            RenewHistory();
+        return _activationHistory.ToArray();
+    }
 
-            return _activationHistory;
-        }
+    public void SetProjectsSource(IEnumerable<IProject> projects)
+    {
+        ArgumentNullException.ThrowIfNull(projects);
 
-        public void SetProjectsSource(IEnumerable<IProject> projects)
-        {
-            Argument.IsNotNull(() => projects);
+        _projectsSource = projects;
 
-            _projectsSource = projects;
+        RenewHistory();
+    }
 
-            RenewHistory();
-        }
+    private bool _isHistoryUsageSuspended;
 
-        private bool _isHistoryUsageSuspended;
+    public void SuspendUsingHistory()
+    {
+        _isHistoryUsageSuspended = true;
+    }
 
-        public void SuspendUsingHistory()
-        {
-            _isHistoryUsageSuspended = true;
-        }
+    public void ContinueUsingHistory()
+    {
+        RenewHistory();
 
-        public void ContinueUsingHistory()
-        {
-            RenewHistory();
+        _isHistoryUsageSuspended = false;
+    }
 
-            _isHistoryUsageSuspended = false;
-        }
-        #endregion
-
-        private void RemoveFromHistory(IProject project)
-        {
-            if (project is null)
-            {
-                return;
-            }
-
-            while (_activationHistory.Remove(project))
-            {
-                // Continue
-            }
-
-            _uniqueLocations.Remove(project.Location);
-        }
-
-        private void RenewHistory()
-        {
-            var source = _projectsSource.ToList();
-            var history = _activationHistory.ToList();
-            var toRemove = (from project in history
-                            where !source.Contains(project)
-                            select project).ToList();
-
-            foreach (var project in toRemove)
-            {
-                RemoveFromHistory(project);
-            }
+    private void RemoveFromHistory(IProject project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
             
-            foreach (var project in _projectsSource)
+        while (_activationHistory.Remove(project))
+        {
+            // Continue
+        }
+
+        _uniqueLocations.Remove(project.Location);
+    }
+
+    private void RenewHistory()
+    {
+        var source = _projectsSource.ToList();
+        var history = _activationHistory.ToList();
+        var toRemove = (from project in history
+            where !source.Contains(project)
+            select project).ToList();
+
+        foreach (var project in toRemove)
+        {
+            RemoveFromHistory(project);
+        }
+            
+        foreach (var project in _projectsSource)
+        {
+            if (_uniqueLocations.Add(project.Location))
             {
-                if (_uniqueLocations.Add(project.Location))
-                {
-                    _activationHistory.Add(project);
-                }
+                _activationHistory.Add(project);
             }
         }
     }

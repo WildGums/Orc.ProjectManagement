@@ -1,37 +1,29 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="DefaultProjectSerializerSelector.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement.Serialization;
 
+using System;
+using Catel.IoC;
 
-namespace Orc.ProjectManagement.Serialization
+/// <summary>
+/// The default project serializer selector which uses the service locator.
+/// </summary>
+public class DefaultProjectSerializerSelector : IProjectSerializerSelector
 {
-    using Catel;
-    using Catel.IoC;
+    private readonly IServiceLocator _serviceLocator;
 
-    /// <summary>
-    /// The default project serializer selector which uses the service locator.
-    /// </summary>
-    public class DefaultProjectSerializerSelector : IProjectSerializerSelector
+    public DefaultProjectSerializerSelector(IServiceLocator serviceLocator)
     {
-        private readonly IServiceLocator _serviceLocator;
+        ArgumentNullException.ThrowIfNull(serviceLocator);
 
-        public DefaultProjectSerializerSelector(IServiceLocator serviceLocator)
-        {
-            Argument.IsNotNull(() => serviceLocator);
+        _serviceLocator = serviceLocator;
+    }
 
-            _serviceLocator = serviceLocator;
-        }
+    public IProjectReader GetReader(string location)
+    {
+        return _serviceLocator.ResolveRequiredType<IProjectReader>();
+    }
 
-        public IProjectReader GetReader(string location)
-        {
-            return _serviceLocator.ResolveType<IProjectReader>();
-        }
-
-        public IProjectWriter GetWriter(string location)
-        {
-            return _serviceLocator.ResolveType<IProjectWriter>();
-        }
+    public IProjectWriter GetWriter(string location)
+    {
+        return _serviceLocator.ResolveRequiredType<IProjectWriter>();
     }
 }

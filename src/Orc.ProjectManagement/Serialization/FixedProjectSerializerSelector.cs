@@ -1,30 +1,28 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="FixedProjectSerializerSelector.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement.Serialization;
 
+using System;
+using Catel.IoC;
 
-namespace Orc.ProjectManagement.Serialization
+public class FixedProjectSerializerSelector<TReader, TWriter> : IProjectSerializerSelector
+    where TReader : IProjectReader
+    where TWriter : IProjectWriter
 {
-    using Catel.IoC;
+    private readonly ITypeFactory _typeFactory;
 
-    public class FixedProjectSerializerSelector<TReader, TWriter> : IProjectSerializerSelector
-        where TReader : IProjectReader
-        where TWriter : IProjectWriter
+    public FixedProjectSerializerSelector(ITypeFactory typeFactory)
     {
-        #region IProjectSerializerSelector Members
-        public IProjectReader GetReader(string location)
-        {
-            var typeFactory = TypeFactory.Default;
-            return typeFactory.CreateInstance<TReader>();
-        }
+        ArgumentNullException.ThrowIfNull(typeFactory);
 
-        public IProjectWriter GetWriter(string location)
-        {
-            var typeFactory = TypeFactory.Default;
-            return typeFactory.CreateInstance<TWriter>();
-        }
-        #endregion
+        _typeFactory = typeFactory;
+    }
+
+    public IProjectReader GetReader(string location)
+    {
+        return _typeFactory.CreateRequiredInstance<TReader>();
+    }
+
+    public IProjectWriter GetWriter(string location)
+    {
+        return _typeFactory.CreateRequiredInstance<TWriter>();
     }
 }

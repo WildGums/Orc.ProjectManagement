@@ -1,43 +1,35 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectReaderService.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System.Threading.Tasks;
+using Catel;
+using Catel.Logging;
+using MethodTimer;
 
-namespace Orc.ProjectManagement
+public abstract class ProjectReaderBase : IProjectReader
 {
-    using System.Threading.Tasks;
-    using Catel;
-    using Catel.Logging;
-    using MethodTimer;
+    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-    public abstract class ProjectReaderBase : IProjectReader
+    [Time]
+    public async Task<IProject?> ReadAsync(string location)
     {
-        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+        Argument.IsNotNullOrWhitespace(() => location);
 
-        [Time]
-        public async Task<IProject> ReadAsync(string location)
+        Log.Debug("Reading data from '{0}'", location);
+
+        var project = await ReadFromLocationAsync(location).ConfigureAwait(false);
+        if (project is null)
         {
-            Argument.IsNotNullOrWhitespace(() => location);
+            Log.Info("Project reader returned no project");
+        }
+        else
+        {
+            project.ClearIsDirty();
 
-            Log.Debug("Reading data from '{0}'", location);
-
-            var project = await ReadFromLocationAsync(location).ConfigureAwait(false);
-            if (project is null)
-            {
-                Log.Info("Project reader returned no project");
-            }
-            else
-            {
-                project.ClearIsDirty();
-
-                Log.Info("Read data from '{0}'", location);
-            }
-
-            return project;
+            Log.Info("Read data from '{0}'", location);
         }
 
-        protected abstract Task<IProject> ReadFromLocationAsync(string location);
+        return project;
     }
+
+    protected abstract Task<IProject?> ReadFromLocationAsync(string location);
 }

@@ -1,22 +1,12 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="DirectoryExistsProjectValidator.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System.IO;
+using System.Threading.Tasks;
 
-namespace Orc.ProjectManagement
+public class DirectoryExistsProjectValidator : ProjectValidatorBase
 {
-    using System.IO;
-    using System.Threading.Tasks;
-
-    public class DirectoryExistsProjectValidator : ProjectValidatorBase
+    public override async Task<bool> CanStartLoadingProjectAsync(string location)
     {
-        #region IProjectValidator 
-        public override async Task<bool> CanStartLoadingProjectAsync(string location)
-        {
-            return Directory.Exists(location);
-        }
-        #endregion
+        return Directory.Exists(location);
     }
 }

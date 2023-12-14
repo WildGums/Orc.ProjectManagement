@@ -1,38 +1,20 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="MainWindow.xaml.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement.Example.Views;
 
+using Catel.Logging;
+using Catel.Windows;
+using Orchestra.Logging;
 
-namespace Orc.ProjectManagement.Example.Views
+public partial class MainWindow : DataWindow
 {
-    using Catel.Logging;
-    using Catel.Windows;
-    using Orchestra.Logging;
+    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml.
-    /// </summary>
-    public partial class MainWindow : DataWindow
+    public MainWindow()
+        : base(DataWindowMode.Custom)
     {
-        #region Constants
-        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
-        #endregion
+        InitializeComponent();
 
-        #region Constructors
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MainWindow"/> class.
-        /// </summary>
-        public MainWindow()
-            : base(DataWindowMode.Custom)
-        {
-            InitializeComponent();
+        LogManager.AddListener(new TextBoxLogListener(outputTextBox));
 
-            LogManager.AddListener(new TextBoxLogListener(outputTextBox));
-
-            Log.Info("Welcome to the example of Orc.ProjectManagement. Use any of the buttons above to control the project. Log messages will appear here");
-        }
-        #endregion
+        Log.Info("Welcome to the example of Orc.ProjectManagement. Use any of the buttons above to control the project. Log messages will appear here");
     }
 }

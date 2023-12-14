@@ -1,29 +1,22 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc.ProjectManagement;
+
+using System.Diagnostics;
+using Catel.Logging;
+
+internal static class ILogExtensions
 {
-    using System.Diagnostics;
-    using Catel.Logging;
+    private static readonly bool IsDebuggerAttached;
 
-    internal static class ILogExtensions
+    static ILogExtensions()
     {
-        #region Constants
-        private static readonly bool IsDebuggerAttached = false;
-        #endregion
+        IsDebuggerAttached = Debugger.IsAttached;
+    }
 
-        #region Constructors
-        static ILogExtensions()
+    public static void DebugIfAttached(this ILog log, string message)
+    {
+        if (IsDebuggerAttached)
         {
-            IsDebuggerAttached = Debugger.IsAttached;
+            log.Debug(message);
         }
-        #endregion
-
-        #region Methods
-        public static void DebugIfAttached(this ILog log, string message)
-        {
-            if (IsDebuggerAttached)
-            {
-                log.Debug(message);
-            }
-        }
-        #endregion
     }
 }

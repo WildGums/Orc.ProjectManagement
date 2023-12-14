@@ -1,29 +1,21 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="IWorkspaceSerializerSelector.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
-
-namespace Orc.ProjectManagement
+/// <summary>
+/// Manages the selection of the right serializer for the location.
+/// </summary>
+public interface IProjectSerializerSelector
 {
     /// <summary>
-    /// Manages the selection of the right serializer for the location.
+    /// Gets the reader for the specified location.
     /// </summary>
-    public interface IProjectSerializerSelector
-    {
-        /// <summary>
-        /// Gets the reader for the specified location.
-        /// </summary>
-        /// <param name="location">The location.</param>
-        /// <returns>IProjectReader.</returns>
-        IProjectReader GetReader(string location);
+    /// <param name="location">The location.</param>
+    /// <returns>IProjectReader.</returns>
+    IProjectReader GetReader(string location);
 
-        /// <summary>
-        /// Gets the writer for the specified location.
-        /// </summary>
-        /// <param name="location">The location.</param>
-        /// <returns>IProjectWriter.</returns>
-        IProjectWriter GetWriter(string location);
-    }
+    /// <summary>
+    /// Gets the writer for the specified location.
+    /// </summary>
+    /// <param name="location">The location.</param>
+    /// <returns>IProjectWriter.</returns>
+    IProjectWriter GetWriter(string location);
 }

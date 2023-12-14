@@ -1,44 +1,37 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectWriterService.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System;
+using System.Threading.Tasks;
+using Catel;
+using Catel.Logging;
+using MethodTimer;
 
-namespace Orc.ProjectManagement
+public abstract class ProjectWriterBase<TProject> : IProjectWriter
+    where TProject : IProject
 {
-    using System.Threading.Tasks;
-    using Catel;
-    using Catel.Logging;
-    using MethodTimer;
+    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
-    public abstract class ProjectWriterBase<TProject> : IProjectWriter
-        where TProject : IProject
+    [Time]
+    public async Task<bool> WriteAsync(IProject project, string location)
     {
-        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+        ArgumentNullException.ThrowIfNull(project);
+        Argument.IsNotNullOrWhitespace(() => location);
 
-        [Time]
-        public async Task<bool> WriteAsync(IProject project, string location)
+        Log.Debug("Writing all data to '{0}'", location);
+
+        if (!await WriteToLocationAsync((TProject) project, location).ConfigureAwait(false))
         {
-            Argument.IsNotNull(() => project);
-            Argument.IsNotNullOrWhitespace(() => location);
-
-            Log.Debug("Writing all data to '{0}'", location);
-
-            if (!await WriteToLocationAsync((TProject) project, location).ConfigureAwait(false))
-            {
-                Log.Warning("Failed to write all data to '{0}'", location);
-                return false;
-            }
-
-            project.Location = location;
-            project.ClearIsDirty();
-
-            Log.Info("Wrote all data to '{0}'", location);
-
-            return true;
+            Log.Warning("Failed to write all data to '{0}'", location);
+            return false;
         }
 
-        protected abstract Task<bool> WriteToLocationAsync(TProject project, string location);
+        project.Location = location;
+        project.ClearIsDirty();
+
+        Log.Info("Wrote all data to '{0}'", location);
+
+        return true;
     }
+
+    protected abstract Task<bool> WriteToLocationAsync(TProject project, string location);
 }

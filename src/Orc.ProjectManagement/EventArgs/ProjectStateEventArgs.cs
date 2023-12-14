@@ -1,24 +1,15 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectStateEventArgs.cs" company="WildGums">
-//   Copyright (c) 2008 - 2016 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System;
 
-namespace Orc.ProjectManagement
+public class ProjectStateEventArgs : EventArgs
 {
-    using System;
-    using Catel;
-
-    public class ProjectStateEventArgs : EventArgs
+    public ProjectStateEventArgs(ProjectState projectState)
     {
-        public ProjectStateEventArgs(ProjectState projectState)
-        {
-            Argument.IsNotNull(() => projectState);
+        ArgumentNullException.ThrowIfNull(projectState);
 
-            ProjectState = projectState;
-        }
-
-        public ProjectState ProjectState { get; private set; }
+        ProjectState = projectState;
     }
+
+    public ProjectState ProjectState { get; }
 }

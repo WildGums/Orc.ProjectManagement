@@ -1,27 +1,13 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="IProjectStateService.cs" company="WildGums">
-//   Copyright (c) 2008 - 2016 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System;
 
-namespace Orc.ProjectManagement
+public interface IProjectStateService
 {
-    using System;
+    bool IsRefreshingActiveProject { get; }
 
-    public interface IProjectStateService
-    {
-        #region Properties
-        bool IsRefreshingActiveProject { get; }
-        #endregion
+    event EventHandler<EventArgs>? IsRefreshingActiveProjectUpdated;
+    event EventHandler<ProjectStateEventArgs>? ProjectStateUpdated;
 
-        #region Events
-        event EventHandler<EventArgs> IsRefreshingActiveProjectUpdated;
-        event EventHandler<ProjectStateEventArgs> ProjectStateUpdated;
-        #endregion
-
-        #region Methods
-        ProjectState GetProjectState(IProject project);
-        #endregion
-    }
+    ProjectState GetProjectState(IProject project);
 }

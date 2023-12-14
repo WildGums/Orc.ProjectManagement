@@ -1,197 +1,175 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="MainWindowViewModel.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement.Example.ViewModels;
 
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using Catel.Fody;
+using Catel.Logging;
+using Catel.MVVM;
+using Catel.Services;
+using Models;
 
-namespace Orc.ProjectManagement.Example.ViewModels
+public class MainWindowViewModel : ViewModelBase
 {
-    using System;
-    using System.IO;
-    using System.Threading.Tasks;
-    using Catel;
-    using Catel.Fody;
-    using Catel.Logging;
-    using Catel.MVVM;
-    using Catel.Services;
-    using Models;
+    private const string TextFilter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
+
+    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+
+    private readonly IMessageService _messageService;
+    private readonly IOpenFileService _openFileService;
+    private readonly IProcessService _processService;
+    private readonly IProjectManager _projectManager;
+    private readonly ISaveFileService _saveFileService;
 
     /// <summary>
-    /// MainWindow view model.
+    /// Initializes a new instance of the <see cref="MainWindowViewModel"/> class.
     /// </summary>
-    public class MainWindowViewModel : ViewModelBase
+    public MainWindowViewModel(IProjectManager projectManager, IOpenFileService openFileService,
+        ISaveFileService saveFileService, IProcessService processService, IMessageService messageService)
     {
-        #region Fields
-        private const string TextFilter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
+        ArgumentNullException.ThrowIfNull(projectManager);
+        ArgumentNullException.ThrowIfNull(openFileService);
+        ArgumentNullException.ThrowIfNull(saveFileService);
+        ArgumentNullException.ThrowIfNull(processService);
 
-        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+        _projectManager = projectManager;
+        _openFileService = openFileService;
+        _saveFileService = saveFileService;
+        _processService = processService;
+        _messageService = messageService;
 
-        private readonly IMessageService _messageService;
-        private readonly IOpenFileService _openFileService;
-        private readonly IProcessService _processService;
-        private readonly IProjectManager _projectManager;
-        private readonly ISaveFileService _saveFileService;
-        #endregion
+        LoadProject = new TaskCommand(OnLoadProjectExecuteAsync);
+        RefreshProject = new TaskCommand(OnRefreshProjectExecuteAsync, OnRefreshProjectCanExecute);
+        SaveProject = new TaskCommand(OnSaveProjectExecuteAsync, OnSaveProjectCanExecute);
+        SaveProjectAs = new TaskCommand(OnSaveProjectAsExecuteAsync, OnSaveProjectAsCanExecute);
+        CloseProject = new Command(OnCloseProjectExecute, OnCloseProjectCanExecute);
+        OpenFile = new Command(OnOpenFileExecute, OnOpenFileCanExecute);
 
-        #region Constructors
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MainWindowViewModel"/> class.
-        /// </summary>
-        public MainWindowViewModel(IProjectManager projectManager, IOpenFileService openFileService,
-            ISaveFileService saveFileService, IProcessService processService, IMessageService messageService)
+        Title = "Orc.ProjectManagement example";
+    }
+
+    /// <summary>
+    /// Gets the title of the view model.
+    /// </summary>
+    /// <value>The title.</value>
+    public override string Title
+    {
+        get { return "Orc.ProjectManagement.Example"; }
+    }
+
+    [Model]
+    [Expose("FirstName")]
+    [Expose("MiddleName")]
+    [Expose("LastName")]
+    public PersonProject? Project { get; private set; }
+
+    protected override async Task InitializeAsync()
+    {
+        await base.InitializeAsync().ConfigureAwait(false);
+
+        _projectManager.ProjectActivatedAsync += OnProjectActivatedAsync;
+
+        ReloadProject();
+    }
+
+    protected override Task CloseAsync()
+    {
+        _projectManager.ProjectActivatedAsync -= OnProjectActivatedAsync;
+
+        return base.CloseAsync();
+    }
+
+    private async Task OnProjectActivatedAsync(object sender, ProjectUpdatedEventArgs e)
+    {
+        ReloadProject();
+    }
+
+    private void ReloadProject()
+    {
+        Project = _projectManager.GetActiveProject<PersonProject>();
+    }
+
+    public TaskCommand LoadProject { get; private set; }
+
+    private async Task OnLoadProjectExecuteAsync()
+    {
+        var result = await _openFileService.DetermineFileAsync(new DetermineOpenFileContext
         {
-            Argument.IsNotNull(() => projectManager);
-            Argument.IsNotNull(() => openFileService);
-            Argument.IsNotNull(() => saveFileService);
-            Argument.IsNotNull(() => processService);
+            InitialDirectory = Path.Combine(Environment.CurrentDirectory, "Data"),
+            Filter = TextFilter
+        });
 
-            _projectManager = projectManager;
-            _openFileService = openFileService;
-            _saveFileService = saveFileService;
-            _processService = processService;
-            _messageService = messageService;
-
-            LoadProject = new TaskCommand(OnLoadProjectExecuteAsync);
-            RefreshProject = new TaskCommand(OnRefreshProjectExecuteAsync, OnRefreshProjectCanExecute);
-            SaveProject = new TaskCommand(OnSaveProjectExecuteAsync, OnSaveProjectCanExecute);
-            SaveProjectAs = new TaskCommand(OnSaveProjectAsExecuteAsync, OnSaveProjectAsCanExecute);
-            CloseProject = new Command(OnCloseProjectExecute, OnCloseProjectCanExecute);
-            OpenFile = new Command(OnOpenFileExecute, OnOpenFileCanExecute);
-
-            Title = "Orc.ProjectManagement example";
-        }
-        #endregion
-
-        #region Properties
-        /// <summary>
-        /// Gets the title of the view model.
-        /// </summary>
-        /// <value>The title.</value>
-        public override string Title
+        if (result.Result)
         {
-            get { return "Orc.ProjectManagement.Example"; }
+            await _projectManager.LoadAsync(result.FileName).ConfigureAwait(false);
         }
+    }
 
-        [Model]
-        [Expose("FirstName")]
-        [Expose("MiddleName")]
-        [Expose("LastName")]
-        public PersonProject Project { get; private set; }
-        #endregion
+    public TaskCommand RefreshProject { get; private set; }
 
-        #region Methods
-        protected override async Task InitializeAsync()
+    private bool OnRefreshProjectCanExecute()
+    {
+        return _projectManager.ActiveProject is not null;
+    }
+
+    private async Task OnRefreshProjectExecuteAsync()
+    {
+        await _projectManager.RefreshAsync().ConfigureAwait(false);
+    }
+
+    public TaskCommand SaveProject { get; private set; }
+
+    private bool OnSaveProjectCanExecute()
+    {
+        return _projectManager.ActiveProject is not null;
+    }
+
+    private async Task OnSaveProjectExecuteAsync()
+    {
+        await _projectManager.SaveAsync().ConfigureAwait(false);
+    }
+
+    public TaskCommand SaveProjectAs { get; private set; }
+
+    private bool OnSaveProjectAsCanExecute()
+    {
+        return _projectManager.ActiveProject is not null;
+    }
+
+    private async Task OnSaveProjectAsExecuteAsync()
+    {
+        var result = await _saveFileService.DetermineFileAsync(new DetermineSaveFileContext
         {
-            await base.InitializeAsync().ConfigureAwait(false);
+            Filter = TextFilter
+        });
 
-            _projectManager.ProjectActivatedAsync += OnProjectActivatedAsync;
-
-            ReloadProject();
-        }
-
-        protected override Task CloseAsync()
+        if (result.Result)
         {
-            _projectManager.ProjectActivatedAsync -= OnProjectActivatedAsync;
-
-            return base.CloseAsync();
+            await _projectManager.SaveAsync(result.FileName).ConfigureAwait(false);
         }
+    }
 
-        private async Task OnProjectActivatedAsync(object sender, ProjectUpdatedEventArgs e)
-        {
-            ReloadProject();
-        }
+    public Command CloseProject { get; private set; }
 
-        private void ReloadProject()
-        {
-            Project = _projectManager.GetActiveProject<PersonProject>();
-        }
-        #endregion
+    private bool OnCloseProjectCanExecute()
+    {
+        return _projectManager.ActiveProject is not null;
+    }
 
-        #region Commands
-        public TaskCommand LoadProject { get; private set; }
+    private void OnCloseProjectExecute()
+    {
+        _projectManager.CloseAsync();
+    }
 
-        private async Task OnLoadProjectExecuteAsync()
-        {
-            var result = await _openFileService.DetermineFileAsync(new DetermineOpenFileContext
-            {
-                InitialDirectory = Path.Combine(Environment.CurrentDirectory, "Data"),
-                Filter = TextFilter
-            });
+    public Command OpenFile { get; private set; }
 
-            if (result.Result)
-            {
-                await _projectManager.LoadAsync(result.FileName).ConfigureAwait(false);
-            }
-        }
+    private bool OnOpenFileCanExecute()
+    {
+        return _projectManager.ActiveProject is not null;
+    }
 
-        public TaskCommand RefreshProject { get; private set; }
-
-        private bool OnRefreshProjectCanExecute()
-        {
-            return _projectManager.ActiveProject is not null;
-        }
-
-        private async Task OnRefreshProjectExecuteAsync()
-        {
-            await _projectManager.RefreshAsync().ConfigureAwait(false);
-        }
-
-        public TaskCommand SaveProject { get; private set; }
-
-        private bool OnSaveProjectCanExecute()
-        {
-            return _projectManager.ActiveProject is not null;
-        }
-
-        private async Task OnSaveProjectExecuteAsync()
-        {
-            await _projectManager.SaveAsync().ConfigureAwait(false);
-        }
-
-        public TaskCommand SaveProjectAs { get; private set; }
-
-        private bool OnSaveProjectAsCanExecute()
-        {
-            return _projectManager.ActiveProject is not null;
-        }
-
-        private async Task OnSaveProjectAsExecuteAsync()
-        {
-            var result = await _saveFileService.DetermineFileAsync(new DetermineSaveFileContext
-            {
-                Filter = TextFilter
-            });
-
-            if (result.Result)
-            {
-                await _projectManager.SaveAsync(result.FileName).ConfigureAwait(false);
-            }
-        }
-
-        public Command CloseProject { get; private set; }
-
-        private bool OnCloseProjectCanExecute()
-        {
-            return _projectManager.ActiveProject is not null;
-        }
-
-        private void OnCloseProjectExecute()
-        {
-            _projectManager.CloseAsync();
-        }
-
-        public Command OpenFile { get; private set; }
-
-        private bool OnOpenFileCanExecute()
-        {
-            return _projectManager.ActiveProject is not null;
-        }
-
-        private void OnOpenFileExecute()
-        {
-            _processService.StartProcess(_projectManager.ActiveProject.Location);
-        }
-        #endregion
+    private void OnOpenFileExecute()
+    {
+        _processService.StartProcess(_projectManager.ActiveProject.Location);
     }
 }

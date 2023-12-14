@@ -1,25 +1,16 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="EmptyProjectUpgrader.cs" company="WildGums">
-//   Copyright (c) 2008 - 2016 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System.Threading.Tasks;
 
-namespace Orc.ProjectManagement
+public class EmptyProjectUpgrader : IProjectUpgrader
 {
-    using System.Threading.Tasks;
-    using Catel.Threading;
-
-    public class EmptyProjectUpgrader : IProjectUpgrader
+    public virtual Task<bool> RequiresUpgradeAsync(string location)
     {
-        public virtual Task<bool> RequiresUpgradeAsync(string location)
-        {
-            return TaskHelper<bool>.FromResult(false);
-        }
+        return Task.FromResult(false);
+    }
 
-        public virtual async Task<string> UpgradeAsync(string location)
-        {
-            return location;
-        }
+    public virtual async Task<string> UpgradeAsync(string location)
+    {
+        return location;
     }
 }

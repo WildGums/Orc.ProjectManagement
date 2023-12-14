@@ -1,40 +1,33 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="CloseBeforeLoadProjectWatcher.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System;
+using System.Threading.Tasks;
+using Catel.IoC;
 
-namespace Orc.ProjectManagement
+public class CloseBeforeLoadProjectWatcher : ProjectWatcherBase
 {
-    using System.Threading.Tasks;
-    using Catel;
-    using Catel.IoC;
+    private readonly CloseBeforeLoadProjectWorkflowItem _closeBeforeLoadProjectWorkflowItem;
 
-    public class CloseBeforeLoadProjectWatcher : ProjectWatcherBase
+    public CloseBeforeLoadProjectWatcher(IProjectManager projectManager, ITypeFactory typeFactory)
+        : base(projectManager)
     {
-        #region Fields
-        private readonly CloseBeforeLoadProjectWorkflowItem _closeBeforeLoadProjectWorkflowItem;
-        #endregion
+        ArgumentNullException.ThrowIfNull(typeFactory);
 
-        #region Constructors
-        public CloseBeforeLoadProjectWatcher(IProjectManager projectManager, ITypeFactory typeFactory)
-            : base(projectManager)
+        _closeBeforeLoadProjectWorkflowItem = typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWorkflowItem>(projectManager);
+    }
+
+    protected override async Task OnLoadingAsync(ProjectCancelEventArgs e)
+    {
+        if (e.Cancel)
         {
-            Argument.IsNotNull(() => typeFactory);
-
-            _closeBeforeLoadProjectWorkflowItem = typeFactory.CreateInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWorkflowItem>(projectManager);
+            return;
         }
-        #endregion
 
-        protected override async Task OnLoadingAsync(ProjectCancelEventArgs e)
+        if (e.Location is null)
         {
-            if (e.Cancel)
-            {
-                return;
-            }
-
-            e.Cancel = !await _closeBeforeLoadProjectWorkflowItem.LoadingAsync(e.Location);
+            return;
         }
+
+        e.Cancel = !await _closeBeforeLoadProjectWorkflowItem.LoadingAsync(e.Location);
     }
 }

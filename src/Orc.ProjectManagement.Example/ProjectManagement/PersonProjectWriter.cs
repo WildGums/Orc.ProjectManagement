@@ -1,31 +1,22 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="PersonProjectWriter.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement.Example.Services;
 
+using System.IO;
+using System.Threading.Tasks;
+using Models;
 
-namespace Orc.ProjectManagement.Example.Services
+public class PersonProjectWriter : ProjectWriterBase<PersonProject>
 {
-    using System.IO;
-    using System.Threading.Tasks;
-    using Catel.Threading;
-    using Models;
-
-    public class PersonProjectWriter : ProjectWriterBase<PersonProject>
+    protected override Task<bool> WriteToLocationAsync(PersonProject project, string location)
     {
-        protected override Task<bool> WriteToLocationAsync(PersonProject project, string location)
+        using (var fileStream = new FileStream(location, FileMode.Create, FileAccess.Write))
         {
-            using (var fileStream = new FileStream(location, FileMode.Create, FileAccess.Write))
+            using (var textWriter = new StreamWriter(fileStream))
             {
-                using (var textWriter = new StreamWriter(fileStream))
-                {
-                    textWriter.WriteLine("{0};{1};{2}", project.FirstName ?? string.Empty,
-                        project.MiddleName ?? string.Empty, project.LastName ?? string.Empty);
-                }
+                textWriter.WriteLine("{0};{1};{2}", project.FirstName ?? string.Empty,
+                    project.MiddleName ?? string.Empty, project.LastName ?? string.Empty);
             }
-
-            return TaskHelper<bool>.FromResult(true);
         }
+
+        return Task.FromResult<bool>(true);
     }
 }

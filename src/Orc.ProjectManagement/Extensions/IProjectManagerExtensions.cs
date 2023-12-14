@@ -1,32 +1,22 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="IProjectManagerExtensions.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System;
 
-namespace Orc.ProjectManagement
+public static class IProjectManagerExtensions
 {
-    using Catel;
-
-    public static class IProjectManagerExtensions
+    public static TProject? GetActiveProject<TProject>(this IProjectManager projectManager)
+        where TProject : IProject
     {
-        #region Methods
-        public static TProject GetActiveProject<TProject>(this IProjectManager projectManager)
-            where TProject : IProject
-        {
-            Argument.IsNotNull(() => projectManager);
+        ArgumentNullException.ThrowIfNull(projectManager);
 
-            return (TProject)projectManager.ActiveProject;
-        }
+        return (TProject?)projectManager.ActiveProject;
+    }
 
-        public static string GetActiveProjectLocation(this IProjectManager projectManager)
-        {
-            Argument.IsNotNull(() => projectManager);
+    public static string? GetActiveProjectLocation(this IProjectManager projectManager)
+    {
+        ArgumentNullException.ThrowIfNull(projectManager);
 
-            var activeProject = projectManager.ActiveProject;
-            return activeProject is null ? null : activeProject.Location;
-        }
-        #endregion
+        var activeProject = projectManager.ActiveProject;
+        return activeProject?.Location;
     }
 }

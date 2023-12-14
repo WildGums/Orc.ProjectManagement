@@ -1,47 +1,35 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="CloseBeforeLoadProjectWorkflowItem.cs" company="WildGums">
-//   Copyright (c) 2008 - 2018 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace Orc.ProjectManagement
+public class CloseBeforeLoadProjectWorkflowItem : ProjectManagerWorkflowItemBase
 {
-    using System.Linq;
-    using System.Threading.Tasks;
-    using Catel;
+    private readonly IProjectManager _projectManager;
 
-    public class CloseBeforeLoadProjectWorkflowItem : ProjectManagerWorkflowItemBase
+    public CloseBeforeLoadProjectWorkflowItem(IProjectManager projectManager)
     {
-        #region Fields
-        private readonly IProjectManager _projectManager;
-        #endregion
+        ArgumentNullException.ThrowIfNull(projectManager);
 
-        #region Constructors
-        public CloseBeforeLoadProjectWorkflowItem(IProjectManager projectManager)
+        _projectManager = projectManager;
+    }
+
+    public override async Task<bool> LoadingAsync(string location)
+    {
+        if (!await base.LoadingAsync(location))
         {
-            Argument.IsNotNull(() => projectManager);
-
-            _projectManager = projectManager;
+            return false;
         }
-        #endregion
 
-        public override async Task<bool> LoadingAsync(string location)
+        foreach (var project in _projectManager.Projects.ToList())
         {
-            if (!await base.LoadingAsync(location))
+            if (!await _projectManager.CloseAsync(project))
             {
                 return false;
             }
-
-            foreach (var project in _projectManager.Projects.ToList())
-            {
-                if (!await _projectManager.CloseAsync(project))
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
+
+        return true;
     }
 }

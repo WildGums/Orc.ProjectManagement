@@ -1,51 +1,43 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="PersonProjectReader.cs" company="WildGums">
-//   Copyright (c) 2008 - 2014 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement.Example.Services;
 
+using System.IO;
+using System.Threading.Tasks;
+using Catel.Threading;
+using Models;
 
-namespace Orc.ProjectManagement.Example.Services
+public class PersonProjectReader : ProjectReaderBase
 {
-    using System.IO;
-    using System.Threading.Tasks;
-    using Catel.Threading;
-    using Models;
-
-    public class PersonProjectReader : ProjectReaderBase
+    protected override Task<IProject> ReadFromLocationAsync(string location)
     {
-        protected override Task<IProject> ReadFromLocationAsync(string location)
+        var project = new PersonProject(location);
+
+        if (File.Exists(location))
         {
-            var project = new PersonProject(location);
-
-            if (File.Exists(location))
+            using (var fileStream = new FileStream(location, FileMode.Open, FileAccess.Read))
             {
-                using (var fileStream = new FileStream(location, FileMode.Open, FileAccess.Read))
+                using (var textReader = new StreamReader(fileStream))
                 {
-                    using (var textReader = new StreamReader(fileStream))
+                    var content = textReader.ReadLine();
+
+                    var splittedString = content.Split(new[] { ';' });
+                    if (splittedString.Length > 0)
                     {
-                        var content = textReader.ReadLine();
+                        project.FirstName = splittedString[0];
+                    }
 
-                        var splittedString = content.Split(new[] { ';' });
-                        if (splittedString.Length > 0)
-                        {
-                            project.FirstName = splittedString[0];
-                        }
+                    if (splittedString.Length > 1)
+                    {
+                        project.MiddleName = splittedString[1];
+                    }
 
-                        if (splittedString.Length > 1)
-                        {
-                            project.MiddleName = splittedString[1];
-                        }
-
-                        if (splittedString.Length > 2)
-                        {
-                            project.LastName = splittedString[2];
-                        }
+                    if (splittedString.Length > 2)
+                    {
+                        project.LastName = splittedString[2];
                     }
                 }
             }
-
-            return TaskHelper<IProject>.FromResult((IProject)project);
         }
+
+        return Task.FromResult<IProject>(project);
     }
 }

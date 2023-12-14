@@ -1,38 +1,22 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectCancelEventArgs.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System.ComponentModel;
 
-namespace Orc.ProjectManagement
+public class ProjectCancelEventArgs : CancelEventArgs
 {
-    using System.ComponentModel;
-
-    public class ProjectCancelEventArgs : CancelEventArgs
+    public ProjectCancelEventArgs(string location, bool cancel = false)
+        : base(cancel)
     {
-        #region Constructors
-        public ProjectCancelEventArgs(string location, bool cancel = false)
-            : base(cancel)
-        {
-            Location = location;
-        }
-
-        public ProjectCancelEventArgs(IProject project, bool cancel = false)
-            : base(cancel)
-        {
-            Project = project;
-
-            if (project is not null)
-            {
-                Location = project.Location;
-            }
-        }
-        #endregion
-
-        #region Properties
-        public string Location { get; private set; }
-        public IProject Project { get; private set; }
-        #endregion
+        Location = location;
     }
+
+    public ProjectCancelEventArgs(IProject project, bool cancel = false)
+        : base(cancel)
+    {
+        Project = project;
+        Location = project?.Location;
+    }
+
+    public string? Location { get; }
+    public IProject? Project { get; }
 }

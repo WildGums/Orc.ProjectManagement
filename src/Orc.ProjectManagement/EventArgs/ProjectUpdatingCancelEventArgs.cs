@@ -1,62 +1,54 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ProjectUpdatingCancelEventArgs.cs" company="WildGums">
-//   Copyright (c) 2008 - 2015 WildGums. All rights reserved.
-// </copyright>
-// --------------------------------------------------------------------------------------------------------------------
+﻿namespace Orc.ProjectManagement;
 
+using System.ComponentModel;
+using Catel;
 
-namespace Orc.ProjectManagement
+public class ProjectUpdatingCancelEventArgs : CancelEventArgs
 {
-    using System.ComponentModel;
-    using Catel;
+    private readonly string? _oldProjectLocation;
+    private readonly string? _newProjectLocation;
 
-    public class ProjectUpdatingCancelEventArgs : CancelEventArgs
+    public ProjectUpdatingCancelEventArgs(IProject? oldProject, IProject? newProject, bool cancel = false)
+        : base(cancel)
     {
-        private readonly string _oldProjectLocation;
-        private readonly string _newProjectLocation;
+        OldProject = oldProject;
+        NewProject = newProject;
+    }
 
-        public ProjectUpdatingCancelEventArgs(IProject oldProject, IProject newProject, bool cancel = false)
-            : base(cancel)
+    public ProjectUpdatingCancelEventArgs(string oldProjectLocation, string newProjectLocation, bool cancel = false)
+        : base(cancel)
+    {
+        _oldProjectLocation = oldProjectLocation;
+        _newProjectLocation = newProjectLocation;
+    }
+
+    public IProject? OldProject { get; }
+
+    public string? OldProjectLocation
+    {
+        get { return OldProject?.Location ?? _oldProjectLocation; }
+    }
+
+    public IProject? NewProject { get; }
+
+    public string? NewProjectLocation
+    {
+        get { return NewProject?.Location ?? _newProjectLocation; }
+    }
+
+    public bool IsRefresh
+    {
+        get
         {
-            OldProject = oldProject;
-            NewProject = newProject;
-        }
+            var oldProjectLocation = OldProjectLocation;
+            var newProjectLocation = NewProjectLocation;
 
-        public ProjectUpdatingCancelEventArgs(string oldProjectLocation, string newProjectLocation, bool cancel = false)
-            : base(cancel)
-        {
-            _oldProjectLocation = oldProjectLocation;
-            _newProjectLocation = newProjectLocation;
-        }
-
-        public IProject OldProject { get; private set; }
-
-        public string OldProjectLocation
-        {
-            get { return OldProject is null ? _oldProjectLocation : OldProject.Location; }
-        }
-
-        public IProject NewProject { get; private set; }
-
-        public string NewProjectLocation
-        {
-            get { return NewProject is null ? _newProjectLocation : NewProject.Location; }
-        }
-
-        public bool IsRefresh
-        {
-            get
+            if (string.IsNullOrWhiteSpace(oldProjectLocation) || string.IsNullOrWhiteSpace(newProjectLocation))
             {
-                var oldProjectLocation = OldProjectLocation;
-                var newProjectLocation = NewProjectLocation;
-
-                if (string.IsNullOrWhiteSpace(oldProjectLocation) || string.IsNullOrWhiteSpace(newProjectLocation))
-                {
-                    return false;
-                }
-
-                return ObjectHelper.AreEqual(oldProjectLocation, newProjectLocation);
+                return false;
             }
+
+            return ObjectHelper.AreEqual(oldProjectLocation, newProjectLocation);
         }
     }
 }
