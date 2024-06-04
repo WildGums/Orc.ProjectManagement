@@ -145,22 +145,31 @@ namespace Orc.ProjectManagement
         event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectCancelEventArgs>? ProjectSavingAsync;
         event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectEventArgs>? ProjectSavingCanceledAsync;
         event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectErrorEventArgs>? ProjectSavingFailedAsync;
+        [System.Obsolete("Use extension method. Use `CloseActiveProjectAsync` instead. Will be treated as a" +
+            "n error from version 5.0.0. Will be removed in version 6.0.0.", false)]
         System.Threading.Tasks.Task<bool> CloseAsync();
         System.Threading.Tasks.Task<bool> CloseAsync(Orc.ProjectManagement.IProject project);
         System.Threading.Tasks.Task InitializeAsync();
         System.Threading.Tasks.Task<bool> LoadAsync(string location);
         System.Threading.Tasks.Task<bool> LoadInactiveAsync(string location);
+        [System.Obsolete("Use extension method. Use `RefreshActiveProjectAsync` instead. Will be treated as" +
+            " an error from version 5.0.0. Will be removed in version 6.0.0.", false)]
         System.Threading.Tasks.Task<bool> RefreshAsync();
         System.Threading.Tasks.Task<bool> RefreshAsync(Orc.ProjectManagement.IProject project);
+        [System.Obsolete("Use extension method. Use `SaveActiveProjectAsync` instead. Will be treated as an" +
+            " error from version 5.0.0. Will be removed in version 6.0.0.", false)]
         System.Threading.Tasks.Task<bool> SaveAsync(string? location = null);
         System.Threading.Tasks.Task<bool> SaveAsync(Orc.ProjectManagement.IProject project, string? location = null);
         System.Threading.Tasks.Task<bool> SetActiveProjectAsync(Orc.ProjectManagement.IProject? project);
     }
     public static class IProjectManagerExtensions
     {
+        public static System.Threading.Tasks.Task<bool> CloseActiveProjectAsync(this Orc.ProjectManagement.IProjectManager projectManager) { }
         public static TProject? GetActiveProject<TProject>(this Orc.ProjectManagement.IProjectManager projectManager)
             where TProject : Orc.ProjectManagement.IProject { }
         public static string? GetActiveProjectLocation(this Orc.ProjectManagement.IProjectManager projectManager) { }
+        public static System.Threading.Tasks.Task<bool> RefreshActiveProjectAsync(this Orc.ProjectManagement.IProjectManager projectManager) { }
+        public static System.Threading.Tasks.Task<bool> SaveActiveProjectAsync(this Orc.ProjectManagement.IProjectManager projectManager, string? location = null) { }
     }
     public interface IProjectManagerWorkflowItem
     {
@@ -358,17 +367,23 @@ namespace Orc.ProjectManagement
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectCancelEventArgs>? ProjectSavingAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectEventArgs>? ProjectSavingCanceledAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectErrorEventArgs>? ProjectSavingFailedAsync;
+        [System.Obsolete("Use extension method. Use `CloseActiveProjectAsync` instead. Will be treated as a" +
+            "n error from version 5.0.0. Will be removed in version 6.0.0.", false)]
         public System.Threading.Tasks.Task<bool> CloseAsync() { }
-        public System.Threading.Tasks.Task<bool> CloseAsync(Orc.ProjectManagement.IProject project) { }
-        public System.Threading.Tasks.Task InitializeAsync() { }
-        public System.Threading.Tasks.Task<bool> LoadAsync(string location) { }
-        public System.Threading.Tasks.Task<bool> LoadInactiveAsync(string location) { }
+        public virtual System.Threading.Tasks.Task<bool> CloseAsync(Orc.ProjectManagement.IProject project) { }
+        public virtual System.Threading.Tasks.Task InitializeAsync() { }
+        public virtual System.Threading.Tasks.Task<bool> LoadAsync(string location) { }
+        public virtual System.Threading.Tasks.Task<bool> LoadInactiveAsync(string location) { }
         protected virtual System.Threading.Tasks.Task<Orc.ProjectManagement.IProject?> ReadProjectAsync(string location) { }
+        [System.Obsolete("Use extension method. Use `RefreshActiveProjectAsync` instead. Will be treated as" +
+            " an error from version 5.0.0. Will be removed in version 6.0.0.", false)]
         public System.Threading.Tasks.Task<bool> RefreshAsync() { }
-        public System.Threading.Tasks.Task<bool> RefreshAsync(Orc.ProjectManagement.IProject project) { }
+        public virtual System.Threading.Tasks.Task<bool> RefreshAsync(Orc.ProjectManagement.IProject project) { }
+        [System.Obsolete("Use extension method. Use `SaveActiveProjectAsync` instead. Will be treated as an" +
+            " error from version 5.0.0. Will be removed in version 6.0.0.", false)]
         public System.Threading.Tasks.Task<bool> SaveAsync(string? location = null) { }
-        public System.Threading.Tasks.Task<bool> SaveAsync(Orc.ProjectManagement.IProject project, string? location = null) { }
-        public System.Threading.Tasks.Task<bool> SetActiveProjectAsync(Orc.ProjectManagement.IProject? project) { }
+        public virtual System.Threading.Tasks.Task<bool> SaveAsync(Orc.ProjectManagement.IProject project, string? location = null) { }
+        public virtual System.Threading.Tasks.Task<bool> SetActiveProjectAsync(Orc.ProjectManagement.IProject? project) { }
         protected virtual System.Threading.Tasks.Task<bool> WriteProjectAsync(Orc.ProjectManagement.IProject project, string location) { }
     }
     public abstract class ProjectManagerWorkflowItemBase : Orc.ProjectManagement.IProjectManagerWorkflowItem
