@@ -109,8 +109,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
     public event AsyncEventHandler<ProjectActivationEventArgs>? ProjectActivationCanceledAsync;
     public event AsyncEventHandler<ProjectErrorEventArgs>? ProjectActivationFailedAsync;
 
-    [Time]
-    public async Task InitializeAsync()
+    public virtual async Task InitializeAsync()
     {
         var locations = (from location in await _projectInitializer.GetInitialLocationsAsync()
             where !string.IsNullOrWhiteSpace(location)
@@ -123,6 +122,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         }
     }
 
+    [ObsoleteEx(Message = "Use extension method", ReplacementTypeOrMember = "RefreshActiveProjectAsync", RemoveInVersion = "6.0.0")]
     public Task<bool> RefreshAsync()
     {
         var project = ActiveProject;
@@ -132,16 +132,14 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             : RefreshAsync(project);
     }
 
-    [Time]
-    public Task<bool> RefreshAsync(IProject project)
+    public virtual Task<bool> RefreshAsync(IProject project)
     {
         ArgumentNullException.ThrowIfNull(project);
 
         return SynchronizeProjectOperationAsync(project.Location, () => SyncedRefreshAsync(project));
     }
 
-    [Time]
-    public Task<bool> LoadAsync(string location)
+    public virtual Task<bool> LoadAsync(string location)
     {
         Argument.IsNotNullOrWhitespace("location", location);
 
@@ -158,8 +156,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         });
     }
 
-    [Time]
-    public Task<bool> LoadInactiveAsync(string location)
+    public virtual Task<bool> LoadInactiveAsync(string location)
     {
         Argument.IsNotNullOrWhitespace("location", location);
 
@@ -171,6 +168,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         });
     }
 
+    [ObsoleteEx(Message = "Use extension method", ReplacementTypeOrMember = "SaveActiveProjectAsync", RemoveInVersion = "6.0.0")]
     public Task<bool> SaveAsync(string? location = null)
     {
         var project = ActiveProject;
@@ -183,8 +181,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         return SaveAsync(project, location);
     }
 
-    [Time]
-    public async Task<bool> SaveAsync(IProject project, string? location = null)
+    public virtual async Task<bool> SaveAsync(IProject project, string? location = null)
     {
         if (string.IsNullOrWhiteSpace(location))
         {
@@ -200,6 +197,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         return await SynchronizeProjectOperationAsync(location, () => SyncedSaveAsync(project, location));
     }
 
+    [ObsoleteEx(Message = "Use extension method", ReplacementTypeOrMember = "CloseActiveProjectAsync", RemoveInVersion = "6.0.0")]
     public Task<bool> CloseAsync()
     {
         var project = ActiveProject;
@@ -209,8 +207,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             : CloseAsync(project);
     }
 
-    [Time]
-    public Task<bool> CloseAsync(IProject project)
+    public virtual Task<bool> CloseAsync(IProject project)
     {
         ArgumentNullException.ThrowIfNull(project);
 
@@ -219,8 +216,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         return SynchronizeProjectOperationAsync(location, () => SyncedCloseAsync(project));
     }
 
-    [Time]
-    public async Task<bool> SetActiveProjectAsync(IProject? project)
+    public virtual async Task<bool> SetActiveProjectAsync(IProject? project)
     {
         using (await _commonAsyncLock.LockAsync())
         {
