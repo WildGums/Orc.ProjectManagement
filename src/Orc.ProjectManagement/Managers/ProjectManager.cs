@@ -109,6 +109,150 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
     public event AsyncEventHandler<ProjectActivationEventArgs>? ProjectActivationCanceledAsync;
     public event AsyncEventHandler<ProjectErrorEventArgs>? ProjectActivationFailedAsync;
 
+    protected virtual async Task RaiseEventAsync(IProjectEventType projectEventType)
+    {
+        switch (projectEventType)
+        {
+            case ProjectLoadEvent projectLoadEvent:
+                switch (projectLoadEvent.Stage)
+                {
+                    case ProjectEventTypeStage.Before:
+                        await ProjectLoadingAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectLoadingAsync), this, (ProjectCancelEventArgs)projectLoadEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.After:
+                        await ProjectLoadedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectLoadedAsync), this, (ProjectEventArgs)projectLoadEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.Cancelled:
+                        await ProjectLoadingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectLoadingCanceledAsync), this, (ProjectLocationEventArgs)projectLoadEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.Failed:
+                        await ProjectLoadingFailedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectLoadingFailedAsync), this, (ProjectErrorEventArgs)projectLoadEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+                break;
+            case ProjectSaveEvent projectSaveEvent:
+                switch (projectSaveEvent.Stage)
+                {
+                    case ProjectEventTypeStage.Before:
+                        await ProjectSavingAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectSavingAsync), this, (ProjectCancelEventArgs)projectSaveEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.After:
+                        await ProjectSavedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectSavedAsync), this, (ProjectEventArgs)projectSaveEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.Cancelled:
+                        await ProjectSavingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectSavingCanceledAsync), this, (ProjectEventArgs)projectSaveEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.Failed:
+                        await ProjectSavingFailedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectSavingFailedAsync), this, (ProjectErrorEventArgs)projectSaveEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+                break;
+            case ProjectRefreshEvent projectRefreshEvent:
+                switch (projectRefreshEvent.Stage)
+                {
+                    case ProjectEventTypeStage.Required:
+                        await ProjectRefreshRequiredAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshRequiredAsync), this, (ProjectEventArgs)projectRefreshEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.Before:
+                        await ProjectRefreshingAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshingAsync), this, (ProjectCancelEventArgs)projectRefreshEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.After:
+                        await ProjectRefreshedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshedAsync), this, (ProjectEventArgs)projectRefreshEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.Cancelled:
+                        await ProjectRefreshingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshingCanceledAsync), this, (ProjectRefreshErrorEventArgs)projectRefreshEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.Failed:
+                        await ProjectRefreshingFailedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshingFailedAsync), this, (ProjectErrorEventArgs)projectRefreshEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+                break;
+            case ProjectCloseEvent projectCloseEvent:
+                switch (projectCloseEvent.Stage)
+                {
+                    case ProjectEventTypeStage.Before:
+                        await ProjectClosingAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectClosingAsync), this, (ProjectCancelEventArgs)projectCloseEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.After:
+                        await ProjectClosedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectClosedAsync), this, (ProjectEventArgs)projectCloseEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.Cancelled:
+                        await ProjectClosingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectClosingCanceledAsync), this, (ProjectEventArgs)projectCloseEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+                break;
+            case ProjectActivationEvent projectActivationEvent:
+                switch (projectActivationEvent.Stage)
+                {
+                    case ProjectEventTypeStage.Before:
+                        await ProjectActivationAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectActivationAsync), this, (ProjectUpdatingCancelEventArgs)projectActivationEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.After:
+                        await ProjectActivatedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectActivatedAsync), this, (ProjectUpdatedEventArgs)projectActivationEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.Cancelled:
+                        await ProjectActivationCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectActivationCanceledAsync), this, (ProjectActivationEventArgs)projectActivationEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    case ProjectEventTypeStage.Failed:
+                        await ProjectActivationFailedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectActivationFailedAsync), this, (ProjectErrorEventArgs)projectActivationEvent.EventArgs, DefaultTimeout)
+                            .ConfigureAwait(false);
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
     public virtual async Task InitializeAsync()
     {
         var locations = (from location in await _projectInitializer.GetInitialLocationsAsync()
@@ -244,9 +388,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             _projectStateSetter.SetProjectDeactivating(activeProject?.Location, true);
             _projectStateSetter.SetProjectActivating(project?.Location, true);
 
-            await ProjectActivationAsync
-                .SafeInvokeWithTimeoutAsync(nameof(ProjectActivationAsync), this, eventArgs, DefaultTimeout)
-                .ConfigureAwait(false);
+            await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.Before, eventArgs)).ConfigureAwait(false);
 
             if (eventArgs.Cancel)
             {
@@ -256,9 +398,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
                 _projectStateSetter.SetProjectActivating(project?.Location, false);
 
-                await ProjectActivationCanceledAsync
-                    .SafeInvokeWithTimeoutAsync(nameof(ProjectActivationCanceledAsync), this, new ProjectActivationEventArgs(project), DefaultTimeout)
-                    .ConfigureAwait(false);
+                await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.Cancelled, new ProjectActivationEventArgs(project))).ConfigureAwait(false);
 
                 return false;
             }
@@ -281,9 +421,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                     : "Failed to deactivate currently active project");
 
                 _projectStateSetter.SetProjectActivating(project?.Location ?? string.Empty, false);
-                await ProjectActivationFailedAsync
-                    .SafeInvokeWithTimeoutAsync(nameof(ProjectActivationFailedAsync), this, new ProjectErrorEventArgs(project, exception), DefaultTimeout)
-                    .ConfigureAwait(false);
+                await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.Failed, new ProjectErrorEventArgs(project, exception))).ConfigureAwait(false);
 
                 return false;
             }
@@ -291,9 +429,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             _projectStateSetter.SetProjectDeactivating(activeProject?.Location, false);
             _projectStateSetter.SetProjectActivating(project?.Location, false);
 
-            await ProjectActivatedAsync
-                .SafeInvokeWithTimeoutAsync(nameof(ProjectActivatedAsync), this, new ProjectUpdatedEventArgs(activeProject, project), DefaultTimeout)
-                .ConfigureAwait(false);
+            await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.After, new ProjectUpdatedEventArgs(activeProject, project))).ConfigureAwait(false);
 
             Log.Debug(project is not null
                 ? $"Activating project '{project.Location}' was canceled"
@@ -432,8 +568,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         _projectStateSetter.SetProjectRefreshing(projectLocation, true, isRefreshingActiveProject);
 
         var cancelEventArgs = new ProjectCancelEventArgs(project);
-        await ProjectRefreshingAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshingAsync), this, cancelEventArgs, DefaultTimeout)
-            .ConfigureAwait(false);
+        await RaiseEventAsync(new ProjectRefreshEvent(ProjectEventTypeStage.Before, cancelEventArgs)).ConfigureAwait(false);
 
         Exception? error = null;
         IValidationContext? validationContext = null;
@@ -444,8 +579,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             {
                 _projectStateSetter.SetProjectRefreshing(projectLocation, false);
 
-                await ProjectRefreshingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshingCanceledAsync), this, new ProjectRefreshErrorEventArgs(project), DefaultTimeout)
-                    .ConfigureAwait(false);
+                await RaiseEventAsync(new ProjectRefreshEvent(ProjectEventTypeStage.Cancelled, new ProjectLocationEventArgs(projectLocation))).ConfigureAwait(false);
                 return false;
             }
 
@@ -481,8 +615,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             // Note: we disable IsRefreshingActiveProject at Activated event, that is why isActiveProject == false
             _projectStateSetter.SetProjectRefreshing(projectLocation, true, false);
 
-            await ProjectRefreshedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshedAsync), this, new ProjectEventArgs(loadedProject), DefaultTimeout)
-                .ConfigureAwait(false);
+            await RaiseEventAsync(new ProjectRefreshEvent(ProjectEventTypeStage.After, new ProjectEventArgs(loadedProject))).ConfigureAwait(false); ;
 
             if (isRefreshingActiveProject)
             {
@@ -509,8 +642,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             new ProjectException(project, $"Failed to load project from location '{projectLocation}' while refreshing.", error),
             validationContext);
 
-        await ProjectRefreshingFailedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshingFailedAsync), this, eventArgs, DefaultTimeout)
-            .ConfigureAwait(false);
+        await RaiseEventAsync(new ProjectRefreshEvent(ProjectEventTypeStage.Failed, eventArgs)).ConfigureAwait(false);
 
         return false;
     }
@@ -545,8 +677,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
             var cancelEventArgs = new ProjectCancelEventArgs(location);
 
-            await ProjectLoadingAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectLoadingAsync), this, cancelEventArgs, DefaultTimeout)
-                .ConfigureAwait(false);
+            await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Before, cancelEventArgs)).ConfigureAwait(false);
 
             if (cancelEventArgs.Cancel)
             {
@@ -554,8 +685,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
                 _projectStateSetter.SetProjectLoading(location, false);
 
-                await ProjectLoadingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectLoadingCanceledAsync), this, new ProjectLocationEventArgs(location), DefaultTimeout)
-                    .ConfigureAwait(false);
+                await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Cancelled, new ProjectLocationEventArgs(location))).ConfigureAwait(false);
 
                 return null;
             }
@@ -604,16 +734,14 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             {
                 _projectStateSetter.SetProjectLoading(location, false);
 
-                await ProjectLoadingFailedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectLoadingFailedAsync), this, new ProjectErrorEventArgs(location, error, validationContext), DefaultTimeout)
-                    .ConfigureAwait(false);
+                await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Failed, new ProjectErrorEventArgs(location, error, validationContext))).ConfigureAwait(false);
 
                 return null;
             }
 
             _projectStateSetter.SetProjectLoading(location, false);
 
-            await ProjectLoadedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectLoadedAsync), this, new ProjectEventArgs(project), DefaultTimeout)
-                .ConfigureAwait(false);
+            await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.After, new ProjectEventArgs(project))).ConfigureAwait(false);
 
             Log.Info("Loaded project from '{0}'", location);
         }
@@ -639,16 +767,14 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             _projectStateSetter.SetProjectSaving(location, true);
 
             var cancelEventArgs = new ProjectCancelEventArgs(project);
-            await ProjectSavingAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectSavingAsync), this, cancelEventArgs, DefaultTimeout)
-                .ConfigureAwait(false);
+            await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Before, cancelEventArgs)).ConfigureAwait(false);
 
             if (cancelEventArgs.Cancel)
             {
                 _projectStateSetter.SetProjectSaving(location, false);
 
                 Log.Debug("Canceled saving of project to '{0}'", location);
-                await ProjectSavingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectSavingCanceledAsync), this, new ProjectEventArgs(project), DefaultTimeout)
-                    .ConfigureAwait(false);
+                await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Cancelled, new ProjectEventArgs(project))).ConfigureAwait(false);
 
                 return false;
             }
@@ -670,8 +796,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
                 Log.Error(error, "Failed to save project '{0}' to '{1}'", project, location);
 
-                await ProjectSavingFailedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectSavingFailedAsync), this, new ProjectErrorEventArgs(project, error), DefaultTimeout)
-                    .ConfigureAwait(false);
+                await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Failed, new ProjectErrorEventArgs(project, error))).ConfigureAwait(false);
 
                 return false;
             }
@@ -682,16 +807,14 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
                 Log.Warning("Not saved project '{0}' to '{1}'", project, location);
 
-                await ProjectSavingFailedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectSavingFailedAsync), this, new ProjectErrorEventArgs(project), DefaultTimeout)
-                    .ConfigureAwait(false);
+                await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Failed, new ProjectErrorEventArgs(project))).ConfigureAwait(false);
 
                 return false;
             }
 
             _projectStateSetter.SetProjectSaving(location, false);
 
-            await ProjectSavedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectSavedAsync), this, new ProjectEventArgs(project), DefaultTimeout)
-                .ConfigureAwait(false);
+            await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.After, new ProjectEventArgs(project))).ConfigureAwait(false);
 
             var projectString = project.ToString();
             Log.Info("Saved project '{0}' to '{1}'", projectString, location);
@@ -709,16 +832,14 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         _projectStateSetter.SetProjectClosing(project.Location, true);
 
         var cancelEventArgs = new ProjectCancelEventArgs(project);
-        await ProjectClosingAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectClosingAsync), this, cancelEventArgs, DefaultTimeout)
-            .ConfigureAwait(false);
+        await RaiseEventAsync(new ProjectCloseEvent(ProjectEventTypeStage.Before, cancelEventArgs)).ConfigureAwait(false);
 
         if (cancelEventArgs.Cancel)
         {
             _projectStateSetter.SetProjectClosing(project.Location, false);
 
             Log.Debug("Canceled closing project '{0}'", project);
-            await ProjectClosingCanceledAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectClosingCanceledAsync), this, new ProjectEventArgs(project), DefaultTimeout)
-                .ConfigureAwait(false);
+            await RaiseEventAsync(new ProjectCloseEvent(ProjectEventTypeStage.Cancelled, new ProjectEventArgs(project))).ConfigureAwait(false);
 
             return false;
         }
@@ -731,8 +852,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         UnregisterProject(project);
 
         _projectStateSetter.SetProjectClosing(project.Location, false);
-        await ProjectClosedAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectClosedAsync), this, new ProjectEventArgs(project), DefaultTimeout)
-            .ConfigureAwait(false);
+        await RaiseEventAsync(new ProjectCloseEvent(ProjectEventTypeStage.After, new ProjectEventArgs(project))).ConfigureAwait(false);
 
         Log.Info("Closed project '{0}'", project);
 
@@ -851,8 +971,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         if (_projects.TryGetValue(projectLocation, out var project))
         {
             // Note: not sure why we still need this
-            await ProjectRefreshRequiredAsync.SafeInvokeWithTimeoutAsync(nameof(ProjectRefreshRequiredAsync), this, new ProjectEventArgs(project), DefaultTimeout)
-                .ConfigureAwait(false);
+            await RaiseEventAsync(new ProjectRefreshEvent(ProjectEventTypeStage.Required, new ProjectEventArgs(project))).ConfigureAwait(false);
         }
         else
         {

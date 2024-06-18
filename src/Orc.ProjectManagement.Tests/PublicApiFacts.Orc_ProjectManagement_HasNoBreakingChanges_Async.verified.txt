@@ -107,6 +107,10 @@ namespace Orc.ProjectManagement
         void SetProjectsSource(System.Collections.Generic.IEnumerable<Orc.ProjectManagement.IProject> projects);
         void SuspendUsingHistory();
     }
+    public interface IProjectEventType
+    {
+        Orc.ProjectManagement.ProjectEventTypeStage Stage { get; }
+    }
     public interface IProjectInitializer
     {
         System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<string>> GetInitialLocationsAsync();
@@ -253,6 +257,12 @@ namespace Orc.ProjectManagement
         public MdiProjectManagementConfigurationService() { }
         public override Orc.ProjectManagement.ProjectManagementType GetProjectManagementType() { }
     }
+    public class ProjectActivationEvent : Orc.ProjectManagement.IProjectEventType
+    {
+        public ProjectActivationEvent(Orc.ProjectManagement.ProjectEventTypeStage stage, System.EventArgs eventArgs) { }
+        public System.EventArgs EventArgs { get; }
+        public Orc.ProjectManagement.ProjectEventTypeStage Stage { get; }
+    }
     public class ProjectActivationEventArgs : Orc.ProjectManagement.ProjectLocationEventArgs
     {
         public ProjectActivationEventArgs(Orc.ProjectManagement.IProject? project) { }
@@ -292,6 +302,12 @@ namespace Orc.ProjectManagement
         public string? Location { get; }
         public Orc.ProjectManagement.IProject? Project { get; }
     }
+    public class ProjectCloseEvent : Orc.ProjectManagement.IProjectEventType
+    {
+        public ProjectCloseEvent(Orc.ProjectManagement.ProjectEventTypeStage stage, System.EventArgs eventArgs) { }
+        public System.EventArgs EventArgs { get; }
+        public Orc.ProjectManagement.ProjectEventTypeStage Stage { get; }
+    }
     public class ProjectErrorEventArgs : Orc.ProjectManagement.ProjectLocationEventArgs
     {
         public ProjectErrorEventArgs(Orc.ProjectManagement.IProject? project, System.Exception? exception = null, Catel.Data.IValidationContext? validationContext = null) { }
@@ -305,6 +321,14 @@ namespace Orc.ProjectManagement
         public ProjectEventArgs(Orc.ProjectManagement.IProject project) { }
         public Orc.ProjectManagement.IProject Project { get; }
     }
+    public enum ProjectEventTypeStage
+    {
+        Required = 0,
+        Before = 1,
+        After = 2,
+        Cancelled = 3,
+        Failed = 4,
+    }
     public class ProjectException : System.Exception
     {
         public ProjectException(Orc.ProjectManagement.IProject project, string message) { }
@@ -317,6 +341,12 @@ namespace Orc.ProjectManagement
     {
         public ProjectFileSystemEventArgs(string location, params string[] fileNames) { }
         public string[] FileNames { get; }
+    }
+    public class ProjectLoadEvent : Orc.ProjectManagement.IProjectEventType
+    {
+        public ProjectLoadEvent(Orc.ProjectManagement.ProjectEventTypeStage stage, System.EventArgs eventArgs) { }
+        public System.EventArgs EventArgs { get; }
+        public Orc.ProjectManagement.ProjectEventTypeStage Stage { get; }
     }
     public class ProjectLocationEventArgs : System.EventArgs
     {
@@ -374,6 +404,7 @@ namespace Orc.ProjectManagement
         public virtual System.Threading.Tasks.Task InitializeAsync() { }
         public virtual System.Threading.Tasks.Task<bool> LoadAsync(string location) { }
         public virtual System.Threading.Tasks.Task<bool> LoadInactiveAsync(string location) { }
+        protected virtual System.Threading.Tasks.Task RaiseEventAsync(Orc.ProjectManagement.IProjectEventType projectEventType) { }
         protected virtual System.Threading.Tasks.Task<Orc.ProjectManagement.IProject?> ReadProjectAsync(string location) { }
         [System.Obsolete("Use extension method. Use `RefreshActiveProjectAsync` instead. Will be removed in" +
             " version 6.0.0.", true)]
@@ -451,6 +482,12 @@ namespace Orc.ProjectManagement
         public System.Exception? Exception { get; }
         public Catel.Data.IValidationContext ValidationContext { get; }
     }
+    public class ProjectRefreshEvent : Orc.ProjectManagement.IProjectEventType
+    {
+        public ProjectRefreshEvent(Orc.ProjectManagement.ProjectEventTypeStage stage, System.EventArgs eventArgs) { }
+        public System.EventArgs EventArgs { get; }
+        public Orc.ProjectManagement.ProjectEventTypeStage Stage { get; }
+    }
     public abstract class ProjectRefresherBase : Orc.ProjectManagement.IProjectRefresher
     {
         protected ProjectRefresherBase(string projectLocation) { }
@@ -467,6 +504,12 @@ namespace Orc.ProjectManagement
         protected abstract void SubscribeToLocation(string location);
         public void Unsubscribe() { }
         protected abstract void UnsubscribeFromLocation(string location);
+    }
+    public class ProjectSaveEvent : Orc.ProjectManagement.IProjectEventType
+    {
+        public ProjectSaveEvent(Orc.ProjectManagement.ProjectEventTypeStage stage, System.EventArgs eventArgs) { }
+        public System.EventArgs EventArgs { get; }
+        public Orc.ProjectManagement.ProjectEventTypeStage Stage { get; }
     }
     public class ProjectState
     {
