@@ -13,11 +13,6 @@ namespace Orc.ProjectManagement
         public override System.Threading.Tasks.Task ClosedAsync(Orc.ProjectManagement.IProject project) { }
         public override System.Threading.Tasks.Task LoadingFailedAsync(string location, System.Exception? exception, Catel.Data.IValidationContext validationContext) { }
     }
-    public static class AsyncEventHandlerExtensions
-    {
-        public static System.Threading.Tasks.Task<bool> SafeInvokeWithTimeoutAsync<TEventArgs>(this Catel.AsyncEventHandler<TEventArgs>? handler, string eventName, object sender, TEventArgs e, int timeout)
-            where TEventArgs : System.EventArgs { }
-    }
     public class CloseBeforeLoadProjectWatcher : Orc.ProjectManagement.ProjectWatcherBase
     {
         public CloseBeforeLoadProjectWatcher(Orc.ProjectManagement.IProjectManager projectManager, Catel.IoC.ITypeFactory typeFactory) { }
@@ -402,6 +397,8 @@ namespace Orc.ProjectManagement
         public System.Threading.Tasks.Task<bool> CloseAsync() { }
         public virtual System.Threading.Tasks.Task<bool> CloseAsync(Orc.ProjectManagement.IProject project) { }
         public virtual System.Threading.Tasks.Task InitializeAsync() { }
+        protected virtual System.Threading.Tasks.Task InvokeEventListenerAsync<TEventArgs>(string eventName, object sender, TEventArgs args, Catel.AsyncEventHandler<TEventArgs> eventListener)
+            where TEventArgs : System.EventArgs { }
         public virtual System.Threading.Tasks.Task<bool> LoadAsync(string location) { }
         public virtual System.Threading.Tasks.Task<bool> LoadInactiveAsync(string location) { }
         protected virtual System.Threading.Tasks.Task RaiseEventAsync(Orc.ProjectManagement.IProjectEventType projectEventType) { }
