@@ -39,12 +39,15 @@ public interface IProjectManager
     event AsyncEventHandler<ProjectErrorEventArgs>? ProjectActivationFailedAsync;
 
     Task InitializeAsync();
+    [ObsoleteEx(Message = "Use extension method", ReplacementTypeOrMember = "RefreshActiveProjectAsync", RemoveInVersion = "6.0.0")]
     Task<bool> RefreshAsync();
     Task<bool> RefreshAsync(IProject project);
     Task<bool> LoadAsync(string location);
     Task<bool> LoadInactiveAsync(string location);
+    [ObsoleteEx(Message = "Use extension method", ReplacementTypeOrMember = "SaveActiveProjectAsync", RemoveInVersion = "6.0.0")]
     Task<bool> SaveAsync(string? location = null);
     Task<bool> SaveAsync(IProject project, string? location = null);
+    [ObsoleteEx(Message = "Use extension method", ReplacementTypeOrMember = "CloseActiveProjectAsync", RemoveInVersion = "6.0.0")]
     Task<bool> CloseAsync();
     Task<bool> CloseAsync(IProject project);
     Task<bool> SetActiveProjectAsync(IProject? project);
