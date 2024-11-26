@@ -35,6 +35,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
     private readonly ConcurrentDictionary<string, object> _loadingProjects = new();
     private readonly ConcurrentDictionary<string, object> _savingProjects = new();
     private readonly ConcurrentDictionary<string, Task> _activeRefreshTasks = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, ProjectResources> _projectResources = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly AsyncLock _activeProjectLock = new();
     private readonly AsyncLock _commonLock = new();
@@ -984,7 +985,17 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                 return project;
             });
 
+        // Initialize refresher and track resources
         InitializeProjectRefresher(projectLocation);
+        var projectRefresher = _projectRefreshers[projectLocation];
+        var resources = new ProjectResources(this, projectLocation, projectRefresher, Log);
+
+        _projectResources.AddOrUpdate(projectLocation, resources,
+            (_, existing) =>
+            {
+                existing.Dispose();
+                return resources;
+            });
     }
 
     protected virtual async Task<IProject?> QuietlyLoadProjectAsync(string location, bool skipCanLoadValidation)
@@ -1007,6 +1018,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                 $"Project could not be loaded from '{location}'");
         }
 
+        // Use a proper cleanup token
         if (!_loadingProjects.TryAdd(location, new object()))
         {
             throw Log.ErrorAndCreateException<InvalidOperationException>(
@@ -1019,7 +1031,6 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         }
         finally
         {
-            // Ensure token is removed
             _loadingProjects.TryRemove(location, out _);
         }
     }
@@ -1030,8 +1041,35 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
         if (_projects.TryRemove(location, out _))
         {
-            // Only release refresher if project was actually removed
-            ReleaseProjectRefresher(project);
+            if (_projectRefreshers.TryRemove(location, out var refresher))
+            {
+                CleanupRefresher(refresher, location);
+            }
+
+            if (_projectResources.TryRemove(location, out var resources))
+            {
+                try
+                {
+                    resources.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, $"Failed to cleanup resources for project '{location}'");
+                }
+            }
+        }
+    }
+
+    private void CleanupRefresher(IProjectRefresher refresher, string projectLocation)
+    {
+        try
+        {
+            refresher.Unsubscribe();
+            refresher.Updated -= OnProjectRefresherUpdated;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"Failed to cleanup refresher for project '{projectLocation}'");
         }
     }
 
@@ -1371,19 +1409,107 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
     private sealed class CompositeDisposable : IDisposable
     {
-        private readonly IEnumerable<IDisposable> _disposables;
+        private readonly IList<IDisposable> _disposables;
+        private bool _isDisposed;
 
         public CompositeDisposable(IEnumerable<IDisposable> disposables)
         {
-            _disposables = disposables;
+            _disposables = disposables.ToList();
         }
 
         public void Dispose()
         {
-            foreach (var disposable in _disposables.Reverse())
+            if (_isDisposed)
             {
-                disposable.Dispose();
+                return;
             }
+
+            _isDisposed = true;
+
+            // Dispose in reverse order
+            for (var i = _disposables.Count - 1; i >= 0; i--)
+            {
+                try
+                {
+                    _disposables[i].Dispose();
+                }
+                catch (Exception ex)
+                {
+                    // Log error but continue disposing other resources
+                    Log.Error(ex, "Error during composite disposal");
+                }
+            }
+
+            _disposables.Clear();
+        }
+    }
+
+    private sealed class ProjectResources : IDisposable
+    {
+        private readonly ILog _log;
+        private readonly ProjectManager _projectManager;
+        private readonly string _projectLocation;
+        private readonly IProjectRefresher? _refresher;
+        private readonly List<IDisposable> _resources;
+        private bool _isDisposed;
+
+        public ProjectResources(ProjectManager projectManager, string projectLocation, IProjectRefresher? refresher, ILog log)
+        {
+            _projectManager = projectManager;
+            _projectLocation = projectLocation;
+            _refresher = refresher;
+            _log = log;
+            _resources = new List<IDisposable>();
+        }
+
+        public void AddResource(IDisposable resource)
+        {
+            if (_isDisposed)
+            {
+#pragma warning disable IDISP007
+                resource.Dispose();
+#pragma warning restore IDISP007
+                throw _log.ErrorAndCreateException<ObjectDisposedException>(nameof(ProjectResources));
+            }
+            _resources.Add(resource);
+        }
+
+        public void Dispose()
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            _isDisposed = true;
+
+            if (_refresher is not null)
+            {
+                try
+                {
+                    _refresher.Unsubscribe();
+                    _refresher.Updated -= _projectManager.OnProjectRefresherUpdated;
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, $"Failed to cleanup refresher for project '{_projectLocation}'");
+                }
+            }
+
+            // Dispose all tracked resources in reverse order
+            for (var i = _resources.Count - 1; i >= 0; i--)
+            {
+                try
+                {
+                    _resources[i].Dispose();
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, $"Failed to dispose resource for project '{_projectLocation}'");
+                }
+            }
+
+            _resources.Clear();
         }
     }
 }
