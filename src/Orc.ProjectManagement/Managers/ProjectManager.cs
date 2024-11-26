@@ -39,6 +39,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
     private readonly AsyncLock _activeProjectLock = new();
     private readonly AsyncLock _commonLock = new();
     private readonly AsyncLock _refreshLock = new ();
+    private readonly AsyncLock _eventLock = new();
 
     public ProjectManager(IProjectValidator projectValidator, IProjectUpgrader projectUpgrader, IProjectRefresherSelector projectRefresherSelector,
         IProjectSerializerSelector projectSerializerSelector, IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService,
@@ -269,16 +270,20 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         {
             using var cts = new CancellationTokenSource(timeout);
 
+            Log.DebugIfAttached($"Starting to handle project management event '{eventName}'");
+
             var task = SafeInvokeAsync(eventName, handler, sender, e);
+
             try
             {
                 await task.WaitAsync(cts.Token).ConfigureAwait(false);
-                Log.DebugIfAttached($"Handled project management event '{eventName}'");
+                Log.DebugIfAttached($"Successfully handled project management event '{eventName}'");
                 return true;
             }
             catch (OperationCanceledException)
             {
-                Log.Warning($"Project management event '{eventName}' timed out after {timeout}ms");
+                Log.Warning($"Project management event '{eventName}' timed out after {timeout}ms. " +
+                            "This might indicate a deadlock or performance issue with event handlers.");
                 return false;
             }
         }
@@ -297,33 +302,60 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             return false;
         }
 
+        // Get all handlers upfront to avoid collection modification issues
         var eventListeners = handler.GetInvocationList().Cast<AsyncEventHandler<TEventArgs>>().ToArray();
 
-        foreach (var eventListener in eventListeners)
+        // Lock for the entire event handling sequence to ensure sequential execution
+        using (await _eventLock.LockAsync())
         {
-            try
+            for (var i = 0; i < eventListeners.Length; i++)
             {
-                Log.DebugIfAttached($"Executing event handler: target '{eventListener.Target}', method '{eventListener.Method.Name}'");
+                var eventListener = eventListeners[i];
+                try
+                {
+                    Log.DebugIfAttached($"Executing event handler [{i + 1}/{eventListeners.Length}]: " +
+                                        $"target '{eventListener.Target}', method '{eventListener.Method.Name}'");
 
-                await InvokeEventListenerAsync(eventName, sender, e, eventListener);
+                    // Execute handlers sequentially within the lock
+                    await InvokeEventListenerAsync(eventName, sender, e, eventListener)
+                        .ConfigureAwait(false);
 
-                Log.DebugIfAttached($"Event handler successfully executed: target '{eventListener.Target}', method '{eventListener.Method.Name}'");
+                    Log.DebugIfAttached($"Event handler [{i + 1}/{eventListeners.Length}] successfully executed: " +
+                                        $"target '{eventListener.Target}', method '{eventListener.Method.Name}'");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, $"Failed to invoke event handler [{i + 1}/{eventListeners.Length}]: " +
+                                  $"target '{eventListener.Target}', method '{eventListener.Method.Name}'");
+                    throw;
+                }
             }
-            catch (Exception ex)
-            {
 
-                Log.Error(ex, $"Failed to invoke event handler handler: target '{eventListener.Target}', method '{eventListener.Method.Name}'");
-                throw;
-            }
+            return true;
         }
-
-        return true;
     }
 
-    protected virtual async Task InvokeEventListenerAsync<TEventArgs>(string eventName, object sender, TEventArgs args, AsyncEventHandler<TEventArgs> eventListener)
+    protected virtual async Task InvokeEventListenerAsync<TEventArgs>(
+        string eventName,
+        object sender,
+        TEventArgs args,
+        AsyncEventHandler<TEventArgs> eventListener)
         where TEventArgs : EventArgs
     {
-        await eventListener(sender, args).ConfigureAwait(false);
+        try
+        {
+            await eventListener(sender, args).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            Log.Warning($"Event handler cancelled for '{eventName}', this may affect project state consistency");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"Event handler failed for '{eventName}', this may affect project state consistency");
+            throw;
+        }
     }
 
     public virtual async Task InitializeAsync()
