@@ -6,13 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Catel;
-using Catel.Collections;
 using Catel.Data;
 using Catel.IoC;
 using Catel.Logging;
 using Catel.Reflection;
 using Catel.Threading;
-using MethodTimer;
 
 public class ProjectManager : IProjectManager, INeedCustomInitialization
 {
@@ -35,9 +33,11 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
     private readonly ConcurrentDictionary<string, IProject> _projects;
     private readonly ConcurrentDictionary<string, object> _loadingProjects = new();
     private readonly ConcurrentDictionary<string, object> _savingProjects = new();
+    private readonly ConcurrentDictionary<string, Task> _activeRefreshTasks = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly AsyncLock _activeProjectLock = new();
     private readonly AsyncLock _commonLock = new();
+    private readonly AsyncLock _refreshLock = new ();
 
     public ProjectManager(IProjectValidator projectValidator, IProjectUpgrader projectUpgrader, IProjectRefresherSelector projectRefresherSelector,
         IProjectSerializerSelector projectSerializerSelector, IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService,
@@ -1029,19 +1029,69 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             return;
         }
 
-        if (_loadingProjects.ContainsKey(projectLocation) || _savingProjects.ContainsKey(projectLocation))
+        try
         {
-            return;
-        }
+            // Create new task or get existing one
+            var refreshTask = _activeRefreshTasks.GetOrAdd(
+                projectLocation,
+                async loc =>
+                {
+                    try
+                    {
+                        await HandleProjectRefreshAsync(loc).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        // Cleanup when the task completes
+                        _activeRefreshTasks.TryRemove(loc, out _);
+                    }
+                });
 
-        if (_projects.TryGetValue(projectLocation, out var project))
-        {
-            // Note: not sure why we still need this
-            await RaiseEventAsync(new ProjectRefreshEvent(ProjectEventTypeStage.Required, new ProjectEventArgs(project))).ConfigureAwait(false);
+            // Await the task to catch any errors
+            await refreshTask.ConfigureAwait(false);
         }
-        else
+        catch (Exception ex)
         {
-            Log.Warning($"Project refresh required, but can't find project '{projectLocation}' in list of open projects");
+            // Log but don't rethrow since this is an async void method
+            Log.Error(ex, "Error processing refresh for project '{0}'", projectLocation);
+        }
+    }
+
+    private async Task HandleProjectRefreshAsync(string projectLocation)
+    {
+        using (await _refreshLock.LockAsync().ConfigureAwait(false))
+        {
+            // Quick check if project is currently being loaded or saved
+            if (_loadingProjects.ContainsKey(projectLocation) ||
+                _savingProjects.ContainsKey(projectLocation))
+            {
+                Log.Debug("Project '{0}' is busy with load/save operation, skipping refresh", projectLocation);
+                return;
+            }
+
+            // Get the project under the lock to ensure consistency
+            if (!_projects.TryGetValue(projectLocation, out var project))
+            {
+                Log.Warning("Project refresh required, but project '{0}' not found in list of open projects",
+                    projectLocation);
+                return;
+            }
+
+            try
+            {
+                // Handle the refresh event under the lock to maintain consistency
+                await RaiseEventAsync(
+                    new ProjectRefreshEvent(
+                        ProjectEventTypeStage.Required,
+                        new ProjectEventArgs(project)
+                    )
+                ).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to process refresh for project '{0}'", projectLocation);
+                throw;
+            }
         }
     }
 
