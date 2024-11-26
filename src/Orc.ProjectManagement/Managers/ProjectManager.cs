@@ -24,21 +24,20 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
     private readonly IProjectManagementInitializationService _projectManagementInitializationService;
     private readonly IProjectStateSetter _projectStateSetter;
     private readonly IProjectStateService _projectStateService;
-    private readonly IDictionary<string, IProjectRefresher> _projectRefreshers;
     private readonly IProjectRefresherSelector _projectRefresherSelector;
-    private readonly ListDictionary<string, IProject> _projects;
     private readonly IProjectSerializerSelector _projectSerializerSelector;
     private readonly IProjectValidator _projectValidator;
     private readonly IProjectUpgrader _projectUpgrader;
 
-    private readonly Dictionary<string, AsyncLock> _projectOperationLockers = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, int> _projectOperationRefCounts = new(StringComparer.OrdinalIgnoreCase);
-    private readonly AsyncLock _commonAsyncLock = new();
+    private readonly ConcurrentDictionary<string, AsyncLock> _projectOperationLockers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, int> _projectOperationRefCounts = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, IProjectRefresher> _projectRefreshers;
+    private readonly ConcurrentDictionary<string, IProject> _projects;
+    private readonly ConcurrentDictionary<string, object> _loadingProjects = new();
+    private readonly ConcurrentDictionary<string, object> _savingProjects = new();
 
-    private readonly HashSet<string> _loadingProjects = new();
-    private readonly HashSet<string> _savingProjects = new();
-
-    private readonly AsyncLock _synchronizedCommonAsyncLock = new();
+    private readonly AsyncLock _activeProjectLock = new();
+    private readonly AsyncLock _commonLock = new();
 
     public ProjectManager(IProjectValidator projectValidator, IProjectUpgrader projectUpgrader, IProjectRefresherSelector projectRefresherSelector,
         IProjectSerializerSelector projectSerializerSelector, IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService,
@@ -62,7 +61,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         _projectStateSetter = (IProjectStateSetter)projectStateService;
         _projectStateService = projectStateService;
 
-        _projects = new ListDictionary<string, IProject>();
+        _projects = new ConcurrentDictionary<string, IProject>();
         _projectRefreshers = new ConcurrentDictionary<string, IProjectRefresher>(StringComparer.OrdinalIgnoreCase);
 
         ProjectManagementType = projectManagementConfigurationService.GetProjectManagementType();
@@ -432,7 +431,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
     public virtual async Task<bool> SetActiveProjectAsync(IProject? project)
     {
-        using (await _commonAsyncLock.LockAsync())
+        using (await _activeProjectLock.LockAsync())
         {
             var activeProject = ActiveProject;
 
@@ -569,7 +568,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
     {
         Log.Debug($"Releasing operation synchronization context for '{projectLocation}'");
 
-        using (await _synchronizedCommonAsyncLock.LockAsync())
+        using (await _commonLock.LockAsync())
         {
             if (!_projectOperationRefCounts.TryGetValue(projectLocation, out var refCount))
             {
@@ -584,8 +583,8 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             }
             else
             {
-                _projectOperationRefCounts.Remove(projectLocation);
-                _projectOperationLockers.Remove(projectLocation);
+                _projectOperationRefCounts.Remove(projectLocation, out _);
+                _projectOperationLockers.Remove(projectLocation, out _);
             }
         }
 
@@ -599,18 +598,15 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
         Log.Debug($"Initializing operation synchronization context for '{projectLocation}'");
 
-        using (await _synchronizedCommonAsyncLock.LockAsync())
+        using (await _commonLock.LockAsync())
         {
             if (!_projectOperationLockers.TryGetValue(projectLocation, out asyncLock))
             {
                 asyncLock = new AsyncLock();
-                _projectOperationLockers.Add(projectLocation, asyncLock);
+                _projectOperationLockers.TryAdd(projectLocation, asyncLock);
             }
 
-            if (!_projectOperationRefCounts.TryGetValue(projectLocation, out refCount))
-            {
-                refCount = 0;
-            }
+            refCount = _projectOperationRefCounts.GetValueOrDefault(projectLocation, 0);
 
             refCount++;
 
@@ -728,7 +724,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         }
 
         var projectLocation = location;
-        using (new DisposableToken(location, _ => _loadingProjects.Add(projectLocation), _ => _loadingProjects.Remove(projectLocation)))
+        using (new DisposableToken(location, _ => _loadingProjects.TryAdd(projectLocation, new object()), _ => _loadingProjects.Remove(projectLocation, out var _)))
         {
             Log.Debug($"Going to load project from '{location}', checking if an upgrade is required");
 
@@ -828,7 +824,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             location = project.Location;
         }
 
-        using (new DisposableToken(location, _ => _savingProjects.Add(location), _ => _savingProjects.Remove(location)))
+        using (new DisposableToken(location, _ => _savingProjects.TryAdd(location, new object()), _ => _savingProjects.Remove(location, out var _)))
         {
             Log.Debug("Saving project '{0}' to '{1}'", project, location);
 
@@ -964,7 +960,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         var location = project.Location;
         if (_projects.ContainsKey(location))
         {
-            _projects.Remove(location);
+            _projects.Remove(location, out _);
         }
 
         ReleaseProjectRefresher(project);
@@ -1022,7 +1018,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
         projectRefresher.Updated -= OnProjectRefresherUpdated;
 
-        _projectRefreshers.Remove(location);
+        _projectRefreshers.Remove(location, out _);
     }
 
     private async void OnProjectRefresherUpdated(object? sender, ProjectLocationEventArgs e)
@@ -1033,7 +1029,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             return;
         }
 
-        if (_loadingProjects.Contains(projectLocation) || _savingProjects.Contains(projectLocation))
+        if (_loadingProjects.ContainsKey(projectLocation) || _savingProjects.ContainsKey(projectLocation))
         {
             return;
         }
