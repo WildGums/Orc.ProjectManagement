@@ -662,6 +662,10 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             }
 
             var loadedProject = await QuietlyLoadProjectAsync(projectLocation, false).ConfigureAwait(false);
+            if (loadedProject is null) 
+            {
+                throw Log.ErrorAndCreateException<InvalidOperationException>($"Failed to load project from '{projectLocation}'");
+            }
 
             if (_projectValidator.ValidateProjectOnRefresh)
             {
@@ -777,6 +781,10 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                 }
 
                 project = await QuietlyLoadProjectAsync(location, true).ConfigureAwait(false);
+                if (project is null)
+                {
+                    throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}'");
+                }
 
                 validationContext = await _projectValidator.ValidateProjectAsync(project);
                 if (validationContext.HasErrors)
