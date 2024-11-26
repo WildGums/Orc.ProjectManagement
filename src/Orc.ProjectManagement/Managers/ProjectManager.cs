@@ -1181,25 +1181,34 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
     private async Task HandleProjectRefreshAsync(string projectLocation)
     {
-        // Use the established lock hierarchy
-        using (await AcquireLocksAsync(_commonLock, _refreshLock))
+        try
         {
-            if (_loadingProjects.ContainsKey(projectLocation) ||
-                _savingProjects.ContainsKey(projectLocation))
-            {
-                Log.Debug("Project '{0}' is busy with load/save operation, skipping refresh", projectLocation);
-                return;
-            }
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
-            if (!_projects.TryGetValue(projectLocation, out var project))
+            // Use the established lock hierarchy
+            using (await AcquireLocksAsync(_commonLock, _refreshLock))
             {
-                Log.Warning("Project refresh required, but project '{0}' not found in list of open projects",
-                    projectLocation);
-                return;
-            }
+                // Recheck state after acquiring locks
+                if (!_projectRefreshers.ContainsKey(projectLocation))
+                {
+                    Log.Debug($"Refresher for project '{projectLocation}' was removed while waiting for locks");
+                    return;
+                }
 
-            try
-            {
+                if (_loadingProjects.ContainsKey(projectLocation) ||
+                    _savingProjects.ContainsKey(projectLocation))
+                {
+                    Log.Debug("Project '{0}' is busy with load/save operation, skipping refresh", projectLocation);
+                    return;
+                }
+
+                if (!_projects.TryGetValue(projectLocation, out var project))
+                {
+                    Log.Warning("Project refresh required, but project '{0}' not found in list of open projects",
+                        projectLocation);
+                    return;
+                }
+
                 await RaiseEventAsync(
                     new ProjectRefreshEvent(
                         ProjectEventTypeStage.Required,
@@ -1207,11 +1216,15 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                     )
                 ).ConfigureAwait(false);
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to process refresh for project '{0}'", projectLocation);
-                throw;
-            }
+        }
+        catch (TimeoutException)
+        {
+            Log.Warning($"Refresh operation timed out for project '{projectLocation}'");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"Failed to process refresh for project '{projectLocation}'");
+            throw;
         }
     }
 
