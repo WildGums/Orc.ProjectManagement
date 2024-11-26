@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Catel;
 using Catel.Data;
@@ -252,8 +253,12 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         }
     }
 
-    private async Task<bool> SafeInvokeWithTimeoutAsync<TEventArgs>(AsyncEventHandler<TEventArgs>? handler, string eventName, object sender, TEventArgs e, int timeout)
-        where TEventArgs : EventArgs
+    private async Task<bool> SafeInvokeWithTimeoutAsync<TEventArgs>(
+        AsyncEventHandler<TEventArgs>? handler,
+        string eventName,
+        object sender,
+        TEventArgs e,
+        int timeout) where TEventArgs : EventArgs
     {
         if (handler is null)
         {
@@ -262,25 +267,24 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
         try
         {
-            Log.DebugIfAttached($"Handling project management event '{eventName}'");
+            using var cts = new CancellationTokenSource(timeout);
 
             var task = SafeInvokeAsync(eventName, handler, sender, e);
-            var completedTask = await Task.WhenAny(task, Task.Delay(timeout));
-
-            if (completedTask != task)
+            try
             {
-                Log.Warning($"Handling project management event '{eventName}' has timed out");
-            }
-            else
-            {
+                await task.WaitAsync(cts.Token).ConfigureAwait(false);
                 Log.DebugIfAttached($"Handled project management event '{eventName}'");
+                return true;
             }
-
-            return await task.ConfigureAwait(false);
+            catch (OperationCanceledException)
+            {
+                Log.Warning($"Project management event '{eventName}' timed out after {timeout}ms");
+                return false;
+            }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to handle project management event '{eventName}'");
+            Log.Error(ex, $"Failed to handle project management event '{eventName}'");
             throw;
         }
     }
@@ -431,7 +435,8 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
     public virtual async Task<bool> SetActiveProjectAsync(IProject? project)
     {
-        using (await _activeProjectLock.LockAsync())
+        // Acquire locks in correct order
+        using (await AcquireLocksAsync(_commonLock, _activeProjectLock))
         {
             var activeProject = ActiveProject;
             if (project is not null && !Projects.Contains(project))
@@ -451,7 +456,6 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                 ? $"Activating project '{project.Location}'"
                 : "Deactivating currently active project");
 
-            // Use separate state scopes for deactivation and activation
             using var deactivatingState = activeProject is not null
                 ? new ProjectStateScope(_projectStateSetter, activeProjectLocation, ProjectStateType.Deactivating)
                 : null;
@@ -467,19 +471,11 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
                 if (eventArgs.Cancel)
                 {
-                    Log.Info(project is not null
-                        ? $"Activating project '{project.Location}' was canceled"
-                        : "Deactivating currently active project was canceled");
-
-                    await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.Cancelled,
-                        new ProjectActivationEventArgs(project))).ConfigureAwait(false);
-
                     return false;
                 }
 
                 ActiveProject = project;
 
-                // Only commit states if the operation succeeded
                 deactivatingState?.Commit();
                 activatingState?.Commit();
 
@@ -490,13 +486,9 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             }
             catch (Exception ex)
             {
-                Log.Error(ex, project is not null
-                    ? $"Failed to activate project '{project.Location}'"
-                    : "Failed to deactivate currently active project");
-
+                Log.Error(ex, "Failed to change active project");
                 await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.Failed,
                     new ProjectErrorEventArgs(project, ex))).ConfigureAwait(false);
-
                 return false;
             }
         }
@@ -534,30 +526,35 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
     {
         Argument.IsNotNullOrEmpty(() => projectLocation);
 
-        var countedAsyncLock = await InitializeSynchronizationContextAsync(projectLocation);
-
-        var asyncLock = countedAsyncLock.AsyncLock;
-        var refCount = countedAsyncLock.RefCount;
-
-        try
+        using (await _commonLock.LockAsync())
         {
-            using (await asyncLock.LockAsync())
+            AsyncLock? projectLock;
+            int refCount;
+
+            if (!_projectOperationLockers.TryGetValue(projectLocation, out projectLock))
             {
-                Log.Debug($"Start synchronized operation for '{projectLocation}' refCount = {refCount}]");
-                return await operation();
+                projectLock = new AsyncLock();
+                _projectOperationLockers.TryAdd(projectLocation, projectLock);
+            }
+
+            refCount = _projectOperationRefCounts.GetValueOrDefault(projectLocation, 0);
+            refCount++;
+            _projectOperationRefCounts[projectLocation] = refCount;
+
+            try
+            {
+                using (await projectLock.LockAsync())
+                {
+                    Log.Debug($"Start synchronized operation for '{projectLocation}' refCount = {refCount}]");
+                    return await operation().ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                await ReleaseSynchronizationContextAsync(projectLocation);
             }
         }
-        catch (Exception ex)
-        {
-            Log.Error(ex, $"Failed to execute synchronized operation for '{projectLocation}' refCount = {refCount}]");
-            throw;
-        }
-        finally
-        {
-            await ReleaseSynchronizationContextAsync(projectLocation);
-        }
     }
-
     private async Task ReleaseSynchronizationContextAsync(string projectLocation)
     {
         Log.Debug($"Releasing operation synchronization context for '{projectLocation}'");
@@ -1107,9 +1104,9 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
     private async Task HandleProjectRefreshAsync(string projectLocation)
     {
-        using (await _refreshLock.LockAsync().ConfigureAwait(false))
+        // Use the established lock hierarchy
+        using (await AcquireLocksAsync(_commonLock, _refreshLock))
         {
-            // Quick check if project is currently being loaded or saved
             if (_loadingProjects.ContainsKey(projectLocation) ||
                 _savingProjects.ContainsKey(projectLocation))
             {
@@ -1117,7 +1114,6 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                 return;
             }
 
-            // Get the project under the lock to ensure consistency
             if (!_projects.TryGetValue(projectLocation, out var project))
             {
                 Log.Warning("Project refresh required, but project '{0}' not found in list of open projects",
@@ -1127,7 +1123,6 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
             try
             {
-                // Handle the refresh event under the lock to maintain consistency
                 await RaiseEventAsync(
                     new ProjectRefreshEvent(
                         ProjectEventTypeStage.Required,
@@ -1142,6 +1137,116 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             }
         }
     }
+
+    private async Task<IDisposable> AcquireLocksAsync(params AsyncLock[] locks)
+    {
+        var timeout = TimeSpan.FromSeconds(30);
+        var disposables = new List<IDisposable>();
+
+        try
+        {
+            using var cts = new CancellationTokenSource(timeout);
+
+            foreach (var lockObj in locks)
+            {
+                var lockAcquisitionTask = Task.Run(async () =>
+                {
+                    try
+                    {
+                        // Pass cancellation token to ensure task can be cancelled
+                        if (cts.Token.IsCancellationRequested)
+                        {
+                            throw new OperationCanceledException();
+                        }
+
+                        var lockHandle = await lockObj.LockAsync();
+
+                        // Check again after acquisition in case we were cancelled
+                        if (cts.Token.IsCancellationRequested)
+                        {
+                            lockHandle.Dispose();
+                            throw new OperationCanceledException();
+                        }
+
+                        return lockHandle;
+                    }
+                    catch (Exception)
+                    {
+                        // Ensure we don't hold the lock if cancelled
+                        throw;
+                    }
+                });
+
+                var timeoutTask = Task.Delay(timeout, cts.Token);
+
+                Task completedTask;
+                try
+                {
+                    completedTask = await Task.WhenAny(lockAcquisitionTask, timeoutTask)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    // Cancel pending lock acquisition
+#pragma warning disable CL0001
+                    cts.Cancel();
+#pragma warning restore CL0001
+                    throw;
+                }
+
+                if (completedTask == timeoutTask)
+                {
+                    // Cancel any pending lock acquisition
+#pragma warning disable CL0001
+                    cts.Cancel();
+#pragma warning restore CL0001
+
+                    // Wait for the lock task to complete to ensure proper cleanup
+                    try
+                    {
+                        // Short timeout for cleanup
+                        using var cleanupCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                        await lockAcquisitionTask.WaitAsync(cleanupCts.Token).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, "Failed to wait for lock cleanup after timeout");
+                    }
+
+                    throw Log.ErrorAndCreateException<TimeoutException>($"Failed to acquire lock within {timeout.TotalSeconds} seconds");
+                }
+
+                try
+                {
+                    var lockHandle = await lockAcquisitionTask.ConfigureAwait(false);
+                    disposables.Add(lockHandle);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw Log.ErrorAndCreateException<TimeoutException>($"Lock acquisition was cancelled after {timeout.TotalSeconds} seconds");
+                }
+            }
+
+            return new CompositeDisposable(disposables);
+        }
+        catch
+        {
+            // Clean up any successfully acquired locks
+            foreach (var disposable in disposables)
+            {
+                try
+                {
+                    disposable.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error disposing lock during cleanup");
+                }
+            }
+            throw;
+        }
+    }
+
 
     private class OperationSynchronizationContext
     {
@@ -1221,5 +1326,32 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         Closing,
         Activating,
         Deactivating
+    }
+
+    private class LockHierarchy
+    {
+        // Lock acquisition order (from highest to lowest priority):
+        // 1. _commonLock (for operation synchronization)
+        // 2. _projectOperationLockers (individual project locks)
+        // 3. _activeProjectLock (for active project changes)
+        // 4. _refreshLock (for refresh operations)
+    }
+
+    private sealed class CompositeDisposable : IDisposable
+    {
+        private readonly IEnumerable<IDisposable> _disposables;
+
+        public CompositeDisposable(IEnumerable<IDisposable> disposables)
+        {
+            _disposables = disposables;
+        }
+
+        public void Dispose()
+        {
+            foreach (var disposable in _disposables.Reverse())
+            {
+                disposable.Dispose();
+            }
+        }
     }
 }
