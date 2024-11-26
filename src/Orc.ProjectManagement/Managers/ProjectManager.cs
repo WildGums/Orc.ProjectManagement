@@ -570,11 +570,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
         using (await _commonLock.LockAsync())
         {
-            if (!_projectOperationRefCounts.TryGetValue(projectLocation, out var refCount))
-            {
-                refCount = 0;
-            }
-
+            var refCount = _projectOperationRefCounts.GetValueOrDefault(projectLocation, 0);
             refCount--;
 
             if (refCount >= 1)
@@ -583,8 +579,8 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             }
             else
             {
-                _projectOperationRefCounts.Remove(projectLocation, out _);
-                _projectOperationLockers.Remove(projectLocation, out _);
+                _projectOperationRefCounts.TryRemove(projectLocation, out _);
+                _projectOperationLockers.TryRemove(projectLocation, out _);
             }
         }
 
@@ -824,29 +820,34 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             location = project.Location;
         }
 
-        using (new DisposableToken(location, _ => _savingProjects.TryAdd(location, new object()), _ => _savingProjects.Remove(location, out var _)))
+        if (!_savingProjects.TryAdd(location, new object()))
+        {
+            Log.Warning($"Save operation already in progress for '{location}'");
+            return false;
+        }
+
+        try
         {
             Log.Debug("Saving project '{0}' to '{1}'", project, location);
 
-            // We could support SaveAs where we store the new location, but we need to make sure that we also remove
-            // the old one (and revert on failure & cancel). For now this is sufficient (we will just get a new instance)
             _projectStateSetter.SetProjectSaving(location, true);
 
             var cancelEventArgs = new ProjectCancelEventArgs(project);
-            await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Before, cancelEventArgs)).ConfigureAwait(false);
+            await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Before, cancelEventArgs))
+                .ConfigureAwait(false);
 
             if (cancelEventArgs.Cancel)
             {
                 _projectStateSetter.SetProjectSaving(location, false);
-
                 Log.Debug("Canceled saving of project to '{0}'", location);
-                await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Cancelled, new ProjectEventArgs(project))).ConfigureAwait(false);
-
+                await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Cancelled,
+                    new ProjectEventArgs(project))).ConfigureAwait(false);
                 return false;
             }
 
+            var success = false;
             Exception? error = null;
-            var success = true;
+
             try
             {
                 success = await WriteProjectAsync(project, location);
@@ -859,34 +860,33 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             if (error is not null)
             {
                 _projectStateSetter.SetProjectSaving(location, false);
-
                 Log.Error(error, "Failed to save project '{0}' to '{1}'", project, location);
-
-                await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Failed, new ProjectErrorEventArgs(project, error))).ConfigureAwait(false);
-
+                await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Failed,
+                    new ProjectErrorEventArgs(project, error))).ConfigureAwait(false);
                 return false;
             }
 
             if (!success)
             {
                 _projectStateSetter.SetProjectSaving(location, false);
-
                 Log.Warning("Not saved project '{0}' to '{1}'", project, location);
-
-                await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Failed, new ProjectErrorEventArgs(project))).ConfigureAwait(false);
-
+                await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Failed,
+                    new ProjectErrorEventArgs(project))).ConfigureAwait(false);
                 return false;
             }
 
             _projectStateSetter.SetProjectSaving(location, false);
+            await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.After,
+                new ProjectEventArgs(project))).ConfigureAwait(false);
 
-            await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.After, new ProjectEventArgs(project))).ConfigureAwait(false);
-
-            var projectString = project.ToString();
-            Log.Info("Saved project '{0}' to '{1}'", projectString, location);
+            Log.Info("Saved project '{0}' to '{1}'", project.ToString(), location);
+            return true;
         }
-
-        return true;
+        finally
+        {
+            // Ensure saving token is removed
+            _savingProjects.TryRemove(location, out _);
+        }
     }
 
     private async Task<bool> SyncedCloseAsync(IProject project)
@@ -928,12 +928,19 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
     private void RegisterProject(IProject project)
     {
         var projectLocation = project.Location;
-        _projects[projectLocation] = project;
+
+        _projects.AddOrUpdate(projectLocation,
+            addValue: project,
+            updateValueFactory: (_, existingProject) =>
+            {
+                Log.Warning($"Project at location '{projectLocation}' already exists, updating registration");
+                return project;
+            });
 
         InitializeProjectRefresher(projectLocation);
     }
 
-    private async Task<IProject> QuietlyLoadProjectAsync(string location, bool skipCanLoadValidation)
+    protected virtual async Task<IProject?> QuietlyLoadProjectAsync(string location, bool skipCanLoadValidation)
     {
         if (skipCanLoadValidation)
         {
@@ -941,59 +948,80 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
             if (!await _projectValidator.CanStartLoadingProjectAsync(location))
             {
-                throw Log.ErrorAndCreateException(message => new ProjectException(location, message), $"Cannot load project from '{location}'");
+                throw Log.ErrorAndCreateException(message => new ProjectException(location, message),
+                    $"Cannot load project from '{location}'");
             }
         }
 
         var project = await ReadProjectAsync(location);
-
         if (project is null)
         {
-            throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}'");
+            throw Log.ErrorAndCreateException<InvalidOperationException>(
+                $"Project could not be loaded from '{location}'");
         }
 
-        return project;
+        if (!_loadingProjects.TryAdd(location, new object()))
+        {
+            throw Log.ErrorAndCreateException<InvalidOperationException>(
+                $"Project is already being loaded from '{location}'");
+        }
+
+        try
+        {
+            return project;
+        }
+        finally
+        {
+            // Ensure token is removed
+            _loadingProjects.TryRemove(location, out _);
+        }
     }
 
     private void UnregisterProject(IProject project)
     {
         var location = project.Location;
-        if (_projects.ContainsKey(location))
-        {
-            _projects.Remove(location, out _);
-        }
 
-        ReleaseProjectRefresher(project);
+        if (_projects.TryRemove(location, out _))
+        {
+            // Only release refresher if project was actually removed
+            ReleaseProjectRefresher(project);
+        }
     }
 
     private void InitializeProjectRefresher(string projectLocation)
     {
-        if (_projectRefreshers.TryGetValue(projectLocation, out var projectRefresher))
+        _projectRefreshers.GetOrAdd(projectLocation, location =>
         {
-            return;
-        }
-
-        try
-        {
-            projectRefresher = _projectRefresherSelector.GetProjectRefresher(projectLocation);
-
-            if (projectRefresher is null)
+            var refresher = _projectRefresherSelector.GetProjectRefresher(location);
+            if (refresher is null)
             {
-                return;
+                // Return null if no refresher available - will be filtered out by null check below
+                return null!;
             }
 
-            Log.Debug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
-
-            projectRefresher.Updated += OnProjectRefresherUpdated;
-            projectRefresher.Subscribe();
-
-            _projectRefreshers[projectLocation] = projectRefresher;
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Failed to subscribe to project refresher");
-            throw;
-        }
+            try
+            {
+                Log.Debug("Subscribing to project refresher '{0}'", refresher.GetType().GetSafeFullName());
+                refresher.Updated += OnProjectRefresherUpdated;
+                refresher.Subscribe();
+                return refresher;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to subscribe to project refresher");
+                // Clean up on failure
+                try
+                {
+                    refresher.Unsubscribe();
+                    refresher.Updated -= OnProjectRefresherUpdated;
+                }
+                catch
+                {
+                    // Ignore cleanup errors
+                }
+                throw; // Rethrow the original exception
+            }
+        });
     }
 
     private void ReleaseProjectRefresher(IProject project)
@@ -1008,17 +1036,19 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         try
         {
             Log.Debug("Unsubscribing from project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
-
             projectRefresher.Unsubscribe();
+            projectRefresher.Updated -= OnProjectRefresherUpdated;
         }
         catch (Exception ex)
         {
             Log.Warning(ex, "Failed to unsubscribe from project refresher");
+            // Continue with removal even if unsubscribe fails
         }
-
-        projectRefresher.Updated -= OnProjectRefresherUpdated;
-
-        _projectRefreshers.Remove(location, out _);
+        finally
+        {
+            // Ensure removal happens even if there's an exception
+            _projectRefreshers.TryRemove(location, out _);
+        }
     }
 
     private async void OnProjectRefresherUpdated(object? sender, ProjectLocationEventArgs e)
