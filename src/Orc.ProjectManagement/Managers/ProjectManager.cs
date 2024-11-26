@@ -434,7 +434,6 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         using (await _activeProjectLock.LockAsync())
         {
             var activeProject = ActiveProject;
-
             if (project is not null && !Projects.Contains(project))
             {
                 return false;
@@ -452,59 +451,54 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                 ? $"Activating project '{project.Location}'"
                 : "Deactivating currently active project");
 
-            var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
-
-            _projectStateSetter.SetProjectDeactivating(activeProject?.Location, true);
-            _projectStateSetter.SetProjectActivating(project?.Location, true);
-
-            await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.Before, eventArgs)).ConfigureAwait(false);
-
-            if (eventArgs.Cancel)
-            {
-                Log.Info(project is not null
-                    ? $"Activating project '{project.Location}' was canceled"
-                    : "Deactivating currently active project");
-
-                _projectStateSetter.SetProjectActivating(project?.Location, false);
-
-                await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.Cancelled, new ProjectActivationEventArgs(project))).ConfigureAwait(false);
-
-                return false;
-            }
-
-            Exception? exception = null;
+            // Use separate state scopes for deactivation and activation
+            using var deactivatingState = activeProject is not null
+                ? new ProjectStateScope(_projectStateSetter, activeProjectLocation, ProjectStateType.Deactivating)
+                : null;
+            using var activatingState = project is not null
+                ? new ProjectStateScope(_projectStateSetter, newProjectLocation, ProjectStateType.Activating)
+                : null;
 
             try
             {
+                var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
+                await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.Before, eventArgs))
+                    .ConfigureAwait(false);
+
+                if (eventArgs.Cancel)
+                {
+                    Log.Info(project is not null
+                        ? $"Activating project '{project.Location}' was canceled"
+                        : "Deactivating currently active project was canceled");
+
+                    await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.Cancelled,
+                        new ProjectActivationEventArgs(project))).ConfigureAwait(false);
+
+                    return false;
+                }
+
                 ActiveProject = project;
+
+                // Only commit states if the operation succeeded
+                deactivatingState?.Commit();
+                activatingState?.Commit();
+
+                await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.After,
+                    new ProjectUpdatedEventArgs(activeProject, project))).ConfigureAwait(false);
+
+                return true;
             }
             catch (Exception ex)
             {
-                exception = ex;
-            }
-
-            if (exception is not null)
-            {
-                Log.Error(exception, project is not null
+                Log.Error(ex, project is not null
                     ? $"Failed to activate project '{project.Location}'"
                     : "Failed to deactivate currently active project");
 
-                _projectStateSetter.SetProjectActivating(project?.Location ?? string.Empty, false);
-                await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.Failed, new ProjectErrorEventArgs(project, exception))).ConfigureAwait(false);
+                await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.Failed,
+                    new ProjectErrorEventArgs(project, ex))).ConfigureAwait(false);
 
                 return false;
             }
-
-            _projectStateSetter.SetProjectDeactivating(activeProject?.Location, false);
-            _projectStateSetter.SetProjectActivating(project?.Location, false);
-
-            await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.After, new ProjectUpdatedEventArgs(activeProject, project))).ConfigureAwait(false);
-
-            Log.Debug(project is not null
-                ? $"Activating project '{project.Location}' was canceled"
-                : "Deactivating currently active project");
-
-            return true;
         }
     }
 
@@ -724,96 +718,112 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         }
 
         var projectLocation = location;
-        using (new DisposableToken(location, _ => _loadingProjects.TryAdd(projectLocation, new object()), _ => _loadingProjects.Remove(projectLocation, out var _)))
+        using (new DisposableToken(location,
+            _ => _loadingProjects.TryAdd(projectLocation, new object()),
+            _ => _loadingProjects.TryRemove(projectLocation, out var _)))
         {
-            Log.Debug($"Going to load project from '{location}', checking if an upgrade is required");
-
-            if (await _projectUpgrader.RequiresUpgradeAsync(location))
-            {
-                Log.Debug($"Upgrade is required for '{location}', upgrading...");
-
-                location = await _projectUpgrader.UpgradeAsync(location);
-
-                Log.Debug($"Upgraded project, final location is '{location}'");
-            }
-
-            Log.Debug($"Loading project from '{location}'");
-
-            _projectStateSetter.SetProjectLoading(location, true);
-
-            var cancelEventArgs = new ProjectCancelEventArgs(location);
-
-            await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Before, cancelEventArgs)).ConfigureAwait(false);
-
-            if (cancelEventArgs.Cancel)
-            {
-                Log.Debug("Canceled loading of project from '{0}'", location);
-
-                _projectStateSetter.SetProjectLoading(location, false);
-
-                await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Cancelled, new ProjectLocationEventArgs(location))).ConfigureAwait(false);
-
-                return null;
-            }
-
-            Exception? error = null;
-            IValidationContext? validationContext = null;
+            using var loadingState = new ProjectStateScope(_projectStateSetter, location, ProjectStateType.Loading);
 
             try
             {
-                if (_projects.Count > 0 && ProjectManagementType == ProjectManagementType.SingleDocument)
+                Log.Debug($"Going to load project from '{location}', checking if an upgrade is required");
+
+                if (await _projectUpgrader.RequiresUpgradeAsync(location))
                 {
-                    throw Log.ErrorAndCreateException(message => new SdiProjectManagementException(message, location), "Cannot load project '{0}', currently in SDI mode");
+                    Log.Debug($"Upgrade is required for '{location}', upgrading...");
+                    location = await _projectUpgrader.UpgradeAsync(location);
+                    Log.Debug($"Upgraded project, final location is '{location}'");
                 }
 
-                if (!await _projectValidator.CanStartLoadingProjectAsync(location))
-                {
-                    validationContext = new ValidationContext();
-                    validationContext.Add(BusinessRuleValidationResult.CreateError("Project validator informed that project could not be loaded"));
+                var cancelEventArgs = new ProjectCancelEventArgs(location);
+                await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Before, cancelEventArgs))
+                    .ConfigureAwait(false);
 
-                    throw Log.ErrorAndCreateException(message => new ProjectException(location, message), $"Cannot load project from '{location}'");
+                if (cancelEventArgs.Cancel)
+                {
+                    Log.Debug("Canceled loading of project from '{0}'", location);
+                    await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Cancelled,
+                        new ProjectLocationEventArgs(location))).ConfigureAwait(false);
+                    return null;
                 }
 
-                validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(location);
-                if (validationContext.HasErrors)
-                {
-                    throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}', validator returned errors");
-                }
-
-                project = await QuietlyLoadProjectAsync(location, true).ConfigureAwait(false);
-                if (project is null)
-                {
-                    throw Log.ErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}'");
-                }
-
-                validationContext = await _projectValidator.ValidateProjectAsync(project);
-                if (validationContext.HasErrors)
-                {
-                    throw Log.ErrorAndCreateException<InvalidOperationException>($"Project data was loaded from '{location}', but the validator returned errors");
-                }
+                // Validate and load the project
+                await ValidateProjectManagementTypeAsync(location);
+                var validationContext = await ValidateAndPrepareProjectLoadingAsync(location);
+                project = await LoadAndValidateProjectAsync(location, validationContext);
 
                 RegisterProject(project);
+
+                // Only commit the state if everything succeeded
+                loadingState.Commit();
+
+                await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.After,
+                    new ProjectEventArgs(project))).ConfigureAwait(false);
+
+                Log.Info("Loaded project from '{0}'", location);
+                return project;
             }
             catch (Exception ex)
             {
-                error = ex;
                 Log.Warning(ex, "Failed to load project from '{0}'", location);
-            }
 
-            if (project is null || error is not null)
-            {
-                _projectStateSetter.SetProjectLoading(location, false);
-
-                await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Failed, new ProjectErrorEventArgs(location, error, validationContext))).ConfigureAwait(false);
+                await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Failed,
+                    new ProjectErrorEventArgs(location, ex))).ConfigureAwait(false);
 
                 return null;
             }
+        }
+    }
 
-            _projectStateSetter.SetProjectLoading(location, false);
+    private async Task ValidateProjectManagementTypeAsync(string location)
+    {
+        if (_projects.Count > 0 && ProjectManagementType == ProjectManagementType.SingleDocument)
+        {
+            throw Log.ErrorAndCreateException(
+                message => new SdiProjectManagementException(message, location),
+                "Cannot load project '{0}', currently in SDI mode");
+        }
+    }
 
-            await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.After, new ProjectEventArgs(project))).ConfigureAwait(false);
+    private async Task<IValidationContext> ValidateAndPrepareProjectLoadingAsync(string location)
+    {
+        IValidationContext validationContext;
 
-            Log.Info("Loaded project from '{0}'", location);
+        if (!await _projectValidator.CanStartLoadingProjectAsync(location))
+        {
+            validationContext = new ValidationContext();
+            validationContext.Add(BusinessRuleValidationResult.CreateError(
+                "Project validator informed that project could not be loaded"));
+
+            throw Log.ErrorAndCreateException(
+                message => new ProjectException(location, message),
+                $"Cannot load project from '{location}'");
+        }
+
+        validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(location);
+        if (validationContext.HasErrors)
+        {
+            throw Log.ErrorAndCreateException<InvalidOperationException>(
+                $"Project could not be loaded from '{location}', validator returned errors");
+        }
+
+        return validationContext;
+    }
+
+    private async Task<IProject> LoadAndValidateProjectAsync(string location, IValidationContext previousValidationContext)
+    {
+        var project = await QuietlyLoadProjectAsync(location, true);
+        if (project is null)
+        {
+            throw Log.ErrorAndCreateException<InvalidOperationException>(
+                $"Project could not be loaded from '{location}'");
+        }
+
+        var validationContext = await _projectValidator.ValidateProjectAsync(project);
+        if (validationContext.HasErrors)
+        {
+            throw Log.ErrorAndCreateException<InvalidOperationException>(
+                $"Project data was loaded from '{location}', but the validator returned errors");
         }
 
         return project;
@@ -1143,5 +1153,73 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
         public AsyncLock AsyncLock { get; }
         public int RefCount { get; }
+    }
+
+    private sealed class ProjectStateScope : IDisposable
+    {
+        private readonly IProjectStateSetter _stateSetter;
+        private readonly string? _location;
+        private readonly ProjectStateType _stateType;
+        private readonly bool? _isActiveProject;
+        private bool _isCommitted;
+
+        public ProjectStateScope(IProjectStateSetter stateSetter, string? location, ProjectStateType stateType, bool? isActiveProject = null)
+        {
+            _stateSetter = stateSetter;
+            _location = location;
+            _stateType = stateType;
+            _isActiveProject = isActiveProject;
+            SetState(true);
+        }
+
+        public void Commit() => _isCommitted = true;
+
+        public void Dispose()
+        {
+            if (!_isCommitted && !string.IsNullOrEmpty(_location))
+            {
+                SetState(false);
+            }
+        }
+
+        private void SetState(bool value)
+        {
+            if (string.IsNullOrEmpty(_location))
+            {
+                return;
+            }
+
+            switch (_stateType)
+            {
+                case ProjectStateType.Loading:
+                    _stateSetter.SetProjectLoading(_location, value);
+                    break;
+                case ProjectStateType.Saving:
+                    _stateSetter.SetProjectSaving(_location, value);
+                    break;
+                case ProjectStateType.Refreshing:
+                    _stateSetter.SetProjectRefreshing(_location, value, _isActiveProject ?? false);
+                    break;
+                case ProjectStateType.Closing:
+                    _stateSetter.SetProjectClosing(_location, value);
+                    break;
+                case ProjectStateType.Activating:
+                    _stateSetter.SetProjectActivating(_location, value);
+                    break;
+                case ProjectStateType.Deactivating:
+                    _stateSetter.SetProjectDeactivating(_location, value);
+                    break;
+            }
+        }
+    }
+
+    private enum ProjectStateType
+    {
+        Loading,
+        Saving,
+        Refreshing,
+        Closing,
+        Activating,
+        Deactivating
     }
 }
