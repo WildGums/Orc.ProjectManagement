@@ -41,6 +41,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
     private readonly AsyncLock _commonLock = new();
     private readonly AsyncLock _refreshLock = new ();
     private readonly AsyncLock _eventLock = new();
+    private readonly AsyncLock _refresherManagementLock = new();
 
     public ProjectManager(IProjectValidator projectValidator, IProjectUpgrader projectUpgrader, IProjectRefresherSelector projectRefresherSelector,
         IProjectSerializerSelector projectSerializerSelector, IProjectInitializer projectInitializer, IProjectManagementConfigurationService projectManagementConfigurationService,
@@ -611,33 +612,6 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         Log.Debug($"Released operation synchronization context for '{projectLocation}'");
     }
 
-    private async Task<OperationSynchronizationContext> InitializeSynchronizationContextAsync(string projectLocation)
-    {
-        AsyncLock? asyncLock;
-        int refCount;
-
-        Log.Debug($"Initializing operation synchronization context for '{projectLocation}'");
-
-        using (await _commonLock.LockAsync())
-        {
-            if (!_projectOperationLockers.TryGetValue(projectLocation, out asyncLock))
-            {
-                asyncLock = new AsyncLock();
-                _projectOperationLockers.TryAdd(projectLocation, asyncLock);
-            }
-
-            refCount = _projectOperationRefCounts.GetValueOrDefault(projectLocation, 0);
-
-            refCount++;
-
-            _projectOperationRefCounts[projectLocation] = refCount;
-        }
-
-        Log.Debug($"Initialized operation synchronization context for '{projectLocation}' refCount = [{refCount}]");
-
-        return new OperationSynchronizationContext(asyncLock, refCount);
-    }
-
     private async Task<bool> SyncedRefreshAsync(IProject project)
     {
         var projectLocation = project.Location;
@@ -975,6 +949,84 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
     private void RegisterProject(IProject project)
     {
+        RegisterProjectAsync(project).GetAwaiter().GetResult();
+    }
+
+    private async Task<IProjectRefresher?> InitializeProjectRefresherAsync(string projectLocation)
+    {
+        using (await _refresherManagementLock.LockAsync())
+        {
+            // Check if refresher already exists
+            if (_projectRefreshers.TryGetValue(projectLocation, out var existingRefresher))
+            {
+                return existingRefresher;
+            }
+
+            IProjectRefresher? refresher = null;
+            try
+            {
+                refresher = _projectRefresherSelector.GetProjectRefresher(projectLocation);
+                if (refresher is null)
+                {
+                    return null;
+                }
+
+                // Initialize before adding to dictionary to handle initialization failures
+                Log.Debug("Subscribing to project refresher '{0}'", refresher.GetType().GetSafeFullName());
+                refresher.Updated += OnProjectRefresherUpdated;
+
+                try
+                {
+                    refresher.Subscribe();
+                }
+                catch (Exception ex)
+                {
+                    // Clean up event handler if subscription fails
+                    refresher.Updated -= OnProjectRefresherUpdated;
+                    throw Log.ErrorAndCreateException<InvalidOperationException>($"Failed to subscribe refresher for project '{projectLocation}'", ex);
+                }
+
+                // Only add to dictionary if initialization succeeds
+                if (_projectRefreshers.TryAdd(projectLocation, refresher))
+                {
+                    return refresher;
+                }
+                else
+                {
+                    // Another thread added a refresher, clean up this one
+                    await CleanupRefresherAsync(refresher, projectLocation).ConfigureAwait(false);
+                    return _projectRefreshers[projectLocation];
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Failed to initialize project refresher for '{projectLocation}'");
+                if (refresher is not null)
+                {
+                    await CleanupRefresherAsync(refresher, projectLocation).ConfigureAwait(false);
+                }
+                throw;
+            }
+        }
+    }
+
+    private async Task ReleaseProjectRefresherAsync(IProject project)
+    {
+        var location = project.Location;
+
+        using (await _refresherManagementLock.LockAsync())
+        {
+            if (!_projectRefreshers.TryRemove(location, out var projectRefresher))
+            {
+                return;
+            }
+
+            await CleanupRefresherAsync(projectRefresher, location).ConfigureAwait(false);
+        }
+    }
+
+    private async Task RegisterProjectAsync(IProject project)
+    {
         var projectLocation = project.Location;
 
         _projects.AddOrUpdate(projectLocation,
@@ -985,17 +1037,61 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                 return project;
             });
 
-        // Initialize refresher and track resources
-        InitializeProjectRefresher(projectLocation);
-        var projectRefresher = _projectRefreshers[projectLocation];
-        var resources = new ProjectResources(this, projectLocation, projectRefresher, Log);
+        try
+        {
+            var refresher = await InitializeProjectRefresherAsync(projectLocation).ConfigureAwait(false);
 
-        _projectResources.AddOrUpdate(projectLocation, resources,
-            (_, existing) =>
+            var resources = new ProjectResources(this, projectLocation, refresher, Log);
+            _projectResources.AddOrUpdate(projectLocation, resources,
+                (_, existing) =>
+                {
+                    existing.Dispose();
+                    return resources;
+                });
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"Failed to initialize refresher for project '{projectLocation}'");
+            // Continue without refresher - project can still be used
+        }
+    }
+
+    private async Task UnregisterProjectAsync(IProject project)
+    {
+        var location = project.Location;
+
+        if (_projects.TryRemove(location, out _))
+        {
+            await ReleaseProjectRefresherAsync(project).ConfigureAwait(false);
+
+            if (_projectResources.TryRemove(location, out var resources))
             {
-                existing.Dispose();
-                return resources;
-            });
+                try
+                {
+                    resources.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, $"Failed to cleanup resources for project '{location}'");
+                }
+            }
+        }
+    }
+
+    private async Task CleanupRefresherAsync(IProjectRefresher refresher, string projectLocation)
+    {
+        try
+        {
+            // First remove event handler to prevent new refreshes during cleanup
+            refresher.Updated -= OnProjectRefresherUpdated;
+
+            // Then unsubscribe
+            refresher.Unsubscribe();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"Failed to cleanup refresher for project '{projectLocation}'");
+        }
     }
 
     protected virtual async Task<IProject?> QuietlyLoadProjectAsync(string location, bool skipCanLoadValidation)
@@ -1037,103 +1133,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
     private void UnregisterProject(IProject project)
     {
-        var location = project.Location;
-
-        if (_projects.TryRemove(location, out _))
-        {
-            if (_projectRefreshers.TryRemove(location, out var refresher))
-            {
-                CleanupRefresher(refresher, location);
-            }
-
-            if (_projectResources.TryRemove(location, out var resources))
-            {
-                try
-                {
-                    resources.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, $"Failed to cleanup resources for project '{location}'");
-                }
-            }
-        }
-    }
-
-    private void CleanupRefresher(IProjectRefresher refresher, string projectLocation)
-    {
-        try
-        {
-            refresher.Unsubscribe();
-            refresher.Updated -= OnProjectRefresherUpdated;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, $"Failed to cleanup refresher for project '{projectLocation}'");
-        }
-    }
-
-    private void InitializeProjectRefresher(string projectLocation)
-    {
-        _projectRefreshers.GetOrAdd(projectLocation, location =>
-        {
-            var refresher = _projectRefresherSelector.GetProjectRefresher(location);
-            if (refresher is null)
-            {
-                // Return null if no refresher available - will be filtered out by null check below
-                return null!;
-            }
-
-            try
-            {
-                Log.Debug("Subscribing to project refresher '{0}'", refresher.GetType().GetSafeFullName());
-                refresher.Updated += OnProjectRefresherUpdated;
-                refresher.Subscribe();
-                return refresher;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to subscribe to project refresher");
-                // Clean up on failure
-                try
-                {
-                    refresher.Unsubscribe();
-                    refresher.Updated -= OnProjectRefresherUpdated;
-                }
-                catch
-                {
-                    // Ignore cleanup errors
-                }
-                throw; // Rethrow the original exception
-            }
-        });
-    }
-
-    private void ReleaseProjectRefresher(IProject project)
-    {
-        var location = project.Location;
-
-        if (!_projectRefreshers.TryGetValue(location, out var projectRefresher))
-        {
-            return;
-        }
-
-        try
-        {
-            Log.Debug("Unsubscribing from project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
-            projectRefresher.Unsubscribe();
-            projectRefresher.Updated -= OnProjectRefresherUpdated;
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Failed to unsubscribe from project refresher");
-            // Continue with removal even if unsubscribe fails
-        }
-        finally
-        {
-            // Ensure removal happens even if there's an exception
-            _projectRefreshers.TryRemove(location, out _);
-        }
+        UnregisterProjectAsync(project).GetAwaiter().GetResult();
     }
 
     private async void OnProjectRefresherUpdated(object? sender, ProjectLocationEventArgs e)
@@ -1146,6 +1146,16 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
 
         try
         {
+            // Verify refresher is still valid before proceeding
+            using (await _refresherManagementLock.LockAsync())
+            {
+                if (!_projectRefreshers.ContainsKey(projectLocation))
+                {
+                    // Refresher was removed, ignore the update
+                    return;
+                }
+            }
+
             // Create new task or get existing one
             var refreshTask = _activeRefreshTasks.GetOrAdd(
                 projectLocation,
@@ -1157,17 +1167,14 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                     }
                     finally
                     {
-                        // Cleanup when the task completes
                         _activeRefreshTasks.TryRemove(loc, out _);
                     }
                 });
 
-            // Await the task to catch any errors
             await refreshTask.ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            // Log but don't rethrow since this is an async void method
             Log.Error(ex, "Error processing refresh for project '{0}'", projectLocation);
         }
     }
@@ -1315,19 +1322,6 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             }
             throw;
         }
-    }
-
-
-    private class OperationSynchronizationContext
-    {
-        public OperationSynchronizationContext(AsyncLock asyncLock, int refCount)
-        {
-            AsyncLock = asyncLock;
-            RefCount = refCount;
-        }
-
-        public AsyncLock AsyncLock { get; }
-        public int RefCount { get; }
     }
 
     private sealed class ProjectStateScope : IDisposable
