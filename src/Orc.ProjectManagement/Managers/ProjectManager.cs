@@ -643,7 +643,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                 return false;
             }
 
-            UnregisterProject(project);
+            await UnregisterProjectAsync(project);
 
             if (isRefreshingActiveProject)
             {
@@ -674,7 +674,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                 }
             }
 
-            RegisterProject(loadedProject);
+            await RegisterProjectAsync(loadedProject);
 
             // Note: we disable IsRefreshingActiveProject at Activated event, that is why isActiveProject == false
             _projectStateSetter.SetProjectRefreshing(projectLocation, true, false);
@@ -721,61 +721,56 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             return project;
         }
 
-        var projectLocation = location;
-        using (new DisposableToken(location,
-            _ => _loadingProjects.TryAdd(projectLocation, new object()),
-            _ => _loadingProjects.TryRemove(projectLocation, out var _)))
+        using var loadingState = new LoadingStateScope(_loadingProjects, location, Log);
+        using var stateScope = new ProjectStateScope(_projectStateSetter, location, ProjectStateType.Loading);
+
+        try
         {
-            using var loadingState = new ProjectStateScope(_projectStateSetter, location, ProjectStateType.Loading);
+            Log.Debug($"Going to load project from '{location}', checking if an upgrade is required");
 
-            try
+            if (await _projectUpgrader.RequiresUpgradeAsync(location))
             {
-                Log.Debug($"Going to load project from '{location}', checking if an upgrade is required");
-
-                if (await _projectUpgrader.RequiresUpgradeAsync(location))
-                {
-                    Log.Debug($"Upgrade is required for '{location}', upgrading...");
-                    location = await _projectUpgrader.UpgradeAsync(location);
-                    Log.Debug($"Upgraded project, final location is '{location}'");
-                }
-
-                var cancelEventArgs = new ProjectCancelEventArgs(location);
-                await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Before, cancelEventArgs))
-                    .ConfigureAwait(false);
-
-                if (cancelEventArgs.Cancel)
-                {
-                    Log.Debug("Canceled loading of project from '{0}'", location);
-                    await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Cancelled,
-                        new ProjectLocationEventArgs(location))).ConfigureAwait(false);
-                    return null;
-                }
-
-                // Validate and load the project
-                await ValidateProjectManagementTypeAsync(location);
-                var validationContext = await ValidateAndPrepareProjectLoadingAsync(location);
-                project = await LoadAndValidateProjectAsync(location, validationContext);
-
-                RegisterProject(project);
-
-                // Only commit the state if everything succeeded
-                loadingState.Commit();
-
-                await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.After,
-                    new ProjectEventArgs(project))).ConfigureAwait(false);
-
-                Log.Info("Loaded project from '{0}'", location);
-                return project;
+                Log.Debug($"Upgrade is required for '{location}', upgrading...");
+                location = await _projectUpgrader.UpgradeAsync(location);
+                Log.Debug($"Upgraded project, final location is '{location}'");
             }
-            catch (Exception ex)
+
+            var cancelEventArgs = new ProjectCancelEventArgs(location);
+            await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Before, cancelEventArgs))
+                .ConfigureAwait(false);
+
+            if (cancelEventArgs.Cancel)
             {
-                Log.Warning(ex, "Failed to load project from '{0}'", location);
-
-                await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Failed,
-                    new ProjectErrorEventArgs(location, ex))).ConfigureAwait(false);
-
+                Log.Debug("Canceled loading of project from '{0}'", location);
+                await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Cancelled,
+                    new ProjectLocationEventArgs(location))).ConfigureAwait(false);
                 return null;
             }
+
+            // Validate and load the project
+            await ValidateProjectManagementTypeAsync(location);
+            var validationContext = await ValidateAndPrepareProjectLoadingAsync(location);
+            project = await LoadAndValidateProjectAsync(location, validationContext);
+
+            await RegisterProjectAsync(project);
+
+            // Only commit the state if everything succeeded
+            stateScope.Commit();
+
+            await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.After,
+                new ProjectEventArgs(project))).ConfigureAwait(false);
+
+            Log.Info("Loaded project from '{0}'", location);
+            return project;
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to load project from '{0}'", location);
+
+            await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Failed,
+                new ProjectErrorEventArgs(location, ex))).ConfigureAwait(false);
+
+            return null;
         }
     }
 
@@ -937,7 +932,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             await SetActiveProjectAsync(null).ConfigureAwait(false);
         }
 
-        UnregisterProject(project);
+        await UnregisterProjectAsync(project);
 
         _projectStateSetter.SetProjectClosing(project.Location, false);
         await RaiseEventAsync(new ProjectCloseEvent(ProjectEventTypeStage.After, new ProjectEventArgs(project))).ConfigureAwait(false);
@@ -1094,7 +1089,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         }
     }
 
-    protected virtual async Task<IProject?> QuietlyLoadProjectAsync(string location, bool skipCanLoadValidation)
+    private async Task<IProject?> QuietlyLoadProjectAsync(string location, bool skipCanLoadValidation)
     {
         if (skipCanLoadValidation)
         {
@@ -1114,21 +1109,9 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                 $"Project could not be loaded from '{location}'");
         }
 
-        // Use a proper cleanup token
-        if (!_loadingProjects.TryAdd(location, new object()))
-        {
-            throw Log.ErrorAndCreateException<InvalidOperationException>(
-                $"Project is already being loaded from '{location}'");
-        }
-
-        try
-        {
-            return project;
-        }
-        finally
-        {
-            _loadingProjects.TryRemove(location, out _);
-        }
+        // Project is valid at this point, but we don't need to acquire loading state here
+        // as it's already managed by SyncedLoadProjectAsync
+        return project;
     }
 
     private void UnregisterProject(IProject project)
@@ -1517,6 +1500,37 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             }
 
             _resources.Clear();
+        }
+    }
+
+    private sealed class LoadingStateScope : IDisposable
+    {
+        private readonly ConcurrentDictionary<string, object> _loadingProjects;
+        private readonly string _location;
+        private readonly ILog _log;
+        private bool _acquired;
+
+        public LoadingStateScope(ConcurrentDictionary<string, object> loadingProjects, string location, ILog log)
+        {
+            _loadingProjects = loadingProjects;
+            _location = location;
+            _log = log;
+
+            if (!_loadingProjects.TryAdd(location, new object()))
+            {
+                throw _log.ErrorAndCreateException<InvalidOperationException>(
+                    $"Project is already being loaded from '{location}'");
+            }
+            _acquired = true;
+        }
+
+        public void Dispose()
+        {
+            if (_acquired)
+            {
+                _loadingProjects.TryRemove(_location, out _);
+                _acquired = false;
+            }
         }
     }
 }
