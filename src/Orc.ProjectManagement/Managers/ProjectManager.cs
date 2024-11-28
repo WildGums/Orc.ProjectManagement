@@ -34,7 +34,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
     private readonly ConcurrentDictionary<string, IProject> _projects;
     private readonly ConcurrentDictionary<string, object> _loadingProjects = new();
     private readonly ConcurrentDictionary<string, object> _savingProjects = new();
-    private readonly ConcurrentDictionary<string, Task> _activeRefreshTasks = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, Task<bool>> _activeRefreshTasks = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, ProjectResources> _projectResources = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly AsyncLock _activeProjectLock = new();
@@ -387,8 +387,26 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
     {
         ArgumentNullException.ThrowIfNull(project);
 
-        return SynchronizeProjectOperationAsync(project.Location, () => SyncedRefreshAsync(project));
+        var location = project.Location;
+
+        return _activeRefreshTasks.GetOrAdd(location, loc =>
+        {
+            var refreshTask = Task.Run(async () =>
+            {
+                try
+                {
+                    return await SynchronizeProjectOperationAsync(loc, () => SyncedRefreshAsync(project));
+                }
+                finally
+                {
+                    _activeRefreshTasks.TryRemove(loc, out _);
+                }
+            });
+
+            return refreshTask;
+        });
     }
+
 
     public virtual Task<bool> LoadAsync(string location)
     {
@@ -560,35 +578,26 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
     {
         Argument.IsNotNullOrEmpty(() => projectLocation);
 
+        AsyncLock? projectLock;
+
+        // Ensure only one thread can add a new lock for a project
         using (await _commonLock.LockAsync())
         {
-            AsyncLock? projectLock;
-            int refCount;
-
             if (!_projectOperationLockers.TryGetValue(projectLocation, out projectLock))
             {
                 projectLock = new AsyncLock();
                 _projectOperationLockers.TryAdd(projectLocation, projectLock);
             }
+        }
 
-            refCount = _projectOperationRefCounts.GetValueOrDefault(projectLocation, 0);
-            refCount++;
-            _projectOperationRefCounts[projectLocation] = refCount;
-
-            try
-            {
-                using (await projectLock.LockAsync())
-                {
-                    Log.Debug($"Start synchronized operation for '{projectLocation}' refCount = {refCount}]");
-                    return await operation().ConfigureAwait(false);
-                }
-            }
-            finally
-            {
-                await ReleaseSynchronizationContextAsync(projectLocation);
-            }
+        using (await projectLock.LockAsync())
+        {
+            Log.Debug($"Starting synchronized operation for '{projectLocation}'");
+            return await operation().ConfigureAwait(false);
         }
     }
+
+
     private async Task ReleaseSynchronizationContextAsync(string projectLocation)
     {
         Log.Debug($"Releasing operation synchronization context for '{projectLocation}'");
@@ -770,6 +779,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
             await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.Failed,
                 new ProjectErrorEventArgs(location, ex))).ConfigureAwait(false);
 
+            // Do not re-throw; instead, return null to indicate failure
             return null;
         }
     }
@@ -1139,14 +1149,14 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                 }
             }
 
-            // Create new task or get existing one
-            var refreshTask = _activeRefreshTasks.GetOrAdd(
-                projectLocation,
-                async loc =>
+            // Use the active refresh tasks to coalesce refresh requests
+            var refreshTask = _activeRefreshTasks.GetOrAdd(projectLocation, loc =>
+            {
+                var task = Task.Run(async () =>
                 {
                     try
                     {
-                        await HandleProjectRefreshAsync(loc).ConfigureAwait(false);
+                        return await HandleProjectRefreshAsync(loc).ConfigureAwait(false);
                     }
                     finally
                     {
@@ -1154,6 +1164,10 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                     }
                 });
 
+                return task;
+            });
+
+            // Await the refresh task
             await refreshTask.ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -1162,7 +1176,7 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         }
     }
 
-    private async Task HandleProjectRefreshAsync(string projectLocation)
+    private async Task<bool> HandleProjectRefreshAsync(string projectLocation)
     {
         try
         {
@@ -1175,21 +1189,21 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                 if (!_projectRefreshers.ContainsKey(projectLocation))
                 {
                     Log.Debug($"Refresher for project '{projectLocation}' was removed while waiting for locks");
-                    return;
+                    return false;
                 }
 
                 if (_loadingProjects.ContainsKey(projectLocation) ||
                     _savingProjects.ContainsKey(projectLocation))
                 {
                     Log.Debug("Project '{0}' is busy with load/save operation, skipping refresh", projectLocation);
-                    return;
+                    return false;
                 }
 
                 if (!_projects.TryGetValue(projectLocation, out var project))
                 {
                     Log.Warning("Project refresh required, but project '{0}' not found in list of open projects",
                         projectLocation);
-                    return;
+                    return false;
                 }
 
                 await RaiseEventAsync(
@@ -1198,11 +1212,15 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
                         new ProjectEventArgs(project)
                     )
                 ).ConfigureAwait(false);
+
+                // Now call the public RefreshAsync method to coalesce refresh operations
+                return await RefreshAsync(project).ConfigureAwait(false);
             }
         }
         catch (TimeoutException)
         {
             Log.Warning($"Refresh operation timed out for project '{projectLocation}'");
+            return false;
         }
         catch (Exception ex)
         {
@@ -1508,29 +1526,38 @@ public class ProjectManager : IProjectManager, INeedCustomInitialization
         private readonly ConcurrentDictionary<string, object> _loadingProjects;
         private readonly string _location;
         private readonly ILog _log;
-        private bool _acquired;
+        private readonly object _token;
+        private bool _isDisposed;
 
         public LoadingStateScope(ConcurrentDictionary<string, object> loadingProjects, string location, ILog log)
         {
+            ArgumentNullException.ThrowIfNull(loadingProjects);
+            ArgumentNullException.ThrowIfNull(location);
+            ArgumentNullException.ThrowIfNull(log);
+
             _loadingProjects = loadingProjects;
             _location = location;
             _log = log;
+            _token = new object();
 
-            if (!_loadingProjects.TryAdd(location, new object()))
+            // Try to add our token. If we can't, another load is in progress
+            if (!_loadingProjects.TryAdd(location, _token))
             {
-                throw _log.ErrorAndCreateException<InvalidOperationException>(
-                    $"Project is already being loaded from '{location}'");
+                throw _log.ErrorAndCreateException<InvalidOperationException>($"Project is already being loaded from '{location}'");
             }
-            _acquired = true;
         }
 
         public void Dispose()
         {
-            if (_acquired)
+            if (_isDisposed)
             {
-                _loadingProjects.TryRemove(_location, out _);
-                _acquired = false;
+                return;
             }
+
+            _isDisposed = true;
+
+            // Only remove if it's our token
+            _loadingProjects.TryRemove(new KeyValuePair<string, object>(_location, _token));
         }
     }
 }
