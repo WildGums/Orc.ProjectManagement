@@ -35,7 +35,7 @@ namespace Orc.ProjectManagement
     }
     public class DirectoryProjectInitializer : Orc.ProjectManagement.IProjectInitializer
     {
-        public DirectoryProjectInitializer(Catel.Configuration.IConfigurationService configurationService, Orc.ProjectManagement.IInitialProjectLocationService initialProjectLocationService) { }
+        public DirectoryProjectInitializer(Catel.Configuration.IConfigurationService configurationService, Orc.ProjectManagement.IInitialProjectLocationService initialProjectLocationService, Catel.Services.IAppDataService appDataService) { }
         public virtual System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<string>> GetInitialLocationsAsync() { }
     }
     public class DirectoryProjectRefresher : Orc.ProjectManagement.ProjectRefresherBase
