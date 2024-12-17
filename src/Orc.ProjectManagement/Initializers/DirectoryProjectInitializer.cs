@@ -6,21 +6,25 @@ using System.IO;
 using System.Threading.Tasks;
 using Catel.Configuration;
 using Catel.Logging;
+using Catel.Services;
 
 public class DirectoryProjectInitializer : IProjectInitializer
 {
     private readonly IInitialProjectLocationService _initialProjectLocationService;
+    private readonly IAppDataService _appDataService;
     private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
     private readonly IConfigurationService _configurationService;
 
-    public DirectoryProjectInitializer(IConfigurationService configurationService, IInitialProjectLocationService initialProjectLocationService)
+    public DirectoryProjectInitializer(IConfigurationService configurationService, IInitialProjectLocationService initialProjectLocationService, IAppDataService appDataService)
     {
         ArgumentNullException.ThrowIfNull(configurationService);
         ArgumentNullException.ThrowIfNull(initialProjectLocationService);
+        ArgumentNullException.ThrowIfNull(appDataService);
 
         _configurationService = configurationService;
         _initialProjectLocationService = initialProjectLocationService;
+        _appDataService = appDataService;
     }
 
     public virtual async Task<IEnumerable<string>> GetInitialLocationsAsync()
