@@ -188,6 +188,8 @@ public enum TargetType
 {
     Unknown,
 
+    AspireProject,
+
     Component,
 
     DockerImage,
@@ -200,9 +202,14 @@ public enum TargetType
 
     VsExtension,
 
-    WebApp,
-
     WpfApp
+}
+
+//-------------------------------------------------------------
+
+private static string GetTime()
+{
+    return DateTime.Now.ToString("HH:mm:ss.fff");
 }
 
 //-------------------------------------------------------------
@@ -328,7 +335,7 @@ private static string[] GetTargetFrameworks(BuildContext buildContext, string pr
     foreach (var propertyGroupElement in projectElement.Elements("PropertyGroup"))
     {
         // Step 1: check TargetFramework
-        var targetFrameworkElement = projectElement.Element("TargetFramework");
+        var targetFrameworkElement = propertyGroupElement.Element("TargetFramework");
         if (targetFrameworkElement != null)
         {
             targetFrameworks.Add(targetFrameworkElement.Value);
@@ -351,6 +358,50 @@ private static string[] GetTargetFrameworks(BuildContext buildContext, string pr
     }
 
     return targetFrameworks.ToArray();
+}
+
+//-------------------------------------------------------------
+
+private static string[] GetPlatformTargets(BuildContext buildContext, string projectName)
+{
+    var platformTargets = new List<string>();
+
+    var projectFileName = GetProjectFileName(buildContext, projectName);
+    var projectFileContents = System.IO.File.ReadAllText(projectFileName);
+
+    var xmlDocument = XDocument.Parse(projectFileContents);
+    var projectElement = xmlDocument.Root;
+
+    buildContext.CakeContext.Information("Searching for platform targets for project '{0}'", projectName);
+
+    foreach (var propertyGroupElement in projectElement.Elements("PropertyGroup"))
+    {
+        // Step 1: check TargetFramework
+        var platformTargetElement = propertyGroupElement.Element("PlatformTarget");
+        if (platformTargetElement is not null)
+        {
+            platformTargets.Add(platformTargetElement.Value);
+            break;
+        }
+
+        // Step 2: check TargetFrameworks
+        var platformTargetsElement = propertyGroupElement.Element("PlatformTargets");
+        if (platformTargetsElement is not null)
+        {
+            var value = platformTargetsElement.Value;
+            platformTargets.AddRange(value.Split(new[] { ';' }));
+            break;
+        }
+    }
+
+    if (platformTargets.Count == 0)
+    {
+        buildContext.CakeContext.Information("No platform targets could be detected for project '{0}', using default value 'AnyCPU'", projectName);
+
+        platformTargets.Add("AnyCPU"); // Default value if nothing is specified
+    }
+
+    return platformTargets.ToArray();
 }
 
 //-------------------------------------------------------------
@@ -386,7 +437,7 @@ private static void CleanProject(BuildContext buildContext, string projectName)
 
     buildContext.CakeContext.Information($"Investigating paths to clean up in '{projectDirectory}'");
 
-    var directoriesToDelete = new List<string>();
+    var directoriesToDelete = new HashSet<string>();
 
     var binDirectory = System.IO.Path.Combine(projectDirectory, "bin");
     directoriesToDelete.Add(binDirectory);
@@ -409,6 +460,12 @@ private static void CleanProject(BuildContext buildContext, string projectName)
 
         var x86Directory = System.IO.Path.Combine(projectDirectory, "x86");
         directoriesToDelete.Add(x86Directory);
+
+        var arm32Directory = System.IO.Path.Combine(projectDirectory, "ARM32");
+        directoriesToDelete.Add(arm32Directory);
+
+        var arm64Directory = System.IO.Path.Combine(projectDirectory, "ARM64");
+        directoriesToDelete.Add(arm64Directory);
     }
 
     foreach (var directoryToDelete in directoriesToDelete)
@@ -517,16 +574,7 @@ private static bool IsDotNetCoreProject(BuildContext buildContext, string projec
             var lowerCase = line.ToLower();
             if (lowerCase.Contains("targetframework"))
             {
-                if (lowerCase.Contains("netcore"))
-                {
-                    isDotNetCore = true;
-                    break;
-                }
-
-                if (lowerCase.Contains("net5") ||
-                    lowerCase.Contains("net6") ||
-                    lowerCase.Contains("net7") ||
-                    lowerCase.Contains("net8"))
+                if (IsDotNetCoreTargetFramework(buildContext, lowerCase))
                 {
                     isDotNetCore = true;
                     break;
@@ -538,6 +586,30 @@ private static bool IsDotNetCoreProject(BuildContext buildContext, string projec
     }
 
     return _dotNetCoreCache[projectFileName];
+}
+
+//-------------------------------------------------------------
+
+private static bool IsDotNetCoreTargetFramework(BuildContext buildContext, string targetFramework)
+{
+    var lowerCase = targetFramework.ToLower();
+
+    if (lowerCase.Contains("netcore"))
+    {
+        return true;
+    }
+
+    if (lowerCase.Contains("net5") ||
+        lowerCase.Contains("net6") ||
+        lowerCase.Contains("net7") ||
+        lowerCase.Contains("net8") ||
+        lowerCase.Contains("net9") ||
+        lowerCase.Contains("net10"))
+    {
+        return true;
+    }
+
+    return false;
 }
 
 //-------------------------------------------------------------
@@ -624,9 +696,11 @@ private static bool ShouldProcessProject(BuildContext buildContext, string proje
     return true;
 }
 
+//-------------------------------------------------------------
+
 private static string CreateInlinedProjectXml(BuildContext buildContext, string projectName)
 {
-    buildContext.CakeContext.Information($"Running 'msbuild /pp' for project '{projectName}'");
+    buildContext.CakeContext.Information($"Running 'msbuild /pp' for project '{projectName}' to create inlined project XML");
 
     var projectInlinedFileName = System.IO.Path.Combine(GetProjectOutputDirectory(buildContext, projectName),
         "..", $"{projectName}.inlined.xml");
@@ -660,7 +734,7 @@ private static string CreateInlinedProjectXml(BuildContext buildContext, string 
 
 //-------------------------------------------------------------
 
-private static List<string> GetProjectRuntimesIdentifiers(BuildContext buildContext, Cake.Core.IO.FilePath solutionOrProjectFileName, List<string> runtimeIdentifiersToInvestigate)
+private static List<string> GetProjectRuntimesIdentifiers(BuildContext buildContext, Cake.Core.IO.FilePath solutionOrProjectFileName, IReadOnlyList<string> runtimeIdentifiersToInvestigate)
 {
     var projectFileContents = System.IO.File.ReadAllText(solutionOrProjectFileName.FullPath)?.ToLower();
 
@@ -670,7 +744,7 @@ private static List<string> GetProjectRuntimesIdentifiers(BuildContext buildCont
     {
         if (!string.IsNullOrWhiteSpace(runtimeIdentifier))
         {
-            if (!projectFileContents.Contains(runtimeIdentifier.ToLower()))
+            if (!projectFileContents.Contains(runtimeIdentifier, StringComparison.OrdinalIgnoreCase))
             {
                 buildContext.CakeContext.Information("Project '{0}' does not support runtime identifier '{1}', removing from supported runtime identifiers list", solutionOrProjectFileName, runtimeIdentifier);
                 continue;
@@ -831,12 +905,6 @@ private static bool IsOnlyDependencyProject(BuildContext buildContext, string pr
         buildContext.CakeContext.Information($"Project is list of VS extensions, assuming not dependency only");
         return false;
     }   
-
-    if (buildContext.Web.Items.Contains(projectName))
-    {
-        buildContext.CakeContext.Information($"Project is list of web apps, assuming not dependency only");
-        return false;
-    }  
 
     if (buildContext.Wpf.Items.Contains(projectName))
     {

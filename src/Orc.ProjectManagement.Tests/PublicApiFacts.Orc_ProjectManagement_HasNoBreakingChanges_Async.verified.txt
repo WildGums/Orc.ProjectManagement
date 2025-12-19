@@ -1,7 +1,8 @@
 ﻿[assembly: System.Resources.NeutralResourcesLanguage("en-US")]
-[assembly: System.Runtime.Versioning.TargetFramework(".NETCoreApp,Version=v8.0", FrameworkDisplayName=".NET 8.0")]
+[assembly: System.Runtime.Versioning.TargetFramework(".NETCoreApp,Version=v10.0", FrameworkDisplayName=".NET 10.0")]
 public static class ModuleInitializer
 {
+    [System.Runtime.CompilerServices.ModuleInitializer]
     public static void Initialize() { }
 }
 namespace Orc.ProjectManagement
@@ -281,10 +282,10 @@ namespace Orc.ProjectManagement
         public static readonly Catel.Data.IPropertyData LocationProperty;
         protected ProjectBase(string location) { }
         protected ProjectBase(string location, string title) { }
-        public virtual System.DateTime CreatedOn { get; set; }
+        public virtual System.DateTime CreatedOn { get; protected set; }
         public int Id { get; }
-        public virtual string Title { get; }
         public virtual string Location { get; set; }
+        public virtual string Title { get; }
         public virtual void ClearIsDirty() { }
         public void MarkAsDirty() { }
         protected override bool ShouldPropertyChangeUpdateIsDirty(string propertyName) { }
@@ -368,10 +369,10 @@ namespace Orc.ProjectManagement
     public class ProjectManager : Catel.IoC.INeedCustomInitialization, Orc.ProjectManagement.IProjectManager
     {
         public ProjectManager(Orc.ProjectManagement.IProjectValidator projectValidator, Orc.ProjectManagement.IProjectUpgrader projectUpgrader, Orc.ProjectManagement.IProjectRefresherSelector projectRefresherSelector, Orc.ProjectManagement.IProjectSerializerSelector projectSerializerSelector, Orc.ProjectManagement.IProjectInitializer projectInitializer, Orc.ProjectManagement.IProjectManagementConfigurationService projectManagementConfigurationService, Orc.ProjectManagement.IProjectManagementInitializationService projectManagementInitializationService, Orc.ProjectManagement.IProjectStateService projectStateService) { }
+        public virtual Orc.ProjectManagement.IProject? ActiveProject { get; set; }
         public bool IsLoading { get; }
         public Orc.ProjectManagement.ProjectManagementType ProjectManagementType { get; }
         public virtual Orc.ProjectManagement.IProject[] Projects { get; }
-        public virtual Orc.ProjectManagement.IProject? ActiveProject { get; set; }
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectUpdatedEventArgs>? ProjectActivatedAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectUpdatingCancelEventArgs>? ProjectActivationAsync;
         public event Catel.AsyncEventHandler<Orc.ProjectManagement.ProjectActivationEventArgs>? ProjectActivationCanceledAsync;
