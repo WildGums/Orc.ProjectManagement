@@ -15,7 +15,7 @@ public class FileProjectInitializer : IProjectInitializer
         _initialProjectLocationService = initialProjectLocationService;
     }
 
-    public virtual async Task<IEnumerable<string>> GetInitialLocationsAsync()
+    public virtual async Task<IReadOnlyList<string>> GetInitialLocationsAsync()
     {
         var locations = new List<string>();
 

@@ -5,60 +5,89 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Catel;
-using Catel.IoC;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
-internal class Factory
+internal sealed class Factory : IDisposable
 {
-    #region Constructors
-    private Factory(IServiceLocator serviceLocator)
+    private bool _disposed;
+
+    private IServiceProvider? _serviceProvider;
+
+    private readonly IServiceCollection _serviceCollection;
+
+    private Factory(IServiceCollection serviceCollection)
     {
-        ArgumentNullException.ThrowIfNull(serviceLocator);
-
-        ServiceLocator = serviceLocator;
+        _serviceCollection = serviceCollection;
     }
-    #endregion
 
-    #region Properties
-#pragma warning disable IDISP006 // Implement IDisposable.
-    public IServiceLocator ServiceLocator { get; private set; }
-#pragma warning restore IDISP006 // Implement IDisposable.
-    #endregion
+    public IServiceProvider ServiceProvider
+    {
+        get
+        {
+            var serviceProvider = _serviceProvider;
+            if (serviceProvider is null)
+            {
+#pragma warning disable IDISP003 // Dispose previous before re-assigning
+                _serviceProvider = ServiceCollection.BuildServiceProvider();
+#pragma warning restore IDISP003 // Dispose previous before re-assigning
+            }
+
+            return _serviceProvider;
+        }
+    }
+
+    public IServiceCollection ServiceCollection
+    {
+        get
+        {
+            if (_serviceProvider is not null)
+            {
+                throw new NotSupportedException("The service provider has already been built, cannot customize services");
+            }
+
+            return _serviceCollection;
+        }
+    }
 
     public static Factory Create()
     {
-#pragma warning disable IDISP001 // Dispose created.
-        var serviceLocator = new ServiceLocator();
-#pragma warning restore IDISP001 // Dispose created.
+        var serviceCollection = ServiceCollectionHelper.CreateServiceCollection();
 
-        return new Factory(serviceLocator);
+        return new Factory(serviceCollection);
     }
 
-    public T CreateInstance<T>(params object[] args) where T : class
+    public T CreateInstance<T>(params object[] args)
+        where T : class
     {
-        var instance = CreateWithFactory((c, p) => (T) c.Invoke(p), typeof (T), args);
+        var instance = CreateWithFactory((c, p) => (T)c.Invoke(p), typeof(T), args);
 
         return instance;
     }
 
-    public Mock<T> Mock<T>(params object[] args) where T : class
+    public Mock<T> Mock<T>(params object[] args)
+        where T : class
     {
-        var mock = CreateWithFactory((c, p) => new Mock<T>(MockBehavior.Loose, p) {CallBase = true}, typeof (T), args);
+        var mock = CreateWithFactory((c, p) => new Mock<T>(MockBehavior.Loose, p)
+        {
+            CallBase = true
+        }, typeof(Mock<T>), args);
 
         return mock;
     }
 
-    private T CreateWithFactory<T>(Func<ConstructorInfo, object[], T> factory, Type type, params object[] args) where T : class
+    private T CreateWithFactory<T>(Func<ConstructorInfo, object[], T> factory, Type type, params object[] args)
+        where T : class
     {
         ArgumentNullException.ThrowIfNull(factory);
         ArgumentNullException.ThrowIfNull(type);
 
-        var constructors = FIlterConstructors(type, args);
+        var constructors = FilterConstructors(type, args);
 
-        T inatance = null;
+        T instance = null;
 
         var index = 0;
-        while (inatance is null && index < constructors.Count())
+        while (instance is null && index < constructors.Count())
         {
             var constructor = constructors[index++];
 
@@ -68,10 +97,10 @@ internal class Factory
                 continue;
             }
 
-            inatance = factory(constructor, args.Concat(parameters.Skip(args.Length)).ToArray());
+            instance = factory(constructor, args.Concat(parameters.Skip(args.Length)).ToArray());
         }
 
-        return inatance;
+        return instance;
     }
 
     private IEnumerable<object> PrepareParameters(ConstructorInfo constructor)
@@ -80,26 +109,47 @@ internal class Factory
 
         var parameterInfos = constructor.GetParameters();
 
-        var serviceLocator = ServiceLocator;
+        var serviceProvider = ServiceProvider;
 
-        if (parameterInfos.Any(p => !serviceLocator.IsTypeRegistered(p.ParameterType)))
+        if (parameterInfos.Any(p => !serviceProvider.IsRegistered(p.ParameterType)))
         {
             return null;
         }
 
-        return parameterInfos.Select(x => serviceLocator.ResolveType(x.ParameterType));
+        return parameterInfos.Select(x => serviceProvider.GetRequiredService(x.ParameterType));
     }
 
-    private static ConstructorInfo[] FIlterConstructors(Type type, params object[] args)
+    private static ConstructorInfo[] FilterConstructors(Type type, params object[] args)
     {
         ArgumentNullException.ThrowIfNull(type);
 
         var constructors = (from constructor in type.GetConstructors()
-            let parameters = constructor.GetParameters()
-            where !parameters.Any() || parameters.Length >= args.Length
-            orderby parameters.Length
-            select constructor).ToArray();
+                            let parameters = constructor.GetParameters()
+                            where !parameters.Any() || parameters.Length >= args.Length
+                            orderby parameters.Length
+                            select constructor).ToArray();
 
         return constructors;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        var serviceProvider = _serviceProvider as IDisposable;
+        serviceProvider?.Dispose();
+
+        _disposed = true;
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(GetType().FullName);
+        }
     }
 }

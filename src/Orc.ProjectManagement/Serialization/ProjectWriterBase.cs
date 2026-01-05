@@ -5,11 +5,12 @@ using System.Threading.Tasks;
 using Catel;
 using Catel.Logging;
 using MethodTimer;
+using Microsoft.Extensions.Logging;
 
 public abstract class ProjectWriterBase<TProject> : IProjectWriter
     where TProject : IProject
 {
-    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+    private static readonly ILogger Logger = LogManager.GetLogger(typeof(ProjectWriterBase<TProject>));
 
     [Time]
     public async Task<bool> WriteAsync(IProject project, string location)
@@ -17,18 +18,18 @@ public abstract class ProjectWriterBase<TProject> : IProjectWriter
         ArgumentNullException.ThrowIfNull(project);
         Argument.IsNotNullOrWhitespace(() => location);
 
-        Log.Debug("Writing all data to '{0}'", location);
+        Logger.LogDebug("Writing all data to '{0}'", location);
 
         if (!await WriteToLocationAsync((TProject) project, location).ConfigureAwait(false))
         {
-            Log.Warning("Failed to write all data to '{0}'", location);
+            Logger.LogWarning("Failed to write all data to '{0}'", location);
             return false;
         }
 
         project.Location = location;
         project.ClearIsDirty();
 
-        Log.Info("Wrote all data to '{0}'", location);
+        Logger.LogInformation("Wrote all data to '{0}'", location);
 
         return true;
     }

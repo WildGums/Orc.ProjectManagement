@@ -5,5 +5,5 @@ using System.Threading.Tasks;
 
 public interface IProjectInitializer
 {
-    Task<IEnumerable<string>> GetInitialLocationsAsync();
+    Task<IReadOnlyList<string>> GetInitialLocationsAsync();
 }

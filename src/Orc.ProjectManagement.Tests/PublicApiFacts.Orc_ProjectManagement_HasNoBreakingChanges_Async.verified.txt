@@ -16,7 +16,7 @@ namespace Orc.ProjectManagement
     }
     public class CloseBeforeLoadProjectWatcher : Orc.ProjectManagement.ProjectWatcherBase
     {
-        public CloseBeforeLoadProjectWatcher(Orc.ProjectManagement.IProjectManager projectManager, Catel.IoC.ITypeFactory typeFactory) { }
+        public CloseBeforeLoadProjectWatcher(Orc.ProjectManagement.IProjectManager projectManager, System.IServiceProvider serviceProvider) { }
         protected override System.Threading.Tasks.Task OnLoadingAsync(Orc.ProjectManagement.ProjectCancelEventArgs e) { }
     }
     public class CloseBeforeLoadProjectWorkflowItem : Orc.ProjectManagement.ProjectManagerWorkflowItemBase
@@ -26,7 +26,7 @@ namespace Orc.ProjectManagement
     }
     public class DefaultProjectRefresherSelector : Orc.ProjectManagement.IProjectRefresherSelector
     {
-        public DefaultProjectRefresherSelector(Catel.IoC.IServiceLocator serviceLocator, Catel.IoC.ITypeFactory typeFactory) { }
+        public DefaultProjectRefresherSelector(System.IServiceProvider serviceProvider) { }
         public Orc.ProjectManagement.IProjectRefresher? GetProjectRefresher(string location) { }
     }
     public class DirectoryExistsProjectValidator : Orc.ProjectManagement.ProjectValidatorBase
@@ -37,13 +37,13 @@ namespace Orc.ProjectManagement
     public class DirectoryProjectInitializer : Orc.ProjectManagement.IProjectInitializer
     {
         public DirectoryProjectInitializer(Catel.Configuration.IConfigurationService configurationService, Orc.ProjectManagement.IInitialProjectLocationService initialProjectLocationService, Catel.Services.IAppDataService appDataService) { }
-        public virtual System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<string>> GetInitialLocationsAsync() { }
+        public virtual System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string>> GetInitialLocationsAsync() { }
     }
     public class DirectoryProjectRefresher : Orc.ProjectManagement.ProjectRefresherBase
     {
-        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch) { }
-        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter) { }
-        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter, bool includeSubDirectories) { }
+        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, System.IServiceProvider serviceProvider) { }
+        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter, System.IServiceProvider serviceProvider) { }
+        public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter, bool includeSubDirectories, System.IServiceProvider serviceProvider) { }
         public string FileFilter { get; }
         public bool IncludeSubDirectories { get; set; }
         protected override void SubscribeToLocation(string location) { }
@@ -52,7 +52,7 @@ namespace Orc.ProjectManagement
     public class EmptyProjectInitializer : Orc.ProjectManagement.IProjectInitializer
     {
         public EmptyProjectInitializer() { }
-        public virtual System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<string>> GetInitialLocationsAsync() { }
+        public virtual System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string>> GetInitialLocationsAsync() { }
     }
     public class EmptyProjectUpgrader : Orc.ProjectManagement.IProjectUpgrader
     {
@@ -73,11 +73,11 @@ namespace Orc.ProjectManagement
     public class FileProjectInitializer : Orc.ProjectManagement.IProjectInitializer
     {
         public FileProjectInitializer(Orc.ProjectManagement.IInitialProjectLocationService initialProjectLocationService) { }
-        public virtual System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<string>> GetInitialLocationsAsync() { }
+        public virtual System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string>> GetInitialLocationsAsync() { }
     }
     public class FileProjectRefresher : Orc.ProjectManagement.DirectoryProjectRefresher
     {
-        public FileProjectRefresher(string projectLocation) { }
+        public FileProjectRefresher(string projectLocation, System.IServiceProvider serviceProvider) { }
     }
     public interface IInitialProjectLocationService
     {
@@ -109,7 +109,7 @@ namespace Orc.ProjectManagement
     }
     public interface IProjectInitializer
     {
-        System.Threading.Tasks.Task<System.Collections.Generic.IEnumerable<string>> GetInitialLocationsAsync();
+        System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<string>> GetInitialLocationsAsync();
     }
     public interface IProjectManagementConfigurationService
     {
@@ -253,6 +253,10 @@ namespace Orc.ProjectManagement
         public MdiProjectManagementConfigurationService() { }
         public override Orc.ProjectManagement.ProjectManagementType GetProjectManagementType() { }
     }
+    public static class OrcProjectManagementModule
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddOrcProjectManagement(this Microsoft.Extensions.DependencyInjection.IServiceCollection serviceCollection) { }
+    }
     public class ProjectActivationEvent : Orc.ProjectManagement.IProjectEventType
     {
         public ProjectActivationEvent(Orc.ProjectManagement.ProjectEventTypeStage stage, System.EventArgs eventArgs) { }
@@ -356,8 +360,8 @@ namespace Orc.ProjectManagement
     }
     public class ProjectManagementInitializationService : Orc.ProjectManagement.IProjectManagementInitializationService
     {
-        public ProjectManagementInitializationService(Catel.IoC.IServiceLocator serviceLocator, Orc.ProjectManagement.IProjectManagementConfigurationService projectManagementConfigurationService, Catel.IoC.ITypeFactory typeFactory) { }
-        protected Catel.IoC.IServiceLocator ServiceLocator { get; }
+        protected readonly System.IServiceProvider _serviceProvider;
+        public ProjectManagementInitializationService(System.IServiceProvider serviceProvider, Orc.ProjectManagement.IProjectManagementConfigurationService projectManagementConfigurationService) { }
         public virtual void Initialize(Orc.ProjectManagement.IProjectManager projectManager) { }
         protected virtual void Initialize(Orc.ProjectManagement.IProjectManager projectManager, Orc.ProjectManagement.ProjectManagementType projectManagementType) { }
     }
@@ -366,7 +370,7 @@ namespace Orc.ProjectManagement
         SingleDocument = 0,
         MultipleDocuments = 1,
     }
-    public class ProjectManager : Catel.IoC.INeedCustomInitialization, Orc.ProjectManagement.IProjectManager
+    public class ProjectManager : Orc.ProjectManagement.IProjectManager
     {
         public ProjectManager(Orc.ProjectManagement.IProjectValidator projectValidator, Orc.ProjectManagement.IProjectUpgrader projectUpgrader, Orc.ProjectManagement.IProjectRefresherSelector projectRefresherSelector, Orc.ProjectManagement.IProjectSerializerSelector projectSerializerSelector, Orc.ProjectManagement.IProjectInitializer projectInitializer, Orc.ProjectManagement.IProjectManagementConfigurationService projectManagementConfigurationService, Orc.ProjectManagement.IProjectManagementInitializationService projectManagementInitializationService, Orc.ProjectManagement.IProjectStateService projectStateService) { }
         public virtual Orc.ProjectManagement.IProject? ActiveProject { get; set; }
@@ -488,8 +492,8 @@ namespace Orc.ProjectManagement
     }
     public abstract class ProjectRefresherBase : Orc.ProjectManagement.IProjectRefresher
     {
-        protected ProjectRefresherBase(string projectLocation) { }
-        protected ProjectRefresherBase(string projectLocation, string locationToWatch) { }
+        protected ProjectRefresherBase(string projectLocation, System.IServiceProvider serviceProvider) { }
+        protected ProjectRefresherBase(string projectLocation, string locationToWatch, System.IServiceProvider serviceProvider) { }
         public bool IsEnabled { get; set; }
         public bool IsSubscribed { get; }
         public bool IsSuspended { get; }
@@ -620,7 +624,7 @@ namespace Orc.ProjectManagement.Serialization
 {
     public class DefaultProjectSerializerSelector : Orc.ProjectManagement.IProjectSerializerSelector
     {
-        public DefaultProjectSerializerSelector(Catel.IoC.IServiceLocator serviceLocator) { }
+        public DefaultProjectSerializerSelector(Orc.ProjectManagement.IProjectReader projectReader, Orc.ProjectManagement.IProjectWriter projectWriter) { }
         public Orc.ProjectManagement.IProjectReader GetReader(string location) { }
         public Orc.ProjectManagement.IProjectWriter GetWriter(string location) { }
     }
@@ -628,7 +632,7 @@ namespace Orc.ProjectManagement.Serialization
         where TReader : Orc.ProjectManagement.IProjectReader
         where TWriter : Orc.ProjectManagement.IProjectWriter
     {
-        public FixedProjectSerializerSelector(Catel.IoC.ITypeFactory typeFactory) { }
+        public FixedProjectSerializerSelector(System.IServiceProvider serviceProvider) { }
         public Orc.ProjectManagement.IProjectReader GetReader(string location) { }
         public Orc.ProjectManagement.IProjectWriter GetWriter(string location) { }
     }

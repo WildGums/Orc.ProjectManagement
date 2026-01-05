@@ -7,12 +7,14 @@ using System.Threading.Tasks;
 using Catel.Configuration;
 using Catel.Logging;
 using Catel.Services;
+using Microsoft.Extensions.Logging;
 
 public class DirectoryProjectInitializer : IProjectInitializer
 {
+    private static readonly ILogger Logger = LogManager.GetLogger(typeof(DirectoryProjectInitializer));
+
     private readonly IInitialProjectLocationService _initialProjectLocationService;
     private readonly IAppDataService _appDataService;
-    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
     private readonly IConfigurationService _configurationService;
 
@@ -27,7 +29,7 @@ public class DirectoryProjectInitializer : IProjectInitializer
         _appDataService = appDataService;
     }
 
-    public virtual async Task<IEnumerable<string>> GetInitialLocationsAsync()
+    public virtual async Task<IReadOnlyList<string>> GetInitialLocationsAsync()
     {
         var locations = new List<string>();
         var dataDirectory = _configurationService.GetRoamingValue<string>("DataLocation");
@@ -35,7 +37,7 @@ public class DirectoryProjectInitializer : IProjectInitializer
         {
             dataDirectory = Path.Combine(Catel.IO.Path.GetApplicationDataDirectory(), "data");
 
-            Log.Debug("DataLocation is empty in configuration, determining the data directory automatically to '{0}'", dataDirectory);
+            Logger.LogDebug("DataLocation is empty in configuration, determining the data directory automatically to '{0}'", dataDirectory);
         }
 
         var initialLocation = await _initialProjectLocationService.GetInitialProjectLocationAsync();
@@ -52,7 +54,7 @@ public class DirectoryProjectInitializer : IProjectInitializer
         var fullPath = Path.GetFullPath(dataDirectory);
         if (!Directory.Exists(fullPath))
         {
-            Log.Debug("Cannot use the data directory '{0}', it does not exist", fullPath);
+            Logger.LogDebug("Cannot use the data directory '{0}', it does not exist", fullPath);
             return Array.Empty<string>();
         }
 

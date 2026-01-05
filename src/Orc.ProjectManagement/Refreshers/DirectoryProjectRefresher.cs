@@ -1,28 +1,33 @@
 ﻿namespace Orc.ProjectManagement;
 
+using System;
 using System.IO;
 using Catel;
 using Catel.Logging;
+using Microsoft.Extensions.Logging;
 
 public class DirectoryProjectRefresher : ProjectRefresherBase
 {
-    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+    private static readonly ILogger Logger = LogManager.GetLogger(typeof(DirectoryProjectRefresher));
 
 #pragma warning disable IDISP006 // Implement IDisposable.
     private FileSystemWatcher? _fileSystemWatcher;
 #pragma warning restore IDISP006 // Implement IDisposable.
     private bool _includeSubDirectories;
 
-    public DirectoryProjectRefresher(string projectLocation, string directoryToWatch)
-        : this(projectLocation, directoryToWatch, string.Empty) { }
+    public DirectoryProjectRefresher(string projectLocation, string directoryToWatch,
+        IServiceProvider serviceProvider)
+        : this(projectLocation, directoryToWatch, string.Empty, serviceProvider) { }
 
-    public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter)
-        : this(projectLocation, directoryToWatch, fileFilter, false)
+    public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, 
+        string fileFilter, IServiceProvider serviceProvider)
+        : this(projectLocation, directoryToWatch, fileFilter, false, serviceProvider)
     {
     }
 
-    public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, string fileFilter, bool includeSubDirectories)
-        : base(projectLocation, directoryToWatch)
+    public DirectoryProjectRefresher(string projectLocation, string directoryToWatch, 
+        string fileFilter, bool includeSubDirectories, IServiceProvider serviceProvider)
+        : base(projectLocation, directoryToWatch, serviceProvider)
     {
         FileFilter = fileFilter;
         _includeSubDirectories = includeSubDirectories;
@@ -105,7 +110,7 @@ public class DirectoryProjectRefresher : ProjectRefresherBase
     {
         if (IsSuspended)
         {
-            Log.Debug("Watching is suspended, ignoring file system watcher change");
+            Logger.LogDebug("Watching is suspended, ignoring file system watcher change");
             return;
         }
 
@@ -117,7 +122,7 @@ public class DirectoryProjectRefresher : ProjectRefresherBase
 
         using (new DisposableToken(this, x => fileSystemWatcher.EnableRaisingEvents = false, x => fileSystemWatcher.EnableRaisingEvents = true))
         {
-            Log.Debug("Detected change '{0}' for location '{1}'", e.ChangeType, e.FullPath);
+            Logger.LogDebug("Detected change '{0}' for location '{1}'", e.ChangeType, e.FullPath);
 
             RaiseUpdated(e.FullPath);
 

@@ -1,8 +1,4 @@
-using System.Runtime.CompilerServices;
-using Catel.IoC;
-using Catel.Services;
-using Orc.ProjectManagement;
-using Orc.ProjectManagement.Serialization;
+﻿using System.Runtime.CompilerServices;
 
 /// <summary>
 /// Used by the ModuleInit. All code inside the Initialize method is ran as soon as the assembly is loaded.
@@ -15,22 +11,5 @@ public static class ModuleInitializer
     [ModuleInitializer]
     public static void Initialize()
     {
-        var serviceLocator = ServiceLocator.Default;
-
-        serviceLocator.RegisterType<IProjectManager, ProjectManager>();
-        serviceLocator.RegisterType<IProjectStateService, ProjectStateService>();
-        serviceLocator.RegisterType<IProjectInitializer, EmptyProjectInitializer>();
-        serviceLocator.RegisterType<IProjectValidator, EmptyProjectValidator>();
-        serviceLocator.RegisterType<IProjectUpgrader, EmptyProjectUpgrader>();
-        serviceLocator.RegisterType<IProjectRefresherSelector, DefaultProjectRefresherSelector>();
-        serviceLocator.RegisterType<IProjectActivationHistoryService, ProjectActivationHistoryService>();
-        serviceLocator.RegisterType<IInitialProjectLocationService, InitialProjectLocationService>();
-
-        serviceLocator.RegisterTypeIfNotYetRegistered<IProjectSerializerSelector, DefaultProjectSerializerSelector>();
-        serviceLocator.RegisterTypeIfNotYetRegistered<IProjectManagementConfigurationService, SdiProjectManagementConfigurationService>();
-        serviceLocator.RegisterTypeIfNotYetRegistered<IProjectManagementInitializationService, ProjectManagementInitializationService>();
-
-        var languageService = serviceLocator.ResolveRequiredType<ILanguageService>();
-        languageService.RegisterLanguageSource(new LanguageResourceSource("Orc.ProjectManagement", "Orc.ProjectManagement.Properties", "Resources"));
     }
 }

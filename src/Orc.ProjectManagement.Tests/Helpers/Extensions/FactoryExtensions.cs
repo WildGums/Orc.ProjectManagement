@@ -3,7 +3,9 @@
 using System;
 using System.Threading;
 using Catel;
-using Catel.IoC;
+using Catel.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using Serialization;
 using Test.Mocks;
@@ -22,24 +24,23 @@ internal static class FactoryExtensions
     {
         ArgumentNullException.ThrowIfNull(factory);
 
-        var serviceLocator = factory.ServiceLocator;
-        if (serviceLocator.IsTypeRegistered<IProjectManager>())
+        var serviceProvider = factory.ServiceProvider;
+        if (serviceProvider.IsRegistered<IProjectManager>())
         {
-            return serviceLocator.ResolveType<IProjectManager>();
+            return serviceProvider.GetRequiredService<IProjectManager>();
         }
 
         var projectManager = factory.CreateInstance<ProjectManager>();
         return projectManager;
     }
 
-    public static Mock<IProjectManager> MockProjectManager(this Factory factory)
-    {
-        ArgumentNullException.ThrowIfNull(factory);
+    //public static Mock<IProjectManager> MockProjectManager(this Factory factory)
+    //{
+    //    ArgumentNullException.ThrowIfNull(factory);
 
-        var mock = factory.ServiceLocator.ResolveMocked<IProjectManager>();
-        return mock;
-    }
-
+    //    var mock = factory.ServiceProvider.ResolveMocked<IProjectManager>();
+    //    return mock;
+    //}
 
     public static Factory SetupDefault(this Factory factory, ProjectManagementType projectManagementType = ProjectManagementType.SingleDocument)
     {
@@ -56,15 +57,15 @@ internal static class FactoryExtensions
     {
         ArgumentNullException.ThrowIfNull(factory);
 
-        var projectRefresher = factory.ServiceLocator.ResolveType<IProjectRefresher>();
+        var projectRefresher = factory.ServiceProvider.GetRequiredService<IProjectRefresher>();
         var mockOfProjectRefresher = Mock.Get(projectRefresher);
 
-        var mockOfProjectWriter = factory.ServiceLocator.ResolveMocked<IProjectWriter>();
+        var mockOfProjectWriter = factory.ServiceProvider.ResolveMocked<IProjectWriter>();
 
         mockOfProjectWriter.Setup(x => x.WriteAsync(It.IsAny<IProject>(), It.IsAny<string>())).Callback(() => Thread.Sleep(100)).CallBase().
             Callback<IProject, string>((project, location) => mockOfProjectRefresher.Raise(refresher => refresher.Updated += null, new ProjectEventArgs(project)));
 
-        var mockOfProjectRefresherSelector = factory.ServiceLocator.ResolveMocked<IProjectRefresherSelector>();
+        var mockOfProjectRefresherSelector = factory.ServiceProvider.ResolveMocked<IProjectRefresherSelector>();
 
         mockOfProjectRefresherSelector.Setup(x => x.GetProjectRefresher(It.IsAny<string>())).
             Returns(projectRefresher);
@@ -74,42 +75,56 @@ internal static class FactoryExtensions
     {
         ArgumentNullException.ThrowIfNull(factory);
 
-        switch (projectManagementType)
-        {
-            case ProjectManagementType.SingleDocument:
-                factory.ServiceLocator.RegisterType<IProjectManagementConfigurationService, SdiProjectManagementConfigurationService>();
-                break;
+        //switch (projectManagementType)
+        //{
+        //    case ProjectManagementType.SingleDocument:
+        //        factory.ServiceProvider.RegisterType<IProjectManagementConfigurationService, SdiProjectManagementConfigurationService>();
+        //        break;
 
-            case ProjectManagementType.MultipleDocuments:
-                factory.ServiceLocator.RegisterType<IProjectManagementConfigurationService, MdiProjectManagementConfigurationService>();
-                break;
+        //    case ProjectManagementType.MultipleDocuments:
+        //        factory.ServiceProvider.RegisterType<IProjectManagementConfigurationService, MdiProjectManagementConfigurationService>();
+        //        break;
 
-            default:
-                throw new ArgumentOutOfRangeException("projectManagementType", projectManagementType, null);
-        }
+        //    default:
+        //        throw new ArgumentOutOfRangeException("projectManagementType", projectManagementType, null);
+        //}
 
         // Why mock all these services??
         factory.MockAndRegisterIfNotRegistered<IProjectReader, MemoryProjectReader>();
         factory.MockAndRegisterIfNotRegistered<IProjectWriter, MemoryProjectWriter>();
 
-        factory.MockAndRegisterIfNotRegistered<IProjectSerializerSelector, DefaultProjectSerializerSelector>(factory.ServiceLocator);
+        factory.MockAndRegisterIfNotRegistered<IProjectSerializerSelector, DefaultProjectSerializerSelector>(factory.ServiceCollection);
 
-        factory.ServiceLocator.RegisterType<IProjectValidator, EmptyProjectValidator>();
-        factory.ServiceLocator.RegisterType<IProjectUpgrader, EmptyProjectUpgrader>();
-        factory.ServiceLocator.RegisterType<IProjectStateService, ProjectStateService>();
-        factory.ServiceLocator.RegisterType<IProjectActivationHistoryService, ProjectActivationHistoryService>();
+        factory.ServiceCollection.AddSingleton<IProjectValidator, EmptyProjectValidator>();
+        factory.ServiceCollection.AddSingleton<IProjectUpgrader, EmptyProjectUpgrader>();
+        factory.ServiceCollection.AddSingleton<IProjectStateService, ProjectStateService>();
+        factory.ServiceCollection.AddSingleton<IProjectActivationHistoryService, ProjectActivationHistoryService>();
 
-        factory.MockAndRegisterIfNotRegistered<IProjectRefresher>();
-        factory.MockAndRegisterIfNotRegistered<IProjectRefresherSelector>();
+        factory.MockAndRegister<IProjectRefresher>();
+        factory.MockAndRegister<IProjectRefresherSelector>();
 
-        factory.ServiceLocator.RegisterType<IProjectManagementInitializationService, ProjectManagementInitializationService>();
+        factory.ServiceCollection.AddSingleton<IProjectManagementInitializationService, ProjectManagementInitializationService>();
 
-        factory.ServiceLocator.RegisterType<IProjectInitializer, EmptyProjectInitializer>();
+        factory.ServiceCollection.AddSingleton<IProjectInitializer, EmptyProjectInitializer>();
 
-        factory.ServiceLocator.RegisterType<IProjectManager, ProjectManager>();
+        factory.ServiceCollection.AddSingleton<IProjectManager, ProjectManager>();
 
         //var projectManager = factory.ServiceLocator.ResolveType<IProjectManager>() as ProjectManager;
         //factory.ServiceLocator.RegisterInstance<ProjectManager>(projectManager);
+    }
+
+    private static void MockAndRegister<T>(this Factory factory)
+        where T : class
+    {
+        ArgumentNullException.ThrowIfNull(factory);
+
+        var serviceCollection = factory.ServiceCollection;
+
+        serviceCollection.AddSingleton<T>(x =>
+        {
+            var mock = factory.Mock<T>();
+            return mock.Object;
+        });
     }
 
     private static void MockAndRegisterIfNotRegistered<T>(this Factory factory)
@@ -117,15 +132,13 @@ internal static class FactoryExtensions
     {
         ArgumentNullException.ThrowIfNull(factory);
 
-        var serviceLocator = factory.ServiceLocator;
-        if (serviceLocator.IsTypeRegistered<T>())
+        var serviceCollection = factory.ServiceCollection;
+
+        serviceCollection.TryAddSingleton<T>(x =>
         {
-            return;
-        }
-
-        var mock = new Mock<T>(MockBehavior.Loose);
-
-        serviceLocator.RegisterInstance(typeof (T), mock.Object);
+            var mock = factory.Mock<T>();
+            return mock.Object;
+        });
     }
 
     private static void MockAndRegisterIfNotRegistered<TService, TServiceImplementation>(this Factory factory, params object[] args)
@@ -134,14 +147,12 @@ internal static class FactoryExtensions
     {
         ArgumentNullException.ThrowIfNull(factory);
 
-        var serviceLocator = factory.ServiceLocator;
-        if (serviceLocator.IsTypeRegistered<TService>())
-        {
-            return;
-        }
+        var serviceCollection = factory.ServiceCollection;
 
-        var mock = factory.Mock<TServiceImplementation>(args);
-        var instance = mock.Object;
-        serviceLocator.RegisterInstance(typeof(TService), instance);
+        serviceCollection.TryAddSingleton<TService>(x =>
+        {
+            var mock = factory.Mock<TServiceImplementation>(args);
+            return mock.Object;
+        });
     }
 }
