@@ -5,6 +5,13 @@ public static class ModuleInitializer
     [System.Runtime.CompilerServices.ModuleInitializer]
     public static void Initialize() { }
 }
+namespace Orc
+{
+    public static class OrcProjectManagementModule
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddOrcProjectManagement(this Microsoft.Extensions.DependencyInjection.IServiceCollection serviceCollection) { }
+    }
+}
 namespace Orc.ProjectManagement
 {
     public class ActivationHistoryProjectWorkflowItem : Orc.ProjectManagement.ProjectManagerWorkflowItemBase
@@ -252,10 +259,6 @@ namespace Orc.ProjectManagement
     {
         public MdiProjectManagementConfigurationService() { }
         public override Orc.ProjectManagement.ProjectManagementType GetProjectManagementType() { }
-    }
-    public static class OrcProjectManagementModule
-    {
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddOrcProjectManagement(this Microsoft.Extensions.DependencyInjection.IServiceCollection serviceCollection) { }
     }
     public class ProjectActivationEvent : Orc.ProjectManagement.IProjectEventType
     {
