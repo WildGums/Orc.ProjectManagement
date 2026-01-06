@@ -1,9 +1,10 @@
-﻿namespace Orc.ProjectManagement
+﻿namespace Orc
 {
     using Catel.Services;
     using Catel.ThirdPartyNotices;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.DependencyInjection.Extensions;
+    using Orc.ProjectManagement;
     using Orc.ProjectManagement.Serialization;
 
     /// <summary>
