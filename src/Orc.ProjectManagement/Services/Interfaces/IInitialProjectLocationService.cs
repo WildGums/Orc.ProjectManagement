@@ -4,5 +4,5 @@ using System.Threading.Tasks;
 
 public interface IInitialProjectLocationService
 {
-    Task<string> GetInitialProjectLocationAsync();
+    Task<string?> GetInitialProjectLocationAsync();
 }

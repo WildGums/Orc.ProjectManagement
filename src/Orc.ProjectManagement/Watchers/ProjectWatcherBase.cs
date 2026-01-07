@@ -8,9 +8,10 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Catel.Data;
+using Catel.IoC;
 using Catel.Reflection;
 
-public abstract class ProjectWatcherBase
+public abstract class ProjectWatcherBase : IConstructAtStartup
 {
     private readonly IProjectManager _projectManager;
 
