@@ -88,7 +88,7 @@ namespace Orc.ProjectManagement
     }
     public interface IInitialProjectLocationService
     {
-        System.Threading.Tasks.Task<string> GetInitialProjectLocationAsync();
+        System.Threading.Tasks.Task<string?> GetInitialProjectLocationAsync();
     }
     public interface IProject
     {
@@ -249,7 +249,7 @@ namespace Orc.ProjectManagement
     public class InitialProjectLocationService : Orc.ProjectManagement.IInitialProjectLocationService
     {
         public InitialProjectLocationService() { }
-        public virtual System.Threading.Tasks.Task<string> GetInitialProjectLocationAsync() { }
+        public virtual System.Threading.Tasks.Task<string?> GetInitialProjectLocationAsync() { }
     }
     public class InvalidProjectException : Orc.ProjectManagement.ProjectException
     {
@@ -573,7 +573,7 @@ namespace Orc.ProjectManagement
         public virtual System.Threading.Tasks.Task<Catel.Data.IValidationContext> ValidateProjectAsync(Orc.ProjectManagement.IProject project) { }
         public virtual System.Threading.Tasks.Task<Catel.Data.IValidationContext> ValidateProjectBeforeLoadingAsync(string location) { }
     }
-    public abstract class ProjectWatcherBase
+    public abstract class ProjectWatcherBase : Catel.IoC.IConstructAtStartup
     {
         protected ProjectWatcherBase(Orc.ProjectManagement.IProjectManager projectManager) { }
         protected bool IsActivating { get; }
