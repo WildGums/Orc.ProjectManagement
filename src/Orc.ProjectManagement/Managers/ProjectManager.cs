@@ -330,19 +330,12 @@ public class ProjectManager : IProjectManager
         }
     }
 
-    [ObsoleteEx(Message = "Use extension method", ReplacementTypeOrMember = "RefreshActiveProjectAsync", RemoveInVersion = "6.0.0")]
-    public Task<bool> RefreshAsync()
+    public virtual Task<bool> RefreshAsync(IProject? project)
     {
-        var project = ActiveProject;
-
-        return project is null
-            ? Task.FromResult(false)
-            : RefreshAsync(project);
-    }
-
-    public virtual Task<bool> RefreshAsync(IProject project)
-    {
-        ArgumentNullException.ThrowIfNull(project);
+        if (project is null)
+        {
+            return Task.FromResult(false);
+        }
 
         return SynchronizeProjectOperationAsync(project.Location, () => SyncedRefreshAsync(project));
     }
@@ -376,19 +369,6 @@ public class ProjectManager : IProjectManager
         });
     }
 
-    [ObsoleteEx(Message = "Use extension method", ReplacementTypeOrMember = "SaveActiveProjectAsync", RemoveInVersion = "6.0.0")]
-    public Task<bool> SaveAsync(string? location = null)
-    {
-        var project = ActiveProject;
-        if (project is null)
-        {
-            Logger.LogWarning("Cannot save empty project");
-            return Task.FromResult(false);
-        }
-
-        return SaveAsync(project, location);
-    }
-
     public virtual async Task<bool> SaveAsync(IProject project, string? location = null)
     {
         if (string.IsNullOrWhiteSpace(location))
@@ -403,16 +383,6 @@ public class ProjectManager : IProjectManager
         }
 
         return await SynchronizeProjectOperationAsync(location, () => SyncedSaveAsync(project, location));
-    }
-
-    [ObsoleteEx(Message = "Use extension method", ReplacementTypeOrMember = "CloseActiveProjectAsync", RemoveInVersion = "6.0.0")]
-    public Task<bool> CloseAsync()
-    {
-        var project = ActiveProject;
-
-        return project is null
-            ? Task.FromResult(false)
-            : CloseAsync(project);
     }
 
     public virtual Task<bool> CloseAsync(IProject project)

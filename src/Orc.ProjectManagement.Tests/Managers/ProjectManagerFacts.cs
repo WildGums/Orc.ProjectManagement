@@ -219,7 +219,7 @@ public class ProjectManagerFacts
 
             Assert.That(projectManager.ActiveProject, Is.Null);
 
-            await projectManager.RefreshAsync();
+            await projectManager.RefreshAsync(null);
 
             Assert.That(projectManager.ActiveProject, Is.Null);
         }
@@ -235,7 +235,7 @@ public class ProjectManagerFacts
             var eventRaised = false;
             projectManager.ProjectActivatedAsync += async (sender, e) => eventRaised = true;
 
-            await projectManager.RefreshAsync();
+            await projectManager.RefreshAsync(projectManager.ActiveProject);
 
             Assert.That(eventRaised, Is.True);
         }
@@ -254,7 +254,7 @@ public class ProjectManagerFacts
 
             Assert.That(projectManager.ActiveProject.Location, Is.EqualTo("dummyLocation"));
 
-            await projectManager.SaveAsync(newLocation);
+            await projectManager.SaveAsync(projectManager.ActiveProject, newLocation);
 
             Assert.That(projectManager.ActiveProject.Location, Is.EqualTo(newLocation));
         }
@@ -270,7 +270,7 @@ public class ProjectManagerFacts
             var eventRaised = false;
             projectManager.ProjectSavingAsync += async (sender, e) => eventRaised = true;
 
-            await projectManager.SaveAsync();
+            await projectManager.SaveAsync(projectManager.ActiveProject);
 
             Assert.That(eventRaised, Is.True);
         }
@@ -286,7 +286,7 @@ public class ProjectManagerFacts
             var eventRaised = false;
             projectManager.ProjectSavedAsync += async (sender, e) => eventRaised = true;
 
-            await projectManager.SaveAsync();
+            await projectManager.SaveAsync(projectManager.ActiveProject);
 
             Assert.That(eventRaised, Is.True);
         }
@@ -305,7 +305,7 @@ public class ProjectManagerFacts
 
             Assert.That(projectManager.ActiveProject, Is.Not.Null);
 
-            await projectManager.CloseAsync();
+            await projectManager.CloseAsync(projectManager.ActiveProject);
 
             Assert.That(projectManager.ActiveProject, Is.Null);
         }
@@ -320,7 +320,7 @@ public class ProjectManagerFacts
 
             Assert.That(projectManager.ActiveProject.Location, Is.EqualTo("dummyLocation"));
 
-            await projectManager.CloseAsync();
+            await projectManager.CloseAsync(projectManager.ActiveProject);
 
             Assert.That(projectManager.ActiveProject, Is.EqualTo(null));
         }
@@ -336,7 +336,7 @@ public class ProjectManagerFacts
             var eventRaised = false;
             projectManager.ProjectClosingAsync += async (sender, e) => eventRaised = true;
 
-            await projectManager.CloseAsync();
+            await projectManager.CloseAsync(projectManager.ActiveProject);
 
             Assert.That(eventRaised, Is.True);
         }
@@ -352,7 +352,7 @@ public class ProjectManagerFacts
             var eventRaised = false;
             projectManager.ProjectClosedAsync += async (sender, e) => eventRaised = true;
 
-            await projectManager.CloseAsync();
+            await projectManager.CloseAsync(projectManager.ActiveProject);
 
             Assert.That(eventRaised, Is.True);
         }
@@ -373,7 +373,7 @@ public class ProjectManagerFacts
                 projects.Add(e.NewProject);
             };
 
-            await projectManager.CloseAsync();
+            await projectManager.CloseAsync(projectManager.ActiveProject);
 
             Assert.That(eventCount, Is.EqualTo(1));
             Assert.That(projects.Count, Is.EqualTo(1));

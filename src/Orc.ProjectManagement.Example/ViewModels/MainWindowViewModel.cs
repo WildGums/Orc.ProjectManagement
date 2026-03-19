@@ -106,7 +106,7 @@ public class MainWindowViewModel : FeaturedViewModelBase
 
     private async Task OnRefreshProjectExecuteAsync()
     {
-        await _projectManager.RefreshAsync().ConfigureAwait(false);
+        await _projectManager.RefreshAsync(_projectManager.ActiveProject).ConfigureAwait(false);
     }
 
     public TaskCommand SaveProject { get; private set; }
@@ -118,7 +118,7 @@ public class MainWindowViewModel : FeaturedViewModelBase
 
     private async Task OnSaveProjectExecuteAsync()
     {
-        await _projectManager.SaveAsync().ConfigureAwait(false);
+        await _projectManager.SaveAsync(_projectManager.ActiveProject).ConfigureAwait(false);
     }
 
     public TaskCommand SaveProjectAs { get; private set; }
@@ -137,7 +137,7 @@ public class MainWindowViewModel : FeaturedViewModelBase
 
         if (result.Result)
         {
-            await _projectManager.SaveAsync(result.FileName).ConfigureAwait(false);
+            await _projectManager.SaveAsync(_projectManager.ActiveProject, result.FileName).ConfigureAwait(false);
         }
     }
 
@@ -150,7 +150,7 @@ public class MainWindowViewModel : FeaturedViewModelBase
 
     private void OnCloseProjectExecute()
     {
-        _projectManager.CloseAsync();
+        _projectManager.CloseAsync(_projectManager.ActiveProject);
     }
 
     public Command OpenFile { get; private set; }
