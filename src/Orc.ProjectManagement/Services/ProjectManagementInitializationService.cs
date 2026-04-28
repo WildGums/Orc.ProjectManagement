@@ -3,27 +3,21 @@
 using System;
 using Catel.IoC;
 using Catel.Logging;
+using Microsoft.Extensions.Logging;
 
 public class ProjectManagementInitializationService : IProjectManagementInitializationService
 {
-    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+    private static readonly ILogger Logger = LogManager.GetLogger(typeof(ProjectManagementInitializationService));
 
+    protected readonly IServiceProvider _serviceProvider;
     private readonly IProjectManagementConfigurationService _projectManagementConfigurationService;
-    private readonly ITypeFactory _typeFactory;
 
-    public ProjectManagementInitializationService(IServiceLocator serviceLocator, IProjectManagementConfigurationService projectManagementConfigurationService,
-        ITypeFactory typeFactory)
+    public ProjectManagementInitializationService(IServiceProvider serviceProvider, 
+        IProjectManagementConfigurationService projectManagementConfigurationService)
     {
-        ArgumentNullException.ThrowIfNull(serviceLocator);
-        ArgumentNullException.ThrowIfNull(projectManagementConfigurationService);
-        ArgumentNullException.ThrowIfNull(typeFactory);
-
-        ServiceLocator = serviceLocator;
+        _serviceProvider = serviceProvider;
         _projectManagementConfigurationService = projectManagementConfigurationService;
-        _typeFactory = typeFactory;
     }
-
-    protected IServiceLocator ServiceLocator { get; }
 
     public virtual void Initialize(IProjectManager projectManager)
     {
@@ -31,29 +25,31 @@ public class ProjectManagementInitializationService : IProjectManagementInitiali
 
         var projectManagementType = _projectManagementConfigurationService.GetProjectManagementType();
 
-        Log.Debug("Initializing project management for '{0}'", projectManagementType);
+        Logger.LogDebug("Initializing project management for '{0}'", projectManagementType);
 
         Initialize(projectManager, projectManagementType);
     }
 
     protected virtual void Initialize(IProjectManager projectManager, ProjectManagementType projectManagementType)
     {
-        switch (projectManagementType)
-        {
-            case ProjectManagementType.SingleDocument:
-                // Note: don't register and instantiate because IProjectManager is not yet registered here
-                var closeBeforeLoadProjectWatcher = _typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWatcher>(projectManager);
-                ServiceLocator.RegisterInstance(closeBeforeLoadProjectWatcher);
-                break;
+        throw new NotImplementedException("Must be implemented if used");
 
-            case ProjectManagementType.MultipleDocuments:
-                // Note: don't register and instantiate because IProjectManager is not yet registered here
-                var activationHistoryProjectWatcher = _typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion<ActivationHistoryProjectWatcher>(projectManager);
-                ServiceLocator.RegisterInstance(activationHistoryProjectWatcher);
-                break;
+        //switch (projectManagementType)
+        //{
+        //    case ProjectManagementType.SingleDocument:
+        //        // Note: don't register and instantiate because IProjectManager is not yet registered here
+        //        var closeBeforeLoadProjectWatcher = _typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWatcher>(projectManager);
+        //        ServiceLocator.RegisterInstance(closeBeforeLoadProjectWatcher);
+        //        break;
 
-            default:
-                throw Log.ErrorAndCreateException(_ => new ArgumentOutOfRangeException(nameof(projectManagementType), projectManagementType, null), string.Empty);
-        }
+        //    case ProjectManagementType.MultipleDocuments:
+        //        // Note: don't register and instantiate because IProjectManager is not yet registered here
+        //        var activationHistoryProjectWatcher = _typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion<ActivationHistoryProjectWatcher>(projectManager);
+        //        ServiceLocator.RegisterInstance(activationHistoryProjectWatcher);
+        //        break;
+
+        //    default:
+        //        throw Logger.LogErrorAndCreateException(_ => new ArgumentOutOfRangeException(nameof(projectManagementType), projectManagementType, null), string.Empty);
+        //}
     }
 }

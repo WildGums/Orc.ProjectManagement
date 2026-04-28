@@ -3,19 +3,16 @@
 using System;
 using System.Threading.Tasks;
 using Catel.Data;
-using Catel.IoC;
+using Microsoft.Extensions.DependencyInjection;
 
 internal class ActivationHistoryProjectWatcher : ProjectWatcherBase
 {
     private readonly ActivationHistoryProjectWorkflowItem _activationHistoryProjectWorkflowItem;
 
-    public ActivationHistoryProjectWatcher(IProjectManager projectManager, 
-        ITypeFactory typeFactory)
+    public ActivationHistoryProjectWatcher(IProjectManager projectManager, IServiceProvider serviceProvider)
         : base(projectManager)
     {
-        ArgumentNullException.ThrowIfNull(typeFactory);
-
-        _activationHistoryProjectWorkflowItem = typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion<ActivationHistoryProjectWorkflowItem>(projectManager);
+        _activationHistoryProjectWorkflowItem = ActivatorUtilities.CreateInstance<ActivationHistoryProjectWorkflowItem>(serviceProvider, projectManager);
     }
 
     protected override Task OnActivatedAsync(IProject? oldProject, IProject? newProject)

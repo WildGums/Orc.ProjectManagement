@@ -5,28 +5,35 @@ using System.Threading.Tasks;
 using Catel;
 using Catel.IoC;
 using Catel.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 public abstract class ProjectRefresherBase : IProjectRefresher
 {
-    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+    private static readonly ILogger Logger = LogManager.GetLogger(typeof(ProjectRefresherBase));
+
+    private bool _isSuspended;
 
     // Note: dirty solution, but IProjectRefresherSelector is injected into ICommandManager, 
     // so we cannot accept ICommandManager in there (circular reference)
-    private readonly Lazy<IProjectManager> _projectManager = new Lazy<IProjectManager>(() => ServiceLocator.Default.ResolveRequiredType<IProjectManager>());
-    private bool _isSuspended;
+    private readonly Lazy<IProjectManager> _projectManager;
+    private readonly IServiceProvider _serviceProvider;
 
-    protected ProjectRefresherBase(string projectLocation)
-        : this(projectLocation, projectLocation)
+    protected ProjectRefresherBase(string projectLocation, IServiceProvider serviceProvider)
+        : this(projectLocation, projectLocation, serviceProvider)
     {
     }
 
-    protected ProjectRefresherBase(string projectLocation, string locationToWatch)
+    protected ProjectRefresherBase(string projectLocation, string locationToWatch, IServiceProvider serviceProvider)
     {
         Argument.IsNotNullOrWhitespace(() => projectLocation);
         Argument.IsNotNullOrWhitespace(() => locationToWatch);
 
         ProjectLocation = projectLocation;
         Location = locationToWatch;
+        _serviceProvider = serviceProvider;
+
+        _projectManager = new Lazy<IProjectManager>(() => _serviceProvider.GetRequiredService<IProjectManager>());
     }
 
     protected IProjectManager ProjectManager => _projectManager.Value;
@@ -46,11 +53,11 @@ public abstract class ProjectRefresherBase : IProjectRefresher
     {
         var location = Location;
 
-        Log.Debug("Subscribing to '{0}' for automatic refresh functionality", location);
+        Logger.LogDebug("Subscribing to '{0}' for automatic refresh functionality", location);
 
         if (IsSubscribed)
         {
-            Log.Warning("Already subscribed to '{0}', will not subscribe again", location);
+            Logger.LogWarning("Already subscribed to '{0}', will not subscribe again", location);
             return;
         }
 
@@ -68,11 +75,11 @@ public abstract class ProjectRefresherBase : IProjectRefresher
     {
         var location = Location;
 
-        Log.Debug("Unsubscribing from '{0}' for automatic refresh functionality", location);
+        Logger.LogDebug("Unsubscribing from '{0}' for automatic refresh functionality", location);
 
         if (!IsSubscribed)
         {
-            Log.Warning("Already unsubscribed from '{0}', will not unsubscribe again", location);
+            Logger.LogWarning("Already unsubscribed from '{0}', will not unsubscribe again", location);
             return;
         }
 

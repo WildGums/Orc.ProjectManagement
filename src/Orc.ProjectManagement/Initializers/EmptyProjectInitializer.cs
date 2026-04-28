@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 public class EmptyProjectInitializer : IProjectInitializer
 {
-    public virtual Task<IEnumerable<string>> GetInitialLocationsAsync()
+    public virtual Task<IReadOnlyList<string>> GetInitialLocationsAsync()
     {
-        return Task.FromResult<IEnumerable<string>>(Array.Empty<string>());
+        return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     }
 }

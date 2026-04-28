@@ -7,13 +7,12 @@ using Catel.Fody;
 using Catel.Logging;
 using Catel.MVVM;
 using Catel.Services;
+using Microsoft.Extensions.Logging;
 using Models;
 
-public class MainWindowViewModel : ViewModelBase
+public class MainWindowViewModel : FeaturedViewModelBase
 {
     private const string TextFilter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
-
-    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
 
     private readonly IMessageService _messageService;
     private readonly IOpenFileService _openFileService;
@@ -21,29 +20,22 @@ public class MainWindowViewModel : ViewModelBase
     private readonly IProjectManager _projectManager;
     private readonly ISaveFileService _saveFileService;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MainWindowViewModel"/> class.
-    /// </summary>
-    public MainWindowViewModel(IProjectManager projectManager, IOpenFileService openFileService,
+    public MainWindowViewModel(IServiceProvider serviceProvider, IProjectManager projectManager, IOpenFileService openFileService,
         ISaveFileService saveFileService, IProcessService processService, IMessageService messageService)
+        : base(serviceProvider)
     {
-        ArgumentNullException.ThrowIfNull(projectManager);
-        ArgumentNullException.ThrowIfNull(openFileService);
-        ArgumentNullException.ThrowIfNull(saveFileService);
-        ArgumentNullException.ThrowIfNull(processService);
-
         _projectManager = projectManager;
         _openFileService = openFileService;
         _saveFileService = saveFileService;
         _processService = processService;
         _messageService = messageService;
 
-        LoadProject = new TaskCommand(OnLoadProjectExecuteAsync);
-        RefreshProject = new TaskCommand(OnRefreshProjectExecuteAsync, OnRefreshProjectCanExecute);
-        SaveProject = new TaskCommand(OnSaveProjectExecuteAsync, OnSaveProjectCanExecute);
-        SaveProjectAs = new TaskCommand(OnSaveProjectAsExecuteAsync, OnSaveProjectAsCanExecute);
-        CloseProject = new Command(OnCloseProjectExecute, OnCloseProjectCanExecute);
-        OpenFile = new Command(OnOpenFileExecute, OnOpenFileCanExecute);
+        LoadProject = new TaskCommand(serviceProvider, OnLoadProjectExecuteAsync);
+        RefreshProject = new TaskCommand(serviceProvider, OnRefreshProjectExecuteAsync, OnRefreshProjectCanExecute);
+        SaveProject = new TaskCommand(serviceProvider, OnSaveProjectExecuteAsync, OnSaveProjectCanExecute);
+        SaveProjectAs = new TaskCommand(serviceProvider, OnSaveProjectAsExecuteAsync, OnSaveProjectAsCanExecute);
+        CloseProject = new Command(serviceProvider, OnCloseProjectExecute, OnCloseProjectCanExecute);
+        OpenFile = new Command(serviceProvider, OnOpenFileExecute, OnOpenFileCanExecute);
 
         Title = "Orc.ProjectManagement example";
     }
@@ -114,7 +106,7 @@ public class MainWindowViewModel : ViewModelBase
 
     private async Task OnRefreshProjectExecuteAsync()
     {
-        await _projectManager.RefreshAsync().ConfigureAwait(false);
+        await _projectManager.RefreshAsync(_projectManager.ActiveProject).ConfigureAwait(false);
     }
 
     public TaskCommand SaveProject { get; private set; }
@@ -126,7 +118,7 @@ public class MainWindowViewModel : ViewModelBase
 
     private async Task OnSaveProjectExecuteAsync()
     {
-        await _projectManager.SaveAsync().ConfigureAwait(false);
+        await _projectManager.SaveAsync(_projectManager.ActiveProject).ConfigureAwait(false);
     }
 
     public TaskCommand SaveProjectAs { get; private set; }
@@ -145,7 +137,7 @@ public class MainWindowViewModel : ViewModelBase
 
         if (result.Result)
         {
-            await _projectManager.SaveAsync(result.FileName).ConfigureAwait(false);
+            await _projectManager.SaveAsync(_projectManager.ActiveProject, result.FileName).ConfigureAwait(false);
         }
     }
 
@@ -158,7 +150,7 @@ public class MainWindowViewModel : ViewModelBase
 
     private void OnCloseProjectExecute()
     {
-        _projectManager.CloseAsync();
+        _projectManager.CloseAsync(_projectManager.ActiveProject);
     }
 
     public Command OpenFile { get; private set; }

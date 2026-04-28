@@ -1,28 +1,28 @@
 ﻿namespace Orc.ProjectManagement.Serialization;
 
 using System;
-using Catel.IoC;
+using Microsoft.Extensions.DependencyInjection;
 
 public class FixedProjectSerializerSelector<TReader, TWriter> : IProjectSerializerSelector
     where TReader : IProjectReader
     where TWriter : IProjectWriter
 {
-    private readonly ITypeFactory _typeFactory;
+    private readonly IServiceProvider _serviceProvider;
 
-    public FixedProjectSerializerSelector(ITypeFactory typeFactory)
+    public FixedProjectSerializerSelector(IServiceProvider serviceProvider)
     {
-        ArgumentNullException.ThrowIfNull(typeFactory);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
 
-        _typeFactory = typeFactory;
+        _serviceProvider = serviceProvider;
     }
 
     public IProjectReader GetReader(string location)
     {
-        return _typeFactory.CreateRequiredInstance<TReader>();
+        return ActivatorUtilities.CreateInstance<TReader>(_serviceProvider);
     }
 
     public IProjectWriter GetWriter(string location)
     {
-        return _typeFactory.CreateRequiredInstance<TWriter>();
+        return ActivatorUtilities.CreateInstance<TWriter>(_serviceProvider);
     }
 }

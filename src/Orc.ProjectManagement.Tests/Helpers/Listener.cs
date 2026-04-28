@@ -18,7 +18,7 @@ internal class Listener
 
     public static void ListenToProjectManager(Factory factory, Action<string, object[]> callbackAction)
     {
-        var mockOfProjectManager = factory.ServiceLocator.ResolveMocked<ProjectManager>();
+        var mockOfProjectManager = factory.ServiceProvider.ResolveMocked<ProjectManager>();
 
         mockOfProjectManager.Setup(pm => pm.LoadAsync(It.IsAny<string>())).CallBase().
             Callback<string>(location => callbackAction(ProjectManagerLoad, new object[] {location}));

@@ -1,39 +1,38 @@
 ﻿namespace Orc.ProjectManagement;
 
 using System;
-using Catel.IoC;
+using Catel;
 using Catel.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 public class DefaultProjectRefresherSelector : IProjectRefresherSelector
 {
-    private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+    private readonly IServiceProvider _serviceProvider;
 
-    private readonly IServiceLocator _serviceLocator;
-    private readonly ITypeFactory _typeFactory;
-
-    public DefaultProjectRefresherSelector(IServiceLocator serviceLocator, ITypeFactory typeFactory)
+    public DefaultProjectRefresherSelector(IServiceProvider serviceProvider)
     {
-        ArgumentNullException.ThrowIfNull(serviceLocator);
-        ArgumentNullException.ThrowIfNull(typeFactory);
-
-        _serviceLocator = serviceLocator;
-        _typeFactory = typeFactory;
+        _serviceProvider = serviceProvider;
     }
 
     public IProjectRefresher? GetProjectRefresher(string location)
     {
-        var registrationInfo = _serviceLocator.GetRegistrationInfo(typeof (IProjectRefresher));
-        if (registrationInfo is null)
+        var serviceDescriptors = _serviceProvider.GetServiceDescriptors<IProjectRefresher>();
+        if (serviceDescriptors.Count == 0)
         {
             return null;
         }
 
-        if (registrationInfo.RegistrationType != RegistrationType.Transient)
+        foreach (var serviceDescriptor in serviceDescriptors)
         {
-            throw Log.ErrorAndCreateException<InvalidOperationException>("IProjectRefresher needs to be registered as transient because it needs to be created for every project location");               
+            if (serviceDescriptor.Lifetime != ServiceLifetime.Transient)
+            {
+                continue;
+            }
+
+            return ActivatorUtilities.CreateInstance(_serviceProvider, serviceDescriptor.ImplementationType!, location) as IProjectRefresher;
         }
 
-        var projectRefresher = (IProjectRefresher)_typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion(registrationInfo.ImplementingType, location);
-        return projectRefresher;
+        return null;
     }
 }

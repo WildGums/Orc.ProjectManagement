@@ -2,18 +2,16 @@
 
 using System;
 using System.Threading.Tasks;
-using Catel.IoC;
+using Microsoft.Extensions.DependencyInjection;
 
 public class CloseBeforeLoadProjectWatcher : ProjectWatcherBase
 {
     private readonly CloseBeforeLoadProjectWorkflowItem _closeBeforeLoadProjectWorkflowItem;
 
-    public CloseBeforeLoadProjectWatcher(IProjectManager projectManager, ITypeFactory typeFactory)
+    public CloseBeforeLoadProjectWatcher(IProjectManager projectManager, IServiceProvider serviceProvider)
         : base(projectManager)
     {
-        ArgumentNullException.ThrowIfNull(typeFactory);
-
-        _closeBeforeLoadProjectWorkflowItem = typeFactory.CreateRequiredInstanceWithParametersAndAutoCompletion<CloseBeforeLoadProjectWorkflowItem>(projectManager);
+        _closeBeforeLoadProjectWorkflowItem = ActivatorUtilities.CreateInstance<CloseBeforeLoadProjectWorkflowItem>(serviceProvider, projectManager);
     }
 
     protected override async Task OnLoadingAsync(ProjectCancelEventArgs e)
