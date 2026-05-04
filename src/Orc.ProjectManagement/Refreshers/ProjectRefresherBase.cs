@@ -53,11 +53,11 @@ public abstract class ProjectRefresherBase : IProjectRefresher
     {
         var location = Location;
 
-        Logger.LogDebug("Subscribing to '{0}' for automatic refresh functionality", location);
+        Logger.LogDebug("Subscribing to '{Location}' for automatic refresh functionality", location);
 
         if (IsSubscribed)
         {
-            Logger.LogWarning("Already subscribed to '{0}', will not subscribe again", location);
+            Logger.LogWarning("Already subscribed to '{Location}', will not subscribe again", location);
             return;
         }
 
@@ -75,11 +75,11 @@ public abstract class ProjectRefresherBase : IProjectRefresher
     {
         var location = Location;
 
-        Logger.LogDebug("Unsubscribing from '{0}' for automatic refresh functionality", location);
+        Logger.LogDebug("Unsubscribing from '{Location}' for automatic refresh functionality", location);
 
         if (!IsSubscribed)
         {
-            Logger.LogWarning("Already unsubscribed from '{0}', will not unsubscribe again", location);
+            Logger.LogWarning("Already unsubscribed from '{Location}', will not unsubscribe again", location);
             return;
         }
 

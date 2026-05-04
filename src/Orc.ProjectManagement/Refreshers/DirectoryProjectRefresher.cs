@@ -122,7 +122,7 @@ public class DirectoryProjectRefresher : ProjectRefresherBase
 
         using (new DisposableToken(this, x => fileSystemWatcher.EnableRaisingEvents = false, x => fileSystemWatcher.EnableRaisingEvents = true))
         {
-            Logger.LogDebug("Detected change '{0}' for location '{1}'", e.ChangeType, e.FullPath);
+            Logger.LogDebug("Detected change '{ChangeType}' for location '{Location}'", e.ChangeType, e.FullPath);
 
             RaiseUpdated(e.FullPath);
 

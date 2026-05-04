@@ -18,18 +18,18 @@ public abstract class ProjectWriterBase<TProject> : IProjectWriter
         ArgumentNullException.ThrowIfNull(project);
         Argument.IsNotNullOrWhitespace(() => location);
 
-        Logger.LogDebug("Writing all data to '{0}'", location);
+        Logger.LogDebug("Writing all data to '{Location}'", location);
 
         if (!await WriteToLocationAsync((TProject) project, location).ConfigureAwait(false))
         {
-            Logger.LogWarning("Failed to write all data to '{0}'", location);
+            Logger.LogWarning("Failed to write all data to '{Location}'", location);
             return false;
         }
 
         project.Location = location;
         project.ClearIsDirty();
 
-        Logger.LogInformation("Wrote all data to '{0}'", location);
+        Logger.LogInformation("Wrote all data to '{Location}'", location);
 
         return true;
     }

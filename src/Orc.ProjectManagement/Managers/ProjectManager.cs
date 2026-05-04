@@ -257,25 +257,25 @@ public class ProjectManager : IProjectManager
 
         try
         {
-            Logger.LogDebugIfAttached($"Handling project management event '{eventName}'");
+            Logger.LogDebugIfAttached("Handling project management event '{EventName}'", eventName);
 
             var task = SafeInvokeAsync(eventName, handler, sender, e);
             var completedTask = await Task.WhenAny(task, Task.Delay(timeout));
 
             if (completedTask != task)
             {
-                Logger.LogWarning($"Handling project management event '{eventName}' has timed out");
+                Logger.LogWarning("Handling project management event '{EventName}' has timed out", eventName);
             }
             else
             {
-                Logger.LogDebugIfAttached($"Handled project management event '{eventName}'");
+                Logger.LogDebugIfAttached("Handled project management event '{EventName}'", eventName);
             }
 
             return await task.ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, $"Failed to handle project management event '{eventName}'");
+            Logger.LogError(ex, "Failed to handle project management event '{EventName}'", eventName);
             throw;
         }
     }
@@ -294,16 +294,16 @@ public class ProjectManager : IProjectManager
         {
             try
             {
-                Logger.LogDebugIfAttached($"Executing event handler: target '{eventListener.Target}', method '{eventListener.Method.Name}'");
+                Logger.LogDebugIfAttached("Executing event handler: target '{Target}', method '{MethodName}'", eventListener.Target, eventListener.Method.Name);
 
                 await InvokeEventListenerAsync(eventName, sender, e, eventListener);
 
-                Logger.LogDebugIfAttached($"Event handler successfully executed: target '{eventListener.Target}', method '{eventListener.Method.Name}'");
+                Logger.LogDebugIfAttached("Event handler successfully executed: target '{Target}', method '{MethodName}'", eventListener.Target, eventListener.Method.Name);
             }
             catch (Exception ex)
             {
 
-                Logger.LogError(ex, $"Failed to invoke event handler handler: target '{eventListener.Target}', method '{eventListener.Method.Name}'");
+                Logger.LogError(ex, "Failed to invoke event handler handler: target '{Target}', method '{MethodName}'", eventListener.Target, eventListener.Method.Name);
                 throw;
             }
         }
@@ -325,7 +325,7 @@ public class ProjectManager : IProjectManager
 
         foreach (var location in locations)
         {
-            Logger.LogDebug("Loading initial project from location '{0}'", location);
+            Logger.LogDebug("Loading initial project from location '{Location}'", location);
             await LoadAsync(location).ConfigureAwait(false);
         }
     }
@@ -413,9 +413,14 @@ public class ProjectManager : IProjectManager
                 return false;
             }
 
-            Logger.LogInformation(project is not null
-                ? $"Activating project '{project.Location}'"
-                : "Deactivating currently active project");
+            if (project is not null)
+            {
+                Logger.LogInformation("Activating project '{Location}'", project.Location);
+            }
+            else
+            {
+                Logger.LogInformation("Deactivating currently active project");
+            }
 
             var eventArgs = new ProjectUpdatingCancelEventArgs(activeProject, project);
 
@@ -426,9 +431,14 @@ public class ProjectManager : IProjectManager
 
             if (eventArgs.Cancel)
             {
-                Logger.LogInformation(project is not null
-                    ? $"Activating project '{project.Location}' was canceled"
-                    : "Deactivating currently active project");
+                if (project is not null)
+                {
+                    Logger.LogInformation("Activating project '{Location}' was canceled", project.Location);
+                }
+                else
+                {
+                    Logger.LogInformation("Deactivating currently active project was canceled");
+                }
 
                 _projectStateSetter.SetProjectActivating(project?.Location, false);
 
@@ -450,9 +460,14 @@ public class ProjectManager : IProjectManager
 
             if (exception is not null)
             {
-                Logger.LogError(exception, project is not null
-                    ? $"Failed to activate project '{project.Location}'"
-                    : "Failed to deactivate currently active project");
+                if (project is not null)
+                {
+                    Logger.LogError(exception, "Failed to activate project '{Location}'", project.Location);
+                }
+                else
+                {
+                    Logger.LogError(exception, "Failed to deactivate currently active project");
+                }
 
                 _projectStateSetter.SetProjectActivating(project?.Location ?? string.Empty, false);
                 await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.Failed, new ProjectErrorEventArgs(project, exception))).ConfigureAwait(false);
@@ -465,9 +480,14 @@ public class ProjectManager : IProjectManager
 
             await RaiseEventAsync(new ProjectActivationEvent(ProjectEventTypeStage.After, new ProjectUpdatedEventArgs(activeProject, project))).ConfigureAwait(false);
 
-            Logger.LogDebug(project is not null
-                ? $"Activating project '{project.Location}' was canceled"
-                : "Deactivating currently active project");
+            if (project is not null)
+            {
+                Logger.LogDebug("Activated project '{Location}'", project.Location);
+            }
+            else
+            {
+                Logger.LogDebug("Deactivated currently active project");
+            }
 
             return true;
         }
@@ -478,10 +498,10 @@ public class ProjectManager : IProjectManager
         var projectReader = _projectSerializerSelector.GetReader(location);
         if (projectReader is null)
         {
-            throw Logger.LogErrorAndCreateException<InvalidOperationException>($"No project reader is found for location '{location}'");
+            throw Logger.LogErrorAndCreateException<InvalidOperationException>("No project reader is found for location '{Location}'", location);
         }
 
-        Logger.LogDebug("Using project reader '{0}'", projectReader.GetType().Name);
+        Logger.LogDebug("Using project reader '{ProjectReaderType}'", projectReader.GetType().Name);
 
         var project = await projectReader.ReadAsync(location).ConfigureAwait(false);
 
@@ -493,10 +513,10 @@ public class ProjectManager : IProjectManager
         var projectWriter = _projectSerializerSelector.GetWriter(location);
         if (projectWriter is null)
         {
-            throw Logger.LogErrorAndCreateException<NotSupportedException>($"No project writer is found for location '{location}'");
+            throw Logger.LogErrorAndCreateException<NotSupportedException>("No project writer is found for location '{Location}'", location);
         }
 
-        Logger.LogDebug("Using project writer '{0}'", projectWriter.GetType().Name);
+        Logger.LogDebug("Using project writer '{ProjectWriterType}'", projectWriter.GetType().Name);
 
         return projectWriter.WriteAsync(project, location);
     }
@@ -514,13 +534,13 @@ public class ProjectManager : IProjectManager
         {
             using (await asyncLock.LockAsync())
             {
-                Logger.LogDebug($"Start synchronized operation for '{projectLocation}' refCount = {refCount}]");
+                Logger.LogDebug("Start synchronized operation for '{ProjectLocation}' refCount = {RefCount}]", projectLocation, refCount);
                 return await operation();
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, $"Failed to execute synchronized operation for '{projectLocation}' refCount = {refCount}]");
+            Logger.LogError(ex, "Failed to execute synchronized operation for '{ProjectLocation}' refCount = {RefCount}]", projectLocation, refCount);
             throw;
         }
         finally
@@ -531,7 +551,7 @@ public class ProjectManager : IProjectManager
 
     private async Task ReleaseSynchronizationContextAsync(string projectLocation)
     {
-        Logger.LogDebug($"Releasing operation synchronization context for '{projectLocation}'");
+        Logger.LogDebug("Releasing operation synchronization context for '{ProjectLocation}'", projectLocation);
 
         using (await _synchronizedCommonAsyncLock.LockAsync())
         {
@@ -553,7 +573,7 @@ public class ProjectManager : IProjectManager
             }
         }
 
-        Logger.LogDebug($"Released operation synchronization context for '{projectLocation}'");
+        Logger.LogDebug("Released operation synchronization context for '{ProjectLocation}'", projectLocation);
     }
 
     private async Task<OperationSynchronizationContext> InitializeSynchronizationContextAsync(string projectLocation)
@@ -561,7 +581,7 @@ public class ProjectManager : IProjectManager
         AsyncLock? asyncLock;
         int refCount;
 
-        Logger.LogDebug($"Initializing operation synchronization context for '{projectLocation}'");
+        Logger.LogDebug("Initializing operation synchronization context for '{ProjectLocation}'", projectLocation);
 
         using (await _synchronizedCommonAsyncLock.LockAsync())
         {
@@ -581,7 +601,7 @@ public class ProjectManager : IProjectManager
             _projectOperationRefCounts[projectLocation] = refCount;
         }
 
-        Logger.LogDebug($"Initialized operation synchronization context for '{projectLocation}' refCount = [{refCount}]");
+        Logger.LogDebug("Initialized operation synchronization context for '{ProjectLocation}' refCount = [{RefCount}]", projectLocation, refCount);
 
         return new OperationSynchronizationContext(asyncLock, refCount);
     }
@@ -595,7 +615,7 @@ public class ProjectManager : IProjectManager
             return false;
         }
 
-        Logger.LogDebug("Refreshing project from '{0}'", projectLocation);
+        Logger.LogDebug("Refreshing project from '{ProjectLocation}'", projectLocation);
 
         var isRefreshingActiveProject = activeProjectLocation.EndsWithIgnoreCase(projectLocation);
 
@@ -629,7 +649,7 @@ public class ProjectManager : IProjectManager
                 validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(projectLocation);
                 if (validationContext.HasErrors)
                 {
-                    throw Logger.LogErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{projectLocation}', the validator returned errors");
+                    throw Logger.LogErrorAndCreateException<InvalidOperationException>("Project could not be loaded from '{ProjectLocation}', the validator returned errors", projectLocation);
                 }
             }
 
@@ -640,7 +660,7 @@ public class ProjectManager : IProjectManager
                 validationContext = await _projectValidator.ValidateProjectAsync(loadedProject);
                 if (validationContext.HasErrors)
                 {
-                    throw Logger.LogErrorAndCreateException<InvalidOperationException>($"Project data was loaded from '{projectLocation}', but the validator returned errors");
+                    throw Logger.LogErrorAndCreateException<InvalidOperationException>("Project data was loaded from '{ProjectLocation}', but the validator returned errors", projectLocation);
                 }
             }
 
@@ -656,11 +676,11 @@ public class ProjectManager : IProjectManager
                 await SetActiveProjectAsync(loadedProject).ConfigureAwait(false);
             }
 
-            Logger.LogInformation("Refreshed project from '{0}'", projectLocation);
+            Logger.LogInformation("Refreshed project from '{ProjectLocation}'", projectLocation);
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Failed to load project from '{0}'", projectLocation);
+            Logger.LogWarning(ex, "Failed to load project from '{ProjectLocation}'", projectLocation);
 
             error = ex;
         }
@@ -694,18 +714,18 @@ public class ProjectManager : IProjectManager
         var projectLocation = location;
         using (new DisposableToken(location, _ => _loadingProjects.Add(projectLocation), _ => _loadingProjects.Remove(projectLocation)))
         {
-            Logger.LogDebug($"Going to load project from '{location}', checking if an upgrade is required");
+            Logger.LogDebug("Going to load project from '{Location}', checking if an upgrade is required", location);
 
             if (await _projectUpgrader.RequiresUpgradeAsync(location))
             {
-                Logger.LogDebug($"Upgrade is required for '{location}', upgrading...");
+                Logger.LogDebug("Upgrade is required for '{Location}', upgrading...", location);
 
                 location = await _projectUpgrader.UpgradeAsync(location);
 
-                Logger.LogDebug($"Upgraded project, final location is '{location}'");
+                Logger.LogDebug("Upgraded project, final location is '{Location}'", location);
             }
 
-            Logger.LogDebug($"Loading project from '{location}'");
+            Logger.LogDebug("Loading project from '{Location}'", location);
 
             _projectStateSetter.SetProjectLoading(location, true);
 
@@ -715,7 +735,7 @@ public class ProjectManager : IProjectManager
 
             if (cancelEventArgs.Cancel)
             {
-                Logger.LogDebug("Canceled loading of project from '{0}'", location);
+                Logger.LogDebug("Canceled loading of project from '{Location}'", location);
 
                 _projectStateSetter.SetProjectLoading(location, false);
 
@@ -731,7 +751,7 @@ public class ProjectManager : IProjectManager
             {
                 if (_projects.Count > 0 && ProjectManagementType == ProjectManagementType.SingleDocument)
                 {
-                    throw Logger.LogErrorAndCreateException(message => new SdiProjectManagementException(message, location), "Cannot load project '{0}', currently in SDI mode");
+                    throw Logger.LogErrorAndCreateException(message => new SdiProjectManagementException(message, location), "Cannot load project '{Location}', currently in SDI mode", location);
                 }
 
                 if (!await _projectValidator.CanStartLoadingProjectAsync(location))
@@ -739,13 +759,13 @@ public class ProjectManager : IProjectManager
                     validationContext = new ValidationContext();
                     validationContext.Add(BusinessRuleValidationResult.CreateError("Project validator informed that project could not be loaded"));
 
-                    throw Logger.LogErrorAndCreateException(message => new ProjectException(location, message), $"Cannot load project from '{location}'");
+                    throw Logger.LogErrorAndCreateException(message => new ProjectException(location, message), "Cannot load project from '{Location}'", location);
                 }
 
                 validationContext = await _projectValidator.ValidateProjectBeforeLoadingAsync(location);
                 if (validationContext.HasErrors)
                 {
-                    throw Logger.LogErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}', validator returned errors");
+                    throw Logger.LogErrorAndCreateException<InvalidOperationException>("Project could not be loaded from '{Location}', validator returned errors", location);
                 }
 
                 project = await QuietlyLoadProjectAsync(location, true).ConfigureAwait(false);
@@ -753,7 +773,7 @@ public class ProjectManager : IProjectManager
                 validationContext = await _projectValidator.ValidateProjectAsync(project);
                 if (validationContext.HasErrors)
                 {
-                    throw Logger.LogErrorAndCreateException<InvalidOperationException>($"Project data was loaded from '{location}', but the validator returned errors");
+                    throw Logger.LogErrorAndCreateException<InvalidOperationException>("Project data was loaded from '{Location}', but the validator returned errors", location);
                 }
 
                 RegisterProject(project);
@@ -761,7 +781,7 @@ public class ProjectManager : IProjectManager
             catch (Exception ex)
             {
                 error = ex;
-                Logger.LogWarning(ex, "Failed to load project from '{0}'", location);
+                Logger.LogWarning(ex, "Failed to load project from '{Location}'", location);
             }
 
             if (project is null || error is not null)
@@ -777,7 +797,7 @@ public class ProjectManager : IProjectManager
 
             await RaiseEventAsync(new ProjectLoadEvent(ProjectEventTypeStage.After, new ProjectEventArgs(project))).ConfigureAwait(false);
 
-            Logger.LogInformation("Loaded project from '{0}'", location);
+            Logger.LogInformation("Loaded project from '{Location}'", location);
         }
 
         return project;
@@ -794,7 +814,7 @@ public class ProjectManager : IProjectManager
 
         using (new DisposableToken(location, _ => _savingProjects.Add(location), _ => _savingProjects.Remove(location)))
         {
-            Logger.LogDebug("Saving project '{0}' to '{1}'", project, location);
+            Logger.LogDebug("Saving project '{Project}' to '{Location}'", project, location);
 
             // We could support SaveAs where we store the new location, but we need to make sure that we also remove
             // the old one (and revert on failure & cancel). For now this is sufficient (we will just get a new instance)
@@ -807,7 +827,7 @@ public class ProjectManager : IProjectManager
             {
                 _projectStateSetter.SetProjectSaving(location, false);
 
-                Logger.LogDebug("Canceled saving of project to '{0}'", location);
+                Logger.LogDebug("Canceled saving of project to '{Location}'", location);
                 await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Cancelled, new ProjectEventArgs(project))).ConfigureAwait(false);
 
                 return false;
@@ -828,7 +848,7 @@ public class ProjectManager : IProjectManager
             {
                 _projectStateSetter.SetProjectSaving(location, false);
 
-                Logger.LogError(error, "Failed to save project '{0}' to '{1}'", project, location);
+                Logger.LogError(error, "Failed to save project '{Project}' to '{Location}'", project, location);
 
                 await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Failed, new ProjectErrorEventArgs(project, error))).ConfigureAwait(false);
 
@@ -839,7 +859,7 @@ public class ProjectManager : IProjectManager
             {
                 _projectStateSetter.SetProjectSaving(location, false);
 
-                Logger.LogWarning("Not saved project '{0}' to '{1}'", project, location);
+                Logger.LogWarning("Not saved project '{Project}' to '{Location}'", project, location);
 
                 await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.Failed, new ProjectErrorEventArgs(project))).ConfigureAwait(false);
 
@@ -851,7 +871,7 @@ public class ProjectManager : IProjectManager
             await RaiseEventAsync(new ProjectSaveEvent(ProjectEventTypeStage.After, new ProjectEventArgs(project))).ConfigureAwait(false);
 
             var projectString = project.ToString();
-            Logger.LogInformation("Saved project '{0}' to '{1}'", projectString, location);
+            Logger.LogInformation("Saved project '{Project}' to '{Location}'", projectString, location);
         }
 
         return true;
@@ -861,7 +881,7 @@ public class ProjectManager : IProjectManager
     {
         ArgumentNullException.ThrowIfNull(project);
 
-        Logger.LogDebug("Closing project '{0}'", project);
+        Logger.LogDebug("Closing project '{Project}'", project);
 
         _projectStateSetter.SetProjectClosing(project.Location, true);
 
@@ -872,7 +892,7 @@ public class ProjectManager : IProjectManager
         {
             _projectStateSetter.SetProjectClosing(project.Location, false);
 
-            Logger.LogDebug("Canceled closing project '{0}'", project);
+            Logger.LogDebug("Canceled closing project '{Project}'", project);
             await RaiseEventAsync(new ProjectCloseEvent(ProjectEventTypeStage.Cancelled, new ProjectEventArgs(project))).ConfigureAwait(false);
 
             return false;
@@ -888,7 +908,7 @@ public class ProjectManager : IProjectManager
         _projectStateSetter.SetProjectClosing(project.Location, false);
         await RaiseEventAsync(new ProjectCloseEvent(ProjectEventTypeStage.After, new ProjectEventArgs(project))).ConfigureAwait(false);
 
-        Logger.LogInformation("Closed project '{0}'", project);
+        Logger.LogInformation("Closed project '{Project}'", project);
 
         return true;
     }
@@ -905,11 +925,11 @@ public class ProjectManager : IProjectManager
     {
         if (skipCanLoadValidation)
         {
-            Logger.LogDebug("Validating to see if we can load the project from '{0}'", location);
+            Logger.LogDebug("Validating to see if we can load the project from '{Location}'", location);
 
             if (!await _projectValidator.CanStartLoadingProjectAsync(location))
             {
-                throw Logger.LogErrorAndCreateException(message => new ProjectException(location, message), $"Cannot load project from '{location}'");
+                throw Logger.LogErrorAndCreateException(message => new ProjectException(location, message), "Cannot load project from '{Location}'", location);
             }
         }
 
@@ -917,7 +937,7 @@ public class ProjectManager : IProjectManager
 
         if (project is null)
         {
-            throw Logger.LogErrorAndCreateException<InvalidOperationException>($"Project could not be loaded from '{location}'");
+            throw Logger.LogErrorAndCreateException<InvalidOperationException>("Project could not be loaded from '{Location}'", location);
         }
 
         return project;
@@ -950,7 +970,7 @@ public class ProjectManager : IProjectManager
                 return;
             }
 
-            Logger.LogDebug("Subscribing to project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
+            Logger.LogDebug("Subscribing to project refresher '{ProjectRefresherType}'", projectRefresher.GetType().GetSafeFullName());
 
             projectRefresher.Updated += OnProjectRefresherUpdated;
             projectRefresher.Subscribe();
@@ -975,7 +995,7 @@ public class ProjectManager : IProjectManager
 
         try
         {
-            Logger.LogDebug("Unsubscribing from project refresher '{0}'", projectRefresher.GetType().GetSafeFullName());
+            Logger.LogDebug("Unsubscribing from project refresher '{ProjectRefresherType}'", projectRefresher.GetType().GetSafeFullName());
 
             projectRefresher.Unsubscribe();
         }
@@ -1009,7 +1029,7 @@ public class ProjectManager : IProjectManager
         }
         else
         {
-            Logger.LogWarning($"Project refresh required, but can't find project '{projectLocation}' in list of open projects");
+            Logger.LogWarning("Project refresh required, but can't find project '{ProjectLocation}' in list of open projects", projectLocation);
         }
     }
 

@@ -15,7 +15,7 @@ public abstract class ProjectReaderBase : IProjectReader
     {
         Argument.IsNotNullOrWhitespace(() => location);
 
-        Logger.LogDebug("Reading data from '{0}'", location);
+        Logger.LogDebug("Reading data from '{Location}'", location);
 
         var project = await ReadFromLocationAsync(location).ConfigureAwait(false);
         if (project is null)
@@ -26,7 +26,7 @@ public abstract class ProjectReaderBase : IProjectReader
         {
             project.ClearIsDirty();
 
-            Logger.LogInformation("Read data from '{0}'", location);
+            Logger.LogInformation("Read data from '{Location}'", location);
         }
 
         return project;
