@@ -37,7 +37,7 @@ public class DirectoryProjectInitializer : IProjectInitializer
         {
             dataDirectory = Path.Combine(Catel.IO.Path.GetApplicationDataDirectory(), "data");
 
-            Logger.LogDebug("DataLocation is empty in configuration, determining the data directory automatically to '{0}'", dataDirectory);
+            Logger.LogDebug("DataLocation is empty in configuration, determining the data directory automatically to '{DataDirectory}'", dataDirectory);
         }
 
         var initialLocation = await _initialProjectLocationService.GetInitialProjectLocationAsync();
@@ -54,7 +54,7 @@ public class DirectoryProjectInitializer : IProjectInitializer
         var fullPath = Path.GetFullPath(dataDirectory);
         if (!Directory.Exists(fullPath))
         {
-            Logger.LogDebug("Cannot use the data directory '{0}', it does not exist", fullPath);
+            Logger.LogDebug("Cannot use the data directory '{FullPath}', it does not exist", fullPath);
             return Array.Empty<string>();
         }
 

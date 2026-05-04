@@ -25,7 +25,7 @@ public class ProjectManagementInitializationService : IProjectManagementInitiali
 
         var projectManagementType = _projectManagementConfigurationService.GetProjectManagementType();
 
-        Logger.LogDebug("Initializing project management for '{0}'", projectManagementType);
+        Logger.LogDebug("Initializing project management for '{ProjectManagementType}'", projectManagementType);
 
         Initialize(projectManager, projectManagementType);
     }
